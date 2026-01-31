@@ -1,0 +1,36 @@
+services:
+  mysql:
+    image: 'mysql:latest'
+    container_name: mysql-mhfl
+    environment:
+      - 'MYSQL_DATABASE=mhfl_server'
+      - 'MYSQL_PASSWORD=secret'
+      - 'MYSQL_ROOT_PASSWORD=12345678'
+      - 'MYSQL_USER=myuser'
+    ports:
+      - '3306:3306'
+    volumes:
+      - ./docker-data/mysql:/var/lib/mysql
+
+  redis:
+    image: 'redis:latest'
+    container_name: redis-mhfl
+    command: redis-server --requirepass 12345678 --appendonly yes
+    environment:
+      - 'REDIS_PASSWORD=12345678'
+    ports:
+      - '6379:6379'
+    volumes:
+      - ./docker-data/redis:/data
+
+  rabbitmq:
+    image: 'rabbitmq:management'
+    container_name: rabbitmq-mhfl
+    environment:
+      - 'RABBITMQ_DEFAULT_USER=root'
+      - 'RABBITMQ_DEFAULT_PASS=12345678'
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    volumes:
+      - ./docker-data/rabbitmq:/var/lib/rabbitmq

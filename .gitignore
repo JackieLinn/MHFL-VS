@@ -6,6 +6,8 @@ mhfl-algo/mhfl-algo.iml
 
 ### mhfl-server ###
 mhfl-server/target
+mhfl-server/docker-data
+mhfl-server/src/main/resources/application-secret.yaml
 
 ### mhfl-ui ###
 mhfl-ui/mhfl-ui.iml
