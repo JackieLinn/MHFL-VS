@@ -33,3 +33,11 @@ springdoc:
     path: /doc/ui
   api-docs:
     path: /doc/json
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      logic-delete-value: 1, delete_time = NOW()
+      logic-not-delete-value: 0
