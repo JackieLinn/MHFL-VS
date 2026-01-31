@@ -1,0 +1,13 @@
+### jetbrains-settings ###
+.idea
+
+### mhfl-algo ###
+mhfl-algo/mhfl-algo.iml
+
+### mhfl-server ###
+mhfl-server/target
+
+### mhfl-ui ###
+mhfl-ui/mhfl-ui.iml
+mhfl-ui/.vscode
+mhfl-ui/node_modules
