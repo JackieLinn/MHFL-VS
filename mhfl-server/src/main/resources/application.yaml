@@ -19,6 +19,12 @@ spring:
     host: ${MAIL_HOST:smtp.example.com}
     username: ${MAIL_USERNAME:12345678@example.com}
     password: ${MAIL_PASSWORD:12345678}
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
+      password: 12345678
   rabbitmq:
     addresses: localhost
     username: root

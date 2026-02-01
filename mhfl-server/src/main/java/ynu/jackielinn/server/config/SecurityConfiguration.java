@@ -55,7 +55,7 @@ public class SecurityConfiguration {
                 // 配置接口访问权限
                 .authorizeHttpRequests(conf -> conf
                         .requestMatchers(publicPaths).permitAll() // 公共路径无需认证
-                        .requestMatchers("/api/**/admin/**").hasRole("admin")
+                        .requestMatchers("/api/*/admin/**").hasRole("admin")
                         .anyRequest().authenticated() // 其他路径需要认证
                 )
                 // 配置表单登录
