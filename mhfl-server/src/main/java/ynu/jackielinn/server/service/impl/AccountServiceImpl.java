@@ -16,6 +16,7 @@ import ynu.jackielinn.server.dto.request.ConfirmResetRO;
 import ynu.jackielinn.server.dto.request.EmailRegisterRO;
 import ynu.jackielinn.server.dto.request.EmailResetRO;
 import ynu.jackielinn.server.entity.Account;
+import ynu.jackielinn.server.entity.Gender;
 import ynu.jackielinn.server.mapper.AccountMapper;
 import ynu.jackielinn.server.service.AccountService;
 import ynu.jackielinn.server.utils.Const;
@@ -122,7 +123,7 @@ public class AccountServiceImpl extends ServiceImpl<AccountMapper, Account> impl
         Account account = Account.builder()
                 .username(username)
                 .password(password)
-                .gender(1)
+                .gender(Gender.UNKNOWN)
                 .email(email)
                 .telephone(telephone)
                 .avatar("https://avatars.githubusercontent.com/u/136216354?s=96&v=4")
@@ -224,10 +225,11 @@ public class AccountServiceImpl extends ServiceImpl<AccountMapper, Account> impl
             String defaultAvatar = "https://avatars.githubusercontent.com/u/136216354?s=96&v=4";
             LocalDate defaultBirthday = LocalDate.of(2000, 1, 1);
 
+            // 创建管理员账号
             Account admin = Account.builder()
                     .username("admin")
                     .password(password)
-                    .gender(1)
+                    .gender(Gender.MALE)
                     .email("123456@example.com")
                     .telephone("13888888888")
                     .avatar(defaultAvatar)
@@ -244,11 +246,12 @@ public class AccountServiceImpl extends ServiceImpl<AccountMapper, Account> impl
             String[] testEmails = {"234567@example.com", "345678@example.com", "456789@example.com"};
             String[] testPhones = {"13111111111", "13222222222", "13333333333"};
 
+            // 创建测试用户
             for (int i = 0; i < testUsernames.length; i++) {
                 Account testUser = Account.builder()
                         .username(testUsernames[i])
                         .password(password)
-                        .gender(1)
+                        .gender(Gender.MALE)
                         .email(testEmails[i])
                         .telephone(testPhones[i])
                         .avatar(defaultAvatar)

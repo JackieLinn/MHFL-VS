@@ -25,7 +25,7 @@ public class Account extends BaseEntity {
     private String password;
 
     @TableField("gender")
-    private Integer gender;
+    private Gender gender;
 
     @TableField("email")
     private String email;
