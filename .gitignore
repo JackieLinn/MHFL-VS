@@ -8,6 +8,7 @@ mhfl-algo/mhfl-algo.iml
 mhfl-server/target
 mhfl-server/docker-data
 mhfl-server/src/main/resources/application-secret.yaml
+/mhfl-server/src/main/java/ynu/jackielinn/server/controller/TestController.java
 
 ### mhfl-ui ###
 mhfl-ui/mhfl-ui.iml

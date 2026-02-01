@@ -2,7 +2,9 @@ package ynu.jackielinn.server.service.impl;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.core.userdetails.User;
@@ -19,10 +21,12 @@ import ynu.jackielinn.server.service.AccountService;
 import ynu.jackielinn.server.utils.Const;
 import ynu.jackielinn.server.utils.FlowUtils;
 
+import java.time.LocalDate;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @Service
 public class AccountServiceImpl extends ServiceImpl<AccountMapper, Account> implements AccountService {
 
@@ -113,6 +117,7 @@ public class AccountServiceImpl extends ServiceImpl<AccountMapper, Account> impl
         if (!code.equals(ro.getCode())) return "验证码错误，请重新输入";
         if (this.existsAccountByEmail(email)) return "此电子邮件已被其他用户注册";
         if (this.existsAccountByUsername(username)) return "此用户名已被其他人注册，请更换一个新的用户名";
+        if (this.existsAccountByTelephone(telephone)) return "此电话号码已被其他人注册";
         String password = encoder.encode(ro.getPassword());
         Account account = Account.builder()
                 .username(username)
@@ -194,5 +199,70 @@ public class AccountServiceImpl extends ServiceImpl<AccountMapper, Account> impl
      */
     private boolean existsAccountByUsername(String username) {
         return this.baseMapper.exists(Wrappers.<Account>query().eq("username", username));
+    }
+
+    /**
+     * 查询指定用户名的用户是否已经存在
+     *
+     * @param telephone 用户名
+     * @return 是否存在
+     */
+    private boolean existsAccountByTelephone(String telephone) {
+        return this.baseMapper.exists(Wrappers.<Account>query().eq("telephone", telephone));
+    }
+
+    /**
+     * 初始化默认管理员账号和测试用户
+     * 在应用启动时检查 account 表是否有数据，没有则创建默认管理员和测试用户
+     */
+    @PostConstruct
+    public void initDefaultAdmin() {
+        long count = this.count();
+        if (count == 0) {
+            log.info("Account table is empty, creating default admin and test users...");
+            String password = encoder.encode("123456");
+            String defaultAvatar = "https://avatars.githubusercontent.com/u/136216354?s=96&v=4";
+            LocalDate defaultBirthday = LocalDate.of(2000, 1, 1);
+
+            Account admin = Account.builder()
+                    .username("admin")
+                    .password(password)
+                    .gender(1)
+                    .email("123456@example.com")
+                    .telephone("13888888888")
+                    .avatar(defaultAvatar)
+                    .role("admin")
+                    .birthday(defaultBirthday)
+                    .build();
+            if (this.save(admin)) {
+                log.info("Default admin account created successfully, username: admin, password: 123456");
+            } else {
+                log.error("Failed to create default admin account");
+            }
+
+            String[] testUsernames = {"test1", "test2", "test3"};
+            String[] testEmails = {"234567@example.com", "345678@example.com", "456789@example.com"};
+            String[] testPhones = {"13111111111", "13222222222", "13333333333"};
+
+            for (int i = 0; i < testUsernames.length; i++) {
+                Account testUser = Account.builder()
+                        .username(testUsernames[i])
+                        .password(password)
+                        .gender(1)
+                        .email(testEmails[i])
+                        .telephone(testPhones[i])
+                        .avatar(defaultAvatar)
+                        .role("user")
+                        .birthday(defaultBirthday)
+                        .build();
+                if (this.save(testUser)) {
+                    log.info("Test user {} created successfully", testUsernames[i]);
+                } else {
+                    log.error("Failed to create test user {}", testUsernames[i]);
+                }
+            }
+        } else {
+            log.info("Account table already has {} records, skipping initialization", count);
+        }
     }
 }
