@@ -47,8 +47,8 @@ const handleLogout = () => {
           </el-icon>
         </div>
         <div>
-          <h1 class="text-lg font-semibold text-gray-800 dark:text-white leading-tight">MHFL Platform</h1>
-          <p class="text-xs text-gray-400 dark:text-gray-500">可视化仿真平台</p>
+          <h1 class="text-lg font-semibold text-gray-800 dark:text-white leading-tight">MHFL-VS Platform</h1>
+          <p class="text-xs text-gray-400 dark:text-gray-500">全链路可视化与仿真平台</p>
         </div>
       </div>
 
@@ -99,7 +99,7 @@ const handleLogout = () => {
 
         <!-- 标题 -->
         <h2 class="text-3xl font-bold text-gray-800 dark:text-white mb-3">
-          欢迎使用 MHFL 可视化仿真平台
+          欢迎使用 MHFL-VS 可视化仿真平台
         </h2>
         <p class="text-gray-500 dark:text-gray-400 mb-10">
           Model Heterogeneous Federated Learning End-to-End Visualization and Simulation Platform
@@ -141,7 +141,7 @@ const handleLogout = () => {
     <!-- 底部 -->
     <footer
         class="py-4 text-center text-xs text-gray-400 dark:text-gray-500 border-t border-gray-200/50 dark:border-gray-700/50 flex-shrink-0">
-      © 2024 MHFL Platform. All rights reserved.
+      © 2026 MHFL-VS Platform. All rights reserved.
     </footer>
   </div>
 </template>

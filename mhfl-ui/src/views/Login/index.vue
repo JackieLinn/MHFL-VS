@@ -45,7 +45,7 @@ const switchPanel = (panel: PanelType) => {
           </div>
 
           <!-- 标题 -->
-          <h1 class="text-4xl font-bold text-gray-800 dark:text-white mb-3 tracking-wide">MHFL</h1>
+          <h1 class="text-4xl font-bold text-gray-800 dark:text-white mb-3 tracking-wide">MHFL-VS</h1>
           <p class="text-sm text-gray-500 dark:text-gray-400 mb-4 font-medium tracking-wider">
             Model Heterogeneous Federated Learning
           </p>
@@ -109,7 +109,7 @@ const switchPanel = (panel: PanelType) => {
 
           <!-- 底部版权 -->
           <p class="text-center text-xs text-gray-400 dark:text-gray-500 mt-6">
-            © 2024 MHFL Platform. All rights reserved.
+            © 2026 MHFL-VS Platform. All rights reserved.
           </p>
         </div>
       </div>

@@ -73,7 +73,7 @@ onMounted(() => refreshCaptcha())
     <!-- 标题 -->
     <div class="text-center mb-6">
       <h2 class="text-2xl font-semibold text-gray-800 dark:text-white mb-1">欢迎登录</h2>
-      <p class="text-sm text-gray-500 dark:text-gray-400">模型异构联邦学习可视化仿真平台</p>
+      <p class="text-sm text-gray-500 dark:text-gray-400">模型异构联邦学习全链路可视化与仿真平台</p>
     </div>
 
     <!-- 表单 -->
@@ -88,7 +88,7 @@ onMounted(() => refreshCaptcha())
 
       <el-form-item prop="captchaCode">
         <div class="flex gap-3 w-full">
-          <el-input v-model="form.captchaCode" placeholder="验证码" :prefix-icon="Picture" class="flex-1"/>
+          <el-input v-model="form.captchaCode" placeholder="图形验证码" :prefix-icon="Picture" class="flex-1"/>
           <div
               class="w-28 h-10 rounded-lg cursor-pointer overflow-hidden bg-gray-100 dark:bg-gray-700 flex-center border border-gray-200 dark:border-gray-600 hover:border-indigo-400 dark:hover:border-indigo-500 transition-colors flex-shrink-0"
               @click="refreshCaptcha"

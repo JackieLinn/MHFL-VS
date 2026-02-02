@@ -104,7 +104,7 @@ const handleSubmit = async () => {
     <!-- 标题 -->
     <div class="text-center mb-5">
       <h2 class="text-2xl font-semibold text-gray-800 dark:text-white mb-1">创建账号</h2>
-      <p class="text-sm text-gray-500 dark:text-gray-400">加入 MHFL 可视化仿真平台</p>
+      <p class="text-sm text-gray-500 dark:text-gray-400">加入 MHFL-VS 可视化仿真平台</p>
     </div>
 
     <!-- 表单 - 紧凑布局 -->
