@@ -1,182 +1,182 @@
 /* 全局样式重置 */
 * {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 html, body {
-  width: 100%;
-  height: 100%;
+    width: 100%;
+    height: 100%;
 }
 
 #app {
-  width: 100%;
-  min-height: 100%;
+    width: 100%;
+    min-height: 100%;
 }
 
 /* el-link 去除下划线 */
 .el-link {
-  text-decoration: none !important;
+    text-decoration: none !important;
 }
 
 .el-link:hover {
-  text-decoration: none !important;
+    text-decoration: none !important;
 }
 
 .el-link.el-link--primary {
-  text-decoration: none !important;
+    text-decoration: none !important;
 }
 
 .el-link.is-underline:hover:after {
-  display: none !important;
+    display: none !important;
 }
 
 /* 自定义滚动条 */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+    width: 6px;
+    height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+    background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.15);
-  border-radius: 3px;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.25);
+    background: rgba(0, 0, 0, 0.25);
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.15);
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.25);
 }
 
 /* Element Plus 主题变量覆盖 */
 :root {
-  --el-color-primary: #6366f1;
-  --el-color-primary-light-3: #818cf8;
-  --el-color-primary-light-5: #a5b4fc;
-  --el-color-primary-light-7: #c7d2fe;
-  --el-color-primary-light-8: #e0e7ff;
-  --el-color-primary-light-9: #eef2ff;
-  --el-color-primary-dark-2: #4f46e5;
+    --el-color-primary: #6366f1;
+    --el-color-primary-light-3: #818cf8;
+    --el-color-primary-light-5: #a5b4fc;
+    --el-color-primary-light-7: #c7d2fe;
+    --el-color-primary-light-8: #e0e7ff;
+    --el-color-primary-light-9: #eef2ff;
+    --el-color-primary-dark-2: #4f46e5;
 }
 
 /* ============ 登录页主题变量 ============ */
 /* 浅色模式（默认） */
 :root {
-  --login-bg: #f0f4ff;
-  --login-gradient-1: #e0e7ff;
-  --login-gradient-2: #c7d2fe;
-  --login-gradient-3: #a5b4fc;
-  --login-grid-color: rgba(99, 102, 241, 0.08);
-  --login-shape-opacity: 0.4;
-  --login-glow-opacity: 0.25;
-  --login-text-primary: #1e1b4b;
-  --login-text-secondary: #4338ca;
-  --login-text-muted: #6366f1;
-  --login-card-bg: rgba(255, 255, 255, 0.85);
-  --login-card-border: rgba(99, 102, 241, 0.2);
-  --login-card-shadow: rgba(99, 102, 241, 0.15);
-  --login-capability-bg: rgba(255, 255, 255, 0.6);
-  --login-capability-border: rgba(99, 102, 241, 0.15);
-  --login-capability-hover-bg: rgba(99, 102, 241, 0.1);
-  --login-capability-hover-border: rgba(99, 102, 241, 0.3);
-  
-  /* 表单变量 */
-  --login-form-title: #1e1b4b;
-  --login-form-subtitle: #6366f1;
-  --login-input-bg: rgba(99, 102, 241, 0.05);
-  --login-input-border: rgba(99, 102, 241, 0.2);
-  --login-input-text: #1e1b4b;
-  --login-input-placeholder: rgba(99, 102, 241, 0.4);
-  --login-input-icon: rgba(99, 102, 241, 0.4);
-  --login-checkbox-label: #4338ca;
-  --login-checkbox-bg: #fff;
-  --login-checkbox-border: rgba(99, 102, 241, 0.3);
-  --login-link-color: #6366f1;
-  --login-link-hover: #4f46e5;
-  --login-footer-text: rgba(79, 70, 229, 0.6);
-  --login-code-btn-bg: rgba(99, 102, 241, 0.1);
-  --login-code-btn-border: rgba(99, 102, 241, 0.3);
-  --login-code-btn-text: #6366f1;
-  --login-back-btn-bg: rgba(99, 102, 241, 0.05);
-  --login-back-btn-border: rgba(99, 102, 241, 0.15);
-  --login-back-btn-text: #6366f1;
-  --login-step-color: rgba(99, 102, 241, 0.4);
-  --login-step-active: #4f46e5;
-  --login-step-num-bg: rgba(99, 102, 241, 0.05);
-  --login-step-num-border: rgba(99, 102, 241, 0.2);
-  --login-step-line-bg: rgba(99, 102, 241, 0.15);
+    --login-bg: #f0f4ff;
+    --login-gradient-1: #e0e7ff;
+    --login-gradient-2: #c7d2fe;
+    --login-gradient-3: #a5b4fc;
+    --login-grid-color: rgba(99, 102, 241, 0.08);
+    --login-shape-opacity: 0.4;
+    --login-glow-opacity: 0.25;
+    --login-text-primary: #1e1b4b;
+    --login-text-secondary: #4338ca;
+    --login-text-muted: #6366f1;
+    --login-card-bg: rgba(255, 255, 255, 0.85);
+    --login-card-border: rgba(99, 102, 241, 0.2);
+    --login-card-shadow: rgba(99, 102, 241, 0.15);
+    --login-capability-bg: rgba(255, 255, 255, 0.6);
+    --login-capability-border: rgba(99, 102, 241, 0.15);
+    --login-capability-hover-bg: rgba(99, 102, 241, 0.1);
+    --login-capability-hover-border: rgba(99, 102, 241, 0.3);
+
+    /* 表单变量 */
+    --login-form-title: #1e1b4b;
+    --login-form-subtitle: #6366f1;
+    --login-input-bg: rgba(99, 102, 241, 0.05);
+    --login-input-border: rgba(99, 102, 241, 0.2);
+    --login-input-text: #1e1b4b;
+    --login-input-placeholder: rgba(99, 102, 241, 0.4);
+    --login-input-icon: rgba(99, 102, 241, 0.4);
+    --login-checkbox-label: #4338ca;
+    --login-checkbox-bg: #fff;
+    --login-checkbox-border: rgba(99, 102, 241, 0.3);
+    --login-link-color: #6366f1;
+    --login-link-hover: #4f46e5;
+    --login-footer-text: rgba(79, 70, 229, 0.6);
+    --login-code-btn-bg: rgba(99, 102, 241, 0.1);
+    --login-code-btn-border: rgba(99, 102, 241, 0.3);
+    --login-code-btn-text: #6366f1;
+    --login-back-btn-bg: rgba(99, 102, 241, 0.05);
+    --login-back-btn-border: rgba(99, 102, 241, 0.15);
+    --login-back-btn-text: #6366f1;
+    --login-step-color: rgba(99, 102, 241, 0.4);
+    --login-step-active: #4f46e5;
+    --login-step-num-bg: rgba(99, 102, 241, 0.05);
+    --login-step-num-border: rgba(99, 102, 241, 0.2);
+    --login-step-line-bg: rgba(99, 102, 241, 0.15);
 }
 
 /* 深色模式 */
 html.dark {
-  --login-bg: #0f172a;
-  --login-gradient-1: #0f172a;
-  --login-gradient-2: #1e1b4b;
-  --login-gradient-3: #312e81;
-  --login-grid-color: rgba(99, 102, 241, 0.03);
-  --login-shape-opacity: 0.5;
-  --login-glow-opacity: 0.4;
-  --login-text-primary: #fff;
-  --login-text-secondary: rgba(165, 180, 252, 0.8);
-  --login-text-muted: rgba(165, 180, 252, 0.6);
-  --login-card-bg: rgba(255, 255, 255, 0.03);
-  --login-card-border: rgba(255, 255, 255, 0.1);
-  --login-card-shadow: rgba(0, 0, 0, 0.25);
-  --login-capability-bg: rgba(255, 255, 255, 0.03);
-  --login-capability-border: rgba(255, 255, 255, 0.06);
-  --login-capability-hover-bg: rgba(99, 102, 241, 0.08);
-  --login-capability-hover-border: rgba(99, 102, 241, 0.2);
-  
-  /* 表单变量 */
-  --login-form-title: #fff;
-  --login-form-subtitle: rgba(165, 180, 252, 0.7);
-  --login-input-bg: rgba(255, 255, 255, 0.03);
-  --login-input-border: rgba(255, 255, 255, 0.1);
-  --login-input-text: #fff;
-  --login-input-placeholder: rgba(165, 180, 252, 0.4);
-  --login-input-icon: rgba(165, 180, 252, 0.5);
-  --login-checkbox-label: rgba(165, 180, 252, 0.7);
-  --login-checkbox-bg: rgba(255, 255, 255, 0.05);
-  --login-checkbox-border: rgba(255, 255, 255, 0.2);
-  --login-link-color: #818cf8;
-  --login-link-hover: #a5b4fc;
-  --login-footer-text: rgba(165, 180, 252, 0.5);
-  --login-code-btn-bg: rgba(99, 102, 241, 0.2);
-  --login-code-btn-border: rgba(99, 102, 241, 0.3);
-  --login-code-btn-text: #a5b4fc;
-  --login-back-btn-bg: rgba(255, 255, 255, 0.05);
-  --login-back-btn-border: rgba(255, 255, 255, 0.1);
-  --login-back-btn-text: rgba(165, 180, 252, 0.8);
-  --login-step-color: rgba(165, 180, 252, 0.4);
-  --login-step-active: #a5b4fc;
-  --login-step-num-bg: rgba(255, 255, 255, 0.05);
-  --login-step-num-border: rgba(255, 255, 255, 0.1);
-  --login-step-line-bg: rgba(255, 255, 255, 0.1);
+    --login-bg: #0f172a;
+    --login-gradient-1: #0f172a;
+    --login-gradient-2: #1e1b4b;
+    --login-gradient-3: #312e81;
+    --login-grid-color: rgba(99, 102, 241, 0.03);
+    --login-shape-opacity: 0.5;
+    --login-glow-opacity: 0.4;
+    --login-text-primary: #fff;
+    --login-text-secondary: rgba(165, 180, 252, 0.8);
+    --login-text-muted: rgba(165, 180, 252, 0.6);
+    --login-card-bg: rgba(255, 255, 255, 0.03);
+    --login-card-border: rgba(255, 255, 255, 0.1);
+    --login-card-shadow: rgba(0, 0, 0, 0.25);
+    --login-capability-bg: rgba(255, 255, 255, 0.03);
+    --login-capability-border: rgba(255, 255, 255, 0.06);
+    --login-capability-hover-bg: rgba(99, 102, 241, 0.08);
+    --login-capability-hover-border: rgba(99, 102, 241, 0.2);
+
+    /* 表单变量 */
+    --login-form-title: #fff;
+    --login-form-subtitle: rgba(165, 180, 252, 0.7);
+    --login-input-bg: rgba(255, 255, 255, 0.03);
+    --login-input-border: rgba(255, 255, 255, 0.1);
+    --login-input-text: #fff;
+    --login-input-placeholder: rgba(165, 180, 252, 0.4);
+    --login-input-icon: rgba(165, 180, 252, 0.5);
+    --login-checkbox-label: rgba(165, 180, 252, 0.7);
+    --login-checkbox-bg: rgba(255, 255, 255, 0.05);
+    --login-checkbox-border: rgba(255, 255, 255, 0.2);
+    --login-link-color: #818cf8;
+    --login-link-hover: #a5b4fc;
+    --login-footer-text: rgba(165, 180, 252, 0.5);
+    --login-code-btn-bg: rgba(99, 102, 241, 0.2);
+    --login-code-btn-border: rgba(99, 102, 241, 0.3);
+    --login-code-btn-text: #a5b4fc;
+    --login-back-btn-bg: rgba(255, 255, 255, 0.05);
+    --login-back-btn-border: rgba(255, 255, 255, 0.1);
+    --login-back-btn-text: rgba(165, 180, 252, 0.8);
+    --login-step-color: rgba(165, 180, 252, 0.4);
+    --login-step-active: #a5b4fc;
+    --login-step-num-bg: rgba(255, 255, 255, 0.05);
+    --login-step-num-border: rgba(255, 255, 255, 0.1);
+    --login-step-line-bg: rgba(255, 255, 255, 0.1);
 }
 
 /* 暗色主题下 Element Plus 变量 */
 html.dark {
-  --el-bg-color: #1f2937;
-  --el-bg-color-overlay: #374151;
-  --el-text-color-primary: #f9fafb;
-  --el-text-color-regular: #d1d5db;
-  --el-text-color-secondary: #9ca3af;
-  --el-text-color-placeholder: #6b7280;
-  --el-border-color: #4b5563;
-  --el-border-color-light: #374151;
-  --el-border-color-lighter: #374151;
-  --el-fill-color: #374151;
-  --el-fill-color-light: #4b5563;
-  --el-fill-color-lighter: #374151;
+    --el-bg-color: #1f2937;
+    --el-bg-color-overlay: #374151;
+    --el-text-color-primary: #f9fafb;
+    --el-text-color-regular: #d1d5db;
+    --el-text-color-secondary: #9ca3af;
+    --el-text-color-placeholder: #6b7280;
+    --el-border-color: #4b5563;
+    --el-border-color-light: #374151;
+    --el-border-color-lighter: #374151;
+    --el-fill-color: #374151;
+    --el-fill-color-light: #4b5563;
+    --el-fill-color-lighter: #374151;
 }

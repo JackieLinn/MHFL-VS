@@ -142,7 +142,9 @@ const handleBack = () => {
       <template v-if="step === 1">
         <el-form-item prop="email">
           <div class="input-wrapper">
-            <el-icon class="input-icon"><Message/></el-icon>
+            <el-icon class="input-icon">
+              <Message/>
+            </el-icon>
             <el-input v-model="form.email" placeholder="注册时的邮箱地址" class="custom-input"/>
           </div>
         </el-form-item>
@@ -150,7 +152,9 @@ const handleBack = () => {
         <el-form-item prop="code">
           <div class="code-row">
             <div class="input-wrapper flex-1">
-              <el-icon class="input-icon"><Key/></el-icon>
+              <el-icon class="input-icon">
+                <Key/>
+              </el-icon>
               <el-input v-model="form.code" placeholder="邮箱验证码" class="custom-input"/>
             </div>
             <button type="button" class="code-btn" :disabled="!canSendCode || sendingCode" @click="handleSendCode">
@@ -163,15 +167,20 @@ const handleBack = () => {
       <template v-else>
         <el-form-item prop="password">
           <div class="input-wrapper">
-            <el-icon class="input-icon"><Lock/></el-icon>
+            <el-icon class="input-icon">
+              <Lock/>
+            </el-icon>
             <el-input v-model="form.password" type="password" placeholder="新密码" show-password class="custom-input"/>
           </div>
         </el-form-item>
 
         <el-form-item prop="confirmPassword">
           <div class="input-wrapper">
-            <el-icon class="input-icon"><Lock/></el-icon>
-            <el-input v-model="form.confirmPassword" type="password" placeholder="确认新密码" show-password class="custom-input"/>
+            <el-icon class="input-icon">
+              <Lock/>
+            </el-icon>
+            <el-input v-model="form.confirmPassword" type="password" placeholder="确认新密码" show-password
+                      class="custom-input"/>
           </div>
         </el-form-item>
       </template>

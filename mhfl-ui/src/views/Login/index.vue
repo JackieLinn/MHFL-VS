@@ -20,7 +20,7 @@ const switchPanel = (panel: PanelType) => {
     <div class="bg-layer">
       <div class="gradient-bg"></div>
       <div class="grid-pattern"></div>
-      
+
       <!-- 浮动装饰 -->
       <div class="floating-shapes">
         <div class="shape shape-1"></div>
@@ -29,7 +29,7 @@ const switchPanel = (panel: PanelType) => {
         <div class="shape shape-4"></div>
         <div class="shape shape-5"></div>
       </div>
-      
+
       <!-- 光晕 -->
       <div class="glow glow-1"></div>
       <div class="glow glow-2"></div>
@@ -59,9 +59,9 @@ const switchPanel = (panel: PanelType) => {
           <h1 class="brand-title">MHFL-VS</h1>
           <p class="brand-abbr">Model Heterogeneous Federated Learning</p>
           <p class="brand-abbr">End-to-End Visualization and Simulation</p>
-          
+
           <div class="divider"></div>
-          
+
           <h2 class="brand-subtitle">模型异构联邦学习</h2>
           <p class="brand-desc">全链路可视化与仿真平台</p>
 
@@ -69,7 +69,9 @@ const switchPanel = (panel: PanelType) => {
           <div class="capabilities">
             <div class="capability-item">
               <div class="capability-icon">
-                <el-icon :size="20"><Connection/></el-icon>
+                <el-icon :size="20">
+                  <Connection/>
+                </el-icon>
               </div>
               <div class="capability-text">
                 <span class="capability-title">模型异构</span>
@@ -78,7 +80,9 @@ const switchPanel = (panel: PanelType) => {
             </div>
             <div class="capability-item">
               <div class="capability-icon">
-                <el-icon :size="20"><Monitor/></el-icon>
+                <el-icon :size="20">
+                  <Monitor/>
+                </el-icon>
               </div>
               <div class="capability-text">
                 <span class="capability-title">全链路可视化</span>
@@ -87,7 +91,9 @@ const switchPanel = (panel: PanelType) => {
             </div>
             <div class="capability-item">
               <div class="capability-icon">
-                <el-icon :size="20"><TrendCharts/></el-icon>
+                <el-icon :size="20">
+                  <TrendCharts/>
+                </el-icon>
               </div>
               <div class="capability-text">
                 <span class="capability-title">仿真模拟</span>
@@ -105,7 +111,7 @@ const switchPanel = (panel: PanelType) => {
             <div class="deco-line deco-line-1"></div>
             <div class="deco-line deco-line-2"></div>
           </div>
-          
+
           <Transition name="slide" mode="out-in">
             <LoginForm v-if="currentPanel === 'login'" key="login" @switch="switchPanel"/>
             <RegisterForm v-else-if="currentPanel === 'register'" key="register" @switch="switchPanel"/>
@@ -141,28 +147,31 @@ const switchPanel = (panel: PanelType) => {
 .gradient-bg {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, 
-    var(--login-gradient-1) 0%, 
-    var(--login-gradient-2) 25%, 
-    var(--login-gradient-3) 50%, 
-    var(--login-gradient-2) 75%, 
-    var(--login-gradient-1) 100%
+  background: linear-gradient(135deg,
+  var(--login-gradient-1) 0%,
+  var(--login-gradient-2) 25%,
+  var(--login-gradient-3) 50%,
+  var(--login-gradient-2) 75%,
+  var(--login-gradient-1) 100%
   );
   background-size: 400% 400%;
   animation: gradientShift 15s ease infinite;
 }
 
 @keyframes gradientShift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 .grid-pattern {
   position: absolute;
   inset: 0;
-  background-image: 
-    linear-gradient(var(--login-grid-color) 1px, transparent 1px),
-    linear-gradient(90deg, var(--login-grid-color) 1px, transparent 1px);
+  background-image: linear-gradient(var(--login-grid-color) 1px, transparent 1px),
+  linear-gradient(90deg, var(--login-grid-color) 1px, transparent 1px);
   background-size: 60px 60px;
   mask-image: radial-gradient(ellipse at center, black 0%, transparent 70%);
 }
@@ -225,21 +234,39 @@ const switchPanel = (panel: PanelType) => {
 }
 
 @keyframes float1 {
-  0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  33% { transform: translate(30px, -30px) rotate(120deg); }
-  66% { transform: translate(-20px, 20px) rotate(240deg); }
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  33% {
+    transform: translate(30px, -30px) rotate(120deg);
+  }
+  66% {
+    transform: translate(-20px, 20px) rotate(240deg);
+  }
 }
 
 @keyframes float2 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(-40px, 30px) scale(1.1); }
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-40px, 30px) scale(1.1);
+  }
 }
 
 @keyframes float3 {
-  0%, 100% { transform: translate(0, 0); }
-  25% { transform: translate(20px, -20px); }
-  50% { transform: translate(40px, 0); }
-  75% { transform: translate(20px, 20px); }
+  0%, 100% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(20px, -20px);
+  }
+  50% {
+    transform: translate(40px, 0);
+  }
+  75% {
+    transform: translate(20px, 20px);
+  }
 }
 
 .glow {
@@ -268,8 +295,14 @@ const switchPanel = (panel: PanelType) => {
 }
 
 @keyframes glowPulse {
-  0%, 100% { opacity: var(--login-glow-opacity); transform: scale(1); }
-  50% { opacity: calc(var(--login-glow-opacity) * 1.3); transform: scale(1.1); }
+  0%, 100% {
+    opacity: var(--login-glow-opacity);
+    transform: scale(1);
+  }
+  50% {
+    opacity: calc(var(--login-glow-opacity) * 1.3);
+    transform: scale(1.1);
+  }
 }
 
 /* ============ 主题切换按钮 ============ */
@@ -322,7 +355,9 @@ const switchPanel = (panel: PanelType) => {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .logo {
@@ -338,8 +373,12 @@ const switchPanel = (panel: PanelType) => {
 }
 
 @keyframes logoFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
 }
 
 .brand-title {
@@ -482,8 +521,14 @@ const switchPanel = (panel: PanelType) => {
 }
 
 @keyframes lineMove {
-  0%, 100% { transform: translateX(-100%); opacity: 0; }
-  50% { transform: translateX(0); opacity: 1; }
+  0%, 100% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  50% {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 .copyright {
@@ -515,35 +560,44 @@ const switchPanel = (panel: PanelType) => {
     padding: 24px;
     min-height: auto;
   }
-  
+
   .brand-section {
     padding: 24px;
     flex: none;
   }
-  
+
   .brand-content {
     text-align: center;
     max-width: 100%;
   }
-  
+
   .logo-wrapper {
     margin: 0 auto 24px;
   }
-  
-  .brand-title { font-size: 42px; }
-  .brand-subtitle { font-size: 20px; }
-  .brand-desc { font-size: 14px; margin-bottom: 24px; }
-  
+
+  .brand-title {
+    font-size: 42px;
+  }
+
+  .brand-subtitle {
+    font-size: 20px;
+  }
+
+  .brand-desc {
+    font-size: 14px;
+    margin-bottom: 24px;
+  }
+
   .capabilities {
     max-width: 400px;
     margin: 0 auto;
   }
-  
+
   .form-section {
     padding: 24px;
     flex: none;
   }
-  
+
   .form-card {
     padding: 32px 24px;
   }
@@ -553,20 +607,31 @@ const switchPanel = (panel: PanelType) => {
   .main-container {
     padding: 16px;
   }
-  
+
   .brand-section {
     padding: 16px;
   }
-  
-  .brand-title { font-size: 32px; }
-  .brand-abbr { font-size: 11px; }
-  .divider { margin: 16px auto; }
-  .capabilities { display: none; }
-  
+
+  .brand-title {
+    font-size: 32px;
+  }
+
+  .brand-abbr {
+    font-size: 11px;
+  }
+
+  .divider {
+    margin: 16px auto;
+  }
+
+  .capabilities {
+    display: none;
+  }
+
   .form-section {
     padding: 16px;
   }
-  
+
   .form-card {
     padding: 24px 20px;
   }

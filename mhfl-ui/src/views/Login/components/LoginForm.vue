@@ -59,10 +59,10 @@ const handleSubmit = async () => {
         (message) => {
           loading.value = false
           form.captchaCode = ''
-          
-          const needRefresh = message.includes('过期') || 
-                              message.includes('无效') || 
-                              message.includes('请刷新')
+
+          const needRefresh = message.includes('过期') ||
+              message.includes('无效') ||
+              message.includes('请刷新')
           if (needRefresh) {
             refreshCaptcha()
           }
@@ -86,24 +86,28 @@ onMounted(() => refreshCaptcha())
     <el-form ref="formRef" :model="form" :rules="rules" size="large" @keyup.enter="handleSubmit">
       <el-form-item prop="username">
         <div class="input-wrapper">
-          <el-icon class="input-icon"><User/></el-icon>
-          <el-input 
-            v-model="form.username" 
-            placeholder="用户名 / 邮箱 / 手机号"
-            class="custom-input"
+          <el-icon class="input-icon">
+            <User/>
+          </el-icon>
+          <el-input
+              v-model="form.username"
+              placeholder="用户名 / 邮箱 / 手机号"
+              class="custom-input"
           />
         </div>
       </el-form-item>
 
       <el-form-item prop="password">
         <div class="input-wrapper">
-          <el-icon class="input-icon"><Lock/></el-icon>
-          <el-input 
-            v-model="form.password" 
-            type="password" 
-            placeholder="密码" 
-            show-password
-            class="custom-input"
+          <el-icon class="input-icon">
+            <Lock/>
+          </el-icon>
+          <el-input
+              v-model="form.password"
+              type="password"
+              placeholder="密码"
+              show-password
+              class="custom-input"
           />
         </div>
       </el-form-item>
@@ -111,11 +115,13 @@ onMounted(() => refreshCaptcha())
       <el-form-item prop="captchaCode">
         <div class="captcha-row">
           <div class="input-wrapper flex-1">
-            <el-icon class="input-icon"><Picture/></el-icon>
-            <el-input 
-              v-model="form.captchaCode" 
-              placeholder="图形验证码"
-              class="custom-input"
+            <el-icon class="input-icon">
+              <Picture/>
+            </el-icon>
+            <el-input
+                v-model="form.captchaCode"
+                placeholder="图形验证码"
+                class="custom-input"
             />
           </div>
           <div class="captcha-box" @click="refreshCaptcha">
@@ -136,7 +142,9 @@ onMounted(() => refreshCaptcha())
       <el-form-item>
         <button type="button" class="submit-btn" :disabled="loading" @click="handleSubmit">
           <span v-if="!loading">登 录</span>
-          <el-icon v-else class="btn-loading"><Loading/></el-icon>
+          <el-icon v-else class="btn-loading">
+            <Loading/>
+          </el-icon>
         </button>
       </el-form-item>
 
@@ -259,7 +267,9 @@ onMounted(() => refreshCaptcha())
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .captcha-placeholder {

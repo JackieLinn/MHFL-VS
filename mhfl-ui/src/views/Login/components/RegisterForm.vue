@@ -112,13 +112,17 @@ const handleSubmit = async () => {
       <div class="form-row">
         <el-form-item prop="username" class="form-col">
           <div class="input-wrapper">
-            <el-icon class="input-icon"><User/></el-icon>
+            <el-icon class="input-icon">
+              <User/>
+            </el-icon>
             <el-input v-model="form.username" placeholder="用户名" class="custom-input"/>
           </div>
         </el-form-item>
         <el-form-item prop="telephone" class="form-col">
           <div class="input-wrapper">
-            <el-icon class="input-icon"><Phone/></el-icon>
+            <el-icon class="input-icon">
+              <Phone/>
+            </el-icon>
             <el-input v-model="form.telephone" placeholder="手机号" class="custom-input"/>
           </div>
         </el-form-item>
@@ -126,7 +130,9 @@ const handleSubmit = async () => {
 
       <el-form-item prop="email">
         <div class="input-wrapper">
-          <el-icon class="input-icon"><Message/></el-icon>
+          <el-icon class="input-icon">
+            <Message/>
+          </el-icon>
           <el-input v-model="form.email" placeholder="邮箱地址" class="custom-input"/>
         </div>
       </el-form-item>
@@ -134,7 +140,9 @@ const handleSubmit = async () => {
       <el-form-item prop="code">
         <div class="code-row">
           <div class="input-wrapper flex-1">
-            <el-icon class="input-icon"><Key/></el-icon>
+            <el-icon class="input-icon">
+              <Key/>
+            </el-icon>
             <el-input v-model="form.code" placeholder="邮箱验证码" class="custom-input"/>
           </div>
           <button type="button" class="code-btn" :disabled="!canSendCode || sendingCode" @click="handleSendCode">
@@ -146,14 +154,19 @@ const handleSubmit = async () => {
       <div class="form-row">
         <el-form-item prop="password" class="form-col">
           <div class="input-wrapper">
-            <el-icon class="input-icon"><Lock/></el-icon>
+            <el-icon class="input-icon">
+              <Lock/>
+            </el-icon>
             <el-input v-model="form.password" type="password" placeholder="密码" show-password class="custom-input"/>
           </div>
         </el-form-item>
         <el-form-item prop="confirmPassword" class="form-col">
           <div class="input-wrapper">
-            <el-icon class="input-icon"><Lock/></el-icon>
-            <el-input v-model="form.confirmPassword" type="password" placeholder="确认密码" show-password class="custom-input"/>
+            <el-icon class="input-icon">
+              <Lock/>
+            </el-icon>
+            <el-input v-model="form.confirmPassword" type="password" placeholder="确认密码" show-password
+                      class="custom-input"/>
           </div>
         </el-form-item>
       </div>
