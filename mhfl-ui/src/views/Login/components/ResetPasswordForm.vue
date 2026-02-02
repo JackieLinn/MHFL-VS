@@ -115,25 +115,23 @@ const handleBack = () => {
 </script>
 
 <template>
-  <div class="reset-form">
+  <div class="w-full">
     <!-- 标题 -->
-    <div class="form-header">
-      <h2 class="form-title">重置密码</h2>
-      <p class="form-subtitle">
-        {{ step === 1 ? '输入邮箱验证身份' : '设置您的新密码' }}
-      </p>
+    <div class="text-center mb-6">
+      <h2 class="text-2xl font-bold mb-2 form-title">重置密码</h2>
+      <p class="text-sm form-subtitle">{{ step === 1 ? '输入邮箱验证身份' : '设置您的新密码' }}</p>
     </div>
 
     <!-- 步骤指示器 -->
-    <div class="steps">
+    <div class="flex items-center justify-center mb-8">
       <div :class="['step', { active: step >= 1 }]">
         <span class="step-num">1</span>
-        <span class="step-text">验证邮箱</span>
+        <span class="text-sm">验证邮箱</span>
       </div>
       <div :class="['step-line', { active: step >= 2 }]"></div>
       <div :class="['step', { active: step >= 2 }]">
         <span class="step-num">2</span>
-        <span class="step-text">设置密码</span>
+        <span class="text-sm">设置密码</span>
       </div>
     </div>
 
@@ -150,8 +148,8 @@ const handleBack = () => {
         </el-form-item>
 
         <el-form-item prop="code">
-          <div class="code-row">
-            <div class="input-wrapper">
+          <div class="flex gap-3 items-stretch w-full">
+            <div class="input-wrapper flex-1 min-w-0">
               <el-icon class="input-icon">
                 <Key/>
               </el-icon>
@@ -185,8 +183,8 @@ const handleBack = () => {
         </el-form-item>
       </template>
 
-      <el-form-item class="btn-group-item">
-        <div class="btn-group">
+      <el-form-item class="mt-8">
+        <div class="flex gap-3 w-full">
           <button type="button" class="back-btn" @click="handleBack">
             {{ step === 1 ? '返回登录' : '上一步' }}
           </button>
@@ -200,36 +198,16 @@ const handleBack = () => {
 </template>
 
 <style scoped>
-/* 使用全局主题变量 */
-.reset-form {
-  width: 100%;
-}
-
-.form-header {
-  text-align: center;
-  margin-bottom: 24px;
-}
-
+/* 主题色 */
 .form-title {
-  font-size: 26px;
-  font-weight: 700;
   color: var(--login-form-title);
-  margin-bottom: 8px;
 }
 
 .form-subtitle {
-  font-size: 14px;
   color: var(--login-form-subtitle);
 }
 
 /* 步骤指示器 */
-.steps {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 32px;
-}
-
 .step {
   display: flex;
   align-items: center;
@@ -263,10 +241,6 @@ const handleBack = () => {
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
 }
 
-.step-text {
-  font-size: 13px;
-}
-
 .step-line {
   width: 50px;
   height: 2px;
@@ -280,7 +254,7 @@ const handleBack = () => {
   background: linear-gradient(90deg, #6366f1, #8b5cf6);
 }
 
-/* 输入框 */
+/* 输入框图标 */
 .input-wrapper {
   position: relative;
   width: 100%;
@@ -301,6 +275,7 @@ const handleBack = () => {
   color: #6366f1;
 }
 
+/* 自定义输入框 */
 .custom-input :deep(.el-input__wrapper) {
   background: var(--login-input-bg);
   border: 1px solid var(--login-input-border);
@@ -329,19 +304,7 @@ const handleBack = () => {
   color: var(--login-input-placeholder);
 }
 
-/* 验证码行 */
-.code-row {
-  display: flex;
-  gap: 12px;
-  align-items: stretch;
-  width: 100%;
-}
-
-.code-row .input-wrapper {
-  flex: 1;
-  min-width: 0;
-}
-
+/* 发送按钮 */
 .code-btn {
   width: 90px;
   background: var(--login-code-btn-bg);
@@ -364,17 +327,7 @@ const handleBack = () => {
   cursor: not-allowed;
 }
 
-/* 按钮组 */
-.btn-group-item {
-  margin-top: 32px;
-}
-
-.btn-group {
-  display: flex;
-  gap: 12px;
-  width: 100%;
-}
-
+/* 按钮 */
 .back-btn {
   flex: 1;
   height: 48px;

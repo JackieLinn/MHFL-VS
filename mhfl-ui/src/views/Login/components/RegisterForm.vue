@@ -100,17 +100,17 @@ const handleSubmit = async () => {
 </script>
 
 <template>
-  <div class="register-form">
+  <div class="w-full">
     <!-- 标题 -->
-    <div class="form-header">
-      <h2 class="form-title">创建账号</h2>
-      <p class="form-subtitle">加入 MHFL-VS 可视化仿真平台</p>
+    <div class="text-center mb-6">
+      <h2 class="text-2xl font-bold mb-2 form-title">创建账号</h2>
+      <p class="text-sm form-subtitle">加入 MHFL-VS 可视化仿真平台</p>
     </div>
 
     <!-- 表单 -->
     <el-form ref="formRef" :model="form" :rules="rules" size="default" class="compact-form">
-      <div class="form-row">
-        <el-form-item prop="username" class="form-col">
+      <div class="flex gap-3">
+        <el-form-item prop="username" class="flex-1">
           <div class="input-wrapper">
             <el-icon class="input-icon">
               <User/>
@@ -118,7 +118,7 @@ const handleSubmit = async () => {
             <el-input v-model="form.username" placeholder="用户名" class="custom-input"/>
           </div>
         </el-form-item>
-        <el-form-item prop="telephone" class="form-col">
+        <el-form-item prop="telephone" class="flex-1">
           <div class="input-wrapper">
             <el-icon class="input-icon">
               <Phone/>
@@ -138,8 +138,8 @@ const handleSubmit = async () => {
       </el-form-item>
 
       <el-form-item prop="code">
-        <div class="code-row">
-          <div class="input-wrapper">
+        <div class="flex gap-2.5 items-stretch w-full">
+          <div class="input-wrapper flex-1 min-w-0">
             <el-icon class="input-icon">
               <Key/>
             </el-icon>
@@ -151,8 +151,8 @@ const handleSubmit = async () => {
         </div>
       </el-form-item>
 
-      <div class="form-row">
-        <el-form-item prop="password" class="form-col">
+      <div class="flex gap-3">
+        <el-form-item prop="password" class="flex-1">
           <div class="input-wrapper">
             <el-icon class="input-icon">
               <Lock/>
@@ -160,7 +160,7 @@ const handleSubmit = async () => {
             <el-input v-model="form.password" type="password" placeholder="密码" show-password class="custom-input"/>
           </div>
         </el-form-item>
-        <el-form-item prop="confirmPassword" class="form-col">
+        <el-form-item prop="confirmPassword" class="flex-1">
           <div class="input-wrapper">
             <el-icon class="input-icon">
               <Lock/>
@@ -171,15 +171,15 @@ const handleSubmit = async () => {
         </el-form-item>
       </div>
 
-      <el-form-item class="submit-item">
+      <el-form-item class="mt-6 mb-4">
         <button type="button" class="submit-btn" :disabled="loading" @click="handleSubmit">
           <span v-if="!loading">注 册</span>
           <span v-else>注册中...</span>
         </button>
       </el-form-item>
 
-      <div class="form-footer">
-        <span class="footer-text">已有账号？</span>
+      <div class="text-center">
+        <span class="text-sm mr-1 footer-text">已有账号？</span>
         <span class="link-text" @click="emit('switch', 'login')">返回登录</span>
       </div>
     </el-form>
@@ -187,26 +187,17 @@ const handleSubmit = async () => {
 </template>
 
 <style scoped>
-/* 使用全局主题变量 */
-.register-form {
-  width: 100%;
-}
-
-.form-header {
-  text-align: center;
-  margin-bottom: 24px;
-}
-
+/* 主题色 */
 .form-title {
-  font-size: 26px;
-  font-weight: 700;
   color: var(--login-form-title);
-  margin-bottom: 8px;
 }
 
 .form-subtitle {
-  font-size: 14px;
   color: var(--login-form-subtitle);
+}
+
+.footer-text {
+  color: var(--login-footer-text);
 }
 
 /* 紧凑表单 */
@@ -214,17 +205,7 @@ const handleSubmit = async () => {
   margin-bottom: 16px;
 }
 
-/* 双列布局 */
-.form-row {
-  display: flex;
-  gap: 12px;
-}
-
-.form-col {
-  flex: 1;
-}
-
-/* 输入框 */
+/* 输入框图标 */
 .input-wrapper {
   position: relative;
   width: 100%;
@@ -245,6 +226,7 @@ const handleSubmit = async () => {
   color: #6366f1;
 }
 
+/* 自定义输入框 */
 .custom-input :deep(.el-input__wrapper) {
   background: var(--login-input-bg);
   border: 1px solid var(--login-input-border);
@@ -273,19 +255,7 @@ const handleSubmit = async () => {
   color: var(--login-input-placeholder);
 }
 
-/* 验证码行 */
-.code-row {
-  display: flex;
-  gap: 10px;
-  align-items: stretch;
-  width: 100%;
-}
-
-.code-row .input-wrapper {
-  flex: 1;
-  min-width: 0;
-}
-
+/* 发送按钮 */
 .code-btn {
   width: 80px;
   background: var(--login-code-btn-bg);
@@ -309,11 +279,6 @@ const handleSubmit = async () => {
 }
 
 /* 提交按钮 */
-.submit-item {
-  margin-top: 24px;
-  margin-bottom: 16px;
-}
-
 .submit-btn {
   width: 100%;
   height: 44px;
@@ -337,17 +302,7 @@ const handleSubmit = async () => {
   cursor: not-allowed;
 }
 
-/* 底部 */
-.form-footer {
-  text-align: center;
-}
-
-.footer-text {
-  font-size: 14px;
-  color: var(--login-footer-text);
-  margin-right: 4px;
-}
-
+/* 链接 */
 .link-text {
   font-size: 14px;
   color: var(--login-link-color);
