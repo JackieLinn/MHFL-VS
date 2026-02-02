@@ -165,6 +165,35 @@ html.dark {
     --login-step-line-bg: rgba(255, 255, 255, 0.1);
 }
 
+/* ============ Home页主题变量 ============ */
+/* 浅色模式（默认） */
+:root {
+    --home-bg: #f8fafc;
+    --home-header-bg: rgba(255, 255, 255, 0.85);
+    --home-border: rgba(99, 102, 241, 0.1);
+    --home-text-primary: #1e1b4b;
+    --home-text-secondary: #4338ca;
+    --home-text-muted: #6366f1;
+    --home-hover-bg: rgba(99, 102, 241, 0.08);
+    --home-card-bg: rgba(255, 255, 255, 0.8);
+    --home-card-border: rgba(99, 102, 241, 0.12);
+    --home-card-shadow: rgba(99, 102, 241, 0.1);
+}
+
+/* 深色模式 */
+html.dark {
+    --home-bg: #0f172a;
+    --home-header-bg: rgba(30, 41, 59, 0.85);
+    --home-border: rgba(255, 255, 255, 0.08);
+    --home-text-primary: #fff;
+    --home-text-secondary: #a5b4fc;
+    --home-text-muted: rgba(165, 180, 252, 0.6);
+    --home-hover-bg: rgba(255, 255, 255, 0.05);
+    --home-card-bg: rgba(255, 255, 255, 0.03);
+    --home-card-border: rgba(255, 255, 255, 0.08);
+    --home-card-shadow: rgba(0, 0, 0, 0.2);
+}
+
 /* 暗色主题下 Element Plus 变量 */
 html.dark {
     --el-bg-color: #1f2937;

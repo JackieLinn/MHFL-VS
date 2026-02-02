@@ -114,7 +114,7 @@ onMounted(() => refreshCaptcha())
 
       <el-form-item prop="captchaCode">
         <div class="captcha-row">
-          <div class="input-wrapper flex-1">
+          <div class="input-wrapper">
             <el-icon class="input-icon">
               <Picture/>
             </el-icon>
@@ -234,11 +234,17 @@ onMounted(() => refreshCaptcha())
 .captcha-row {
   display: flex;
   gap: 12px;
+  align-items: stretch;
+  width: 100%;
+}
+
+.captcha-row .input-wrapper {
+  flex: 1;
+  min-width: 0;
 }
 
 .captcha-box {
   width: 120px;
-  height: 42px;
   border-radius: 12px;
   background: var(--login-input-bg);
   border: 1px solid var(--login-input-border);

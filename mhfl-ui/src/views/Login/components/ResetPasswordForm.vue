@@ -151,7 +151,7 @@ const handleBack = () => {
 
         <el-form-item prop="code">
           <div class="code-row">
-            <div class="input-wrapper flex-1">
+            <div class="input-wrapper">
               <el-icon class="input-icon">
                 <Key/>
               </el-icon>
@@ -333,11 +333,17 @@ const handleBack = () => {
 .code-row {
   display: flex;
   gap: 12px;
+  align-items: stretch;
+  width: 100%;
+}
+
+.code-row .input-wrapper {
+  flex: 1;
+  min-width: 0;
 }
 
 .code-btn {
   width: 90px;
-  height: 42px;
   background: var(--login-code-btn-bg);
   border: 1px solid var(--login-code-btn-border);
   border-radius: 12px;
