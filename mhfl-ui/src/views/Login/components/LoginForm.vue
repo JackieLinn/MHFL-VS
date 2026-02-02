@@ -56,10 +56,17 @@ const handleSubmit = async () => {
           loading.value = false
           router.push('/home')
         },
-        () => {
+        (message) => {
           loading.value = false
-          refreshCaptcha()
           form.captchaCode = ''
+          
+          // 只有在验证码过期或用完时才刷新，普通错误让用户继续尝试
+          const needRefresh = message.includes('过期') || 
+                              message.includes('无效') || 
+                              message.includes('请刷新')
+          if (needRefresh) {
+            refreshCaptcha()
+          }
         }
     )
   })
