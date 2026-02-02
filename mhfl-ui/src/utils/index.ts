@@ -170,4 +170,15 @@ const unauthorized = (): boolean => {
 };
 
 // 统一导出
-export {login, logout, get, post, unauthorized, takeAccessToken, deleteAccessToken};
+export {
+    login,
+    logout,
+    get,
+    post,
+    unauthorized,
+    takeAccessToken,
+    deleteAccessToken,
+    storeAccessToken,
+    internalPost,
+    internalGet
+};
