@@ -94,7 +94,7 @@ public class AccountServiceImpl extends ServiceImpl<AccountMapper, Account> impl
             Random random = new Random();
             int code = random.nextInt(899999) + 100000;
             Map<String, Object> data = Map.of("type", type, "email", email, "code", code);
-            amqpTemplate.convertAndSend("email", data);
+            amqpTemplate.convertAndSend("MHFLVSMail", data);
             stringRedisTemplate.opsForValue()
                     .set(Const.VERIFY_EMAIL_DATA + email, String.valueOf(code), 3, TimeUnit.MINUTES);
             return null;
