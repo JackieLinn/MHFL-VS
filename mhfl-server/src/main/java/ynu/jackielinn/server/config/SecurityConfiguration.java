@@ -18,6 +18,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import ynu.jackielinn.server.dto.response.AuthorizeVO;
 import ynu.jackielinn.server.entity.Account;
 import ynu.jackielinn.server.entity.ApiResponse;
+import ynu.jackielinn.server.filter.CaptchaValidateFilter;
 import ynu.jackielinn.server.filter.JwtAuthorizeFilter;
 import ynu.jackielinn.server.service.AccountService;
 import ynu.jackielinn.server.utils.JwtUtils;
@@ -38,6 +39,9 @@ public class SecurityConfiguration {
     JwtAuthorizeFilter jwtAuthorizeFilter;
 
     @Resource
+    CaptchaValidateFilter captchaValidateFilter;
+
+    @Resource
     AccountService accountService;
 
     /**
@@ -50,7 +54,7 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         // 定义无需认证的公共路径
-        var publicPaths = new String[]{"/doc/**", "/auth/**", "/error"};
+        var publicPaths = new String[]{"/doc/**", "/auth/**", "/captcha/**", "/error"};
         return http
                 // 配置接口访问权限
                 .authorizeHttpRequests(conf -> conf
@@ -79,6 +83,8 @@ public class SecurityConfiguration {
                 // 配置无状态会话管理策略
                 .sessionManagement(conf -> conf
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // 添加图形验证码过滤器（在登录认证之前验证验证码）
+                .addFilterBefore(captchaValidateFilter, UsernamePasswordAuthenticationFilter.class)
                 // 添加 JWT 授权过滤器
                 .addFilterBefore(jwtAuthorizeFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();

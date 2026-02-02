@@ -17,4 +17,9 @@ public class Const {
     //请求频率限制
     public final static String FLOW_LIMIT_COUNTER = "flow:counter:";
     public final static String FLOW_LIMIT_BLOCK = "flow:block:";
+
+    //图形验证码
+    public final static String VERIFY_CAPTCHA_LIMIT = "verify:captcha:limit:";
+    public final static String VERIFY_CAPTCHA_DATA = "verify:captcha:data:";
+    public final static String VERIFY_CAPTCHA_FAIL_COUNT = "verify:captcha:fail:";
 }
