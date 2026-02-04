@@ -9,7 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.core.annotation.Order;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
-import ynu.jackielinn.server.entity.ApiResponse;
+import ynu.jackielinn.server.common.ApiResponse;
 import ynu.jackielinn.server.utils.Const;
 
 import java.io.IOException;

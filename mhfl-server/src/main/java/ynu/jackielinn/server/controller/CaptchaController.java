@@ -12,7 +12,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import ynu.jackielinn.server.entity.ApiResponse;
+import ynu.jackielinn.server.common.ApiResponse;
 import ynu.jackielinn.server.utils.Const;
 
 import java.io.IOException;

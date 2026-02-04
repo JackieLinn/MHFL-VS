@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import ynu.jackielinn.server.dto.request.ConfirmResetRO;
 import ynu.jackielinn.server.dto.request.EmailRegisterRO;
 import ynu.jackielinn.server.dto.request.EmailResetRO;
-import ynu.jackielinn.server.entity.ApiResponse;
+import ynu.jackielinn.server.common.ApiResponse;
 import ynu.jackielinn.server.service.AccountService;
 
 import java.util.function.Function;

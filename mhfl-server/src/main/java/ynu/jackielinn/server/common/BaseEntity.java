@@ -1,4 +1,4 @@
-package ynu.jackielinn.server.entity;
+package ynu.jackielinn.server.common;
 
 import com.baomidou.mybatisplus.annotation.*;
 import com.fasterxml.jackson.annotation.JsonFormat;

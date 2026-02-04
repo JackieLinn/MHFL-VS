@@ -16,7 +16,7 @@ import ynu.jackielinn.server.dto.request.ConfirmResetRO;
 import ynu.jackielinn.server.dto.request.EmailRegisterRO;
 import ynu.jackielinn.server.dto.request.EmailResetRO;
 import ynu.jackielinn.server.entity.Account;
-import ynu.jackielinn.server.entity.Gender;
+import ynu.jackielinn.server.common.Gender;
 import ynu.jackielinn.server.mapper.AccountMapper;
 import ynu.jackielinn.server.service.AccountService;
 import ynu.jackielinn.server.utils.Const;

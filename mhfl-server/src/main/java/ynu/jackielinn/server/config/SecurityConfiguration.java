@@ -17,7 +17,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import ynu.jackielinn.server.dto.response.AuthorizeVO;
 import ynu.jackielinn.server.entity.Account;
-import ynu.jackielinn.server.entity.ApiResponse;
+import ynu.jackielinn.server.common.ApiResponse;
 import ynu.jackielinn.server.filter.CaptchaValidateFilter;
 import ynu.jackielinn.server.filter.JwtAuthorizeFilter;
 import ynu.jackielinn.server.service.AccountService;

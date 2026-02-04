@@ -5,7 +5,7 @@ import jakarta.validation.ValidationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import ynu.jackielinn.server.entity.ApiResponse;
+import ynu.jackielinn.server.common.ApiResponse;
 
 @Slf4j
 @RestControllerAdvice

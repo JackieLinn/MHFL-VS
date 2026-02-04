@@ -1,4 +1,4 @@
-package ynu.jackielinn.server.entity;
+package ynu.jackielinn.server.common;
 
 import org.springframework.beans.BeanUtils;
 

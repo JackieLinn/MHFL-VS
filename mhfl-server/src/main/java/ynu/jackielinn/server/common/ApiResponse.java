@@ -1,4 +1,4 @@
-package ynu.jackielinn.server.entity;
+package ynu.jackielinn.server.common;
 
 import com.alibaba.fastjson2.JSONObject;
 import com.alibaba.fastjson2.JSONWriter;

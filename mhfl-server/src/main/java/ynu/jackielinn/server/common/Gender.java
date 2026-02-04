@@ -1,4 +1,4 @@
-package ynu.jackielinn.server.entity;
+package ynu.jackielinn.server.common;
 
 import com.baomidou.mybatisplus.annotation.EnumValue;
 import com.fasterxml.jackson.annotation.JsonValue;

@@ -7,6 +7,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import ynu.jackielinn.server.common.BaseEntity;
+import ynu.jackielinn.server.common.Status;
 
 @Data
 @TableName("task")

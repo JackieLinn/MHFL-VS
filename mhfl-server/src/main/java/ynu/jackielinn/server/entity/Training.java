@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import ynu.jackielinn.server.common.BaseEntity;
 
 import java.time.LocalDateTime;
 
