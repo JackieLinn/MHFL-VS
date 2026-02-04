@@ -13,21 +13,18 @@ import ynu.jackielinn.server.common.BaseEntity;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("training")
+@TableName("client")
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class Training extends BaseEntity {
+public class Client extends BaseEntity {
 
-    @TableField("tid")
-    private Long tid;
+    @TableField("rid")
+    private Long rid;
 
-    @TableField("client_id")
-    private Long clientId;
-
-    @TableField("round_num")
-    private Long roundNum;
+    @TableField("client_index")
+    private Integer clientIndex;
 
     @TableField("loss")
     private Double loss;

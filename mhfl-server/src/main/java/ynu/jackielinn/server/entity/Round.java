@@ -8,42 +8,20 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import ynu.jackielinn.server.common.BaseEntity;
-import ynu.jackielinn.server.common.Status;
 
 @Data
-@TableName("task")
+@TableName("round")
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class Task extends BaseEntity {
+public class Round extends BaseEntity {
 
-    @TableField("uid")
-    private Long uid;
+    @TableField("tid")
+    private Long tid;
 
-    @TableField("did")
-    private Long did;
-
-    @TableField("aid")
-    private Long aid;
-
-    @TableField("num_nodes")
-    private Integer numNodes;
-
-    @TableField("fraction")
-    private Double fraction;
-
-    @TableField("classes_per_node")
-    private Integer classes_per_node;
-
-    @TableField("low_prob")
-    private Double low_prob;
-
-    @TableField("num_steps")
-    private Integer numSteps;
-
-    @TableField("epochs")
-    private Integer epochs;
+    @TableField("round_num")
+    private Integer roundNum;
 
     @TableField("loss")
     private Double loss;
@@ -59,7 +37,4 @@ public class Task extends BaseEntity {
 
     @TableField("f1_score")
     private Double f1Score;
-
-    @TableField("status")
-    private Status status;
 }
