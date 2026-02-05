@@ -311,7 +311,7 @@ class BaseTrainer(ABC):
             client_id: int,
             net: nn.Module,
             train_loader: torch.utils.data.DataLoader
-    ) -> Dict[str, Any]:
+    ) -> None:
         """
         训练单个客户端（子类实现）
 
@@ -320,9 +320,6 @@ class BaseTrainer(ABC):
             client_id: 客户端ID
             net: 客户端模型
             train_loader: 训练数据加载器
-
-        Returns:
-            包含训练指标的字典，至少包含: loss, accuracy
         """
         pass
 
