@@ -43,3 +43,11 @@ def count_parameters(model):
 
 def get_device(no_cuda=False, gpus='0'):
     return torch.device(f"cuda:{gpus}" if torch.cuda.is_available() and not no_cuda else "cpu")
+
+
+def calc_feat_size(input_size):
+    """Calculate feature map size after conv layers"""
+    size = input_size
+    size = (size - 4) // 2  # conv1(5x5) + pool(2x2)
+    size = (size - 4) // 2  # conv2(5x5) + pool(2x2)
+    return size
