@@ -1,14 +1,16 @@
 from abc import ABC, abstractmethod
-from typing import Dict, List, Callable, Optional, Any, Tuple
+from typing import Dict, List, Callable, Optional, Any
 from collections import defaultdict
 import random
 import logging
 from pathlib import Path
+from datetime import datetime
 
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.utils.data
+from sklearn.metrics import precision_score, recall_score, f1_score
 
 from fl_core.utils.node import BaseNodes
 from fl_core.utils.tools import get_device, set_seed
@@ -58,8 +60,9 @@ class BaseTrainer(ABC):
             seed: int = 42,
             gpu: int = 0,
             # 回调函数用于实时数据传输
-            step_callback: Optional[Callable[[int, Dict[str, Any]], None]] = None,
-            client_callback: Optional[Callable[[int, int, Dict[str, Any]], None]] = None,
+            step_callback: Optional[Callable[[int, int, Dict[str, Any]], None]] = None,  # (tid, step, metrics)
+            client_callback: Optional[Callable[[int, int, int, Dict[str, Any]], None]] = None,
+            # (tid, step, client_id, metrics)
     ):
         """
         初始化训练器
@@ -82,8 +85,8 @@ class BaseTrainer(ABC):
             n_kernels: 卷积核数量
             seed: 随机种子
             gpu: GPU 设备编号
-            step_callback: 每轮训练完成后的回调函数 (step, metrics)
-            client_callback: 每个客户端训练完成后的回调函数 (step, client_id, metrics)
+            step_callback: 每轮训练完成后的回调函数 (tid, step, metrics)
+            client_callback: 每个客户端训练完成后的回调函数 (tid, step, client_id, metrics)
         """
         # Task ID
         self.tid = tid
@@ -217,21 +220,29 @@ class BaseTrainer(ABC):
         }
         return optimizers
 
-    def test_acc(self, net: nn.Module, testloader: torch.utils.data.DataLoader) -> Tuple[float, float]:
+    def test_metrics(self, net: nn.Module, testloader: torch.utils.data.DataLoader) -> Dict[str, float]:
         """
-        测试模型准确率和损失
+        测试模型指标：损失、准确率、精确率、召回率、F1分数
 
         Args:
             net: 模型
             testloader: 测试数据加载器
 
         Returns:
-            (平均损失, 平均准确率)
+            包含所有指标的字典: {
+                'loss': 平均损失,
+                'accuracy': 准确率,
+                'precision': 精确率 (macro average),
+                'recall': 召回率 (macro average),
+                'f1_score': F1分数 (macro average)
+            }
         """
         net.eval()
-        total_acc = 0.0
         total_loss = 0.0
         n_batch = 0
+
+        all_preds = []
+        all_labels = []
 
         with torch.no_grad():
             for img, label in testloader:
@@ -240,12 +251,41 @@ class BaseTrainer(ABC):
                 logits = self._forward(net, img)
                 loss = self.criteria(logits, label)
                 total_loss += float(loss.item())
-                total_acc += float(logits.argmax(1).eq(label).float().mean().item())
+
+                # 获取预测结果
+                preds = logits.argmax(1)
+                all_preds.append(preds.cpu().numpy())
+                all_labels.append(label.cpu().numpy())
 
         if n_batch == 0:
-            return 0.0, 0.0
+            return {
+                'loss': 0.0,
+                'accuracy': 0.0,
+                'precision': 0.0,
+                'recall': 0.0,
+                'f1_score': 0.0
+            }
 
-        return total_loss / n_batch, total_acc / n_batch
+        # 合并所有批次的结果
+        all_preds = np.concatenate(all_preds)
+        all_labels = np.concatenate(all_labels)
+
+        # 计算平均损失和准确率
+        avg_loss = total_loss / n_batch
+        accuracy = float((all_preds == all_labels).mean())
+
+        # 计算精确率、召回率、F1分数
+        precision = float(precision_score(all_labels, all_preds, average='macro', zero_division=0))
+        recall = float(recall_score(all_labels, all_preds, average='macro', zero_division=0))
+        f1 = float(f1_score(all_labels, all_preds, average='macro', zero_division=0))
+
+        return {
+            'loss': avg_loss,
+            'accuracy': accuracy,
+            'precision': precision,
+            'recall': recall,
+            'f1_score': f1
+        }
 
     def _forward(self, net: nn.Module, img: torch.Tensor) -> torch.Tensor:
         """
@@ -336,53 +376,74 @@ class BaseTrainer(ABC):
 
                 # 训练客户端
                 train_loader = self.nodes.train_loaders[client_id]
-                metrics = self._train_client(step, client_id, net, train_loader)
+                self._train_client(step, client_id, net, train_loader)
 
-                # 测试客户端模型
-                test_loss, test_acc = self.test_acc(net, self.nodes.test_loaders[client_id])
+                # 测试客户端模型，获取所有指标
+                test_metrics = self.test_metrics(net, self.nodes.test_loaders[client_id])
 
-                # 更新指标
-                metrics['test_loss'] = test_loss
-                metrics['test_accuracy'] = test_acc
-                all_client_losses.append(test_loss)
-                all_client_accs.append(test_acc)
+                # 构建客户端指标（对应 Client 实体）
+                metrics = {
+                    'client_index': client_id,
+                    'loss': test_metrics['loss'],
+                    'accuracy': test_metrics['accuracy'],
+                    'precision': test_metrics['precision'],
+                    'recall': test_metrics['recall'],
+                    'f1_score': test_metrics['f1_score'],
+                    'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                }
+
+                all_client_losses.append(test_metrics['loss'])
+                all_client_accs.append(test_metrics['accuracy'])
                 client_metrics[client_id] = metrics
-                self.client_acc[client_id] = test_acc
+                self.client_acc[client_id] = test_metrics['accuracy']
 
                 # 保存客户端模型状态
                 client_models[client_id] = {k: v.cpu().clone() for k, v in net.state_dict().items()}
 
                 self._log_info(
-                    f'Round {step} | Client {client_id} | Test Loss: {test_loss:.4f} | Test Acc: {test_acc:.4f}')
+                    f'Round {step} | Client {client_id} | Loss: {test_metrics["loss"]:.4f} | '
+                    f'Acc: {test_metrics["accuracy"]:.4f} | Precision: {test_metrics["precision"]:.4f} | '
+                    f'Recall: {test_metrics["recall"]:.4f} | F1: {test_metrics["f1_score"]:.4f}')
 
                 # 客户端训练完成回调
                 if self.client_callback:
-                    self.client_callback(step, client_id, metrics)
+                    self.client_callback(self.tid, step, client_id, metrics)
 
-            # 计算平均指标
+            # 计算平均指标（所有选中客户端的平均值）
             mean_loss = round(float(np.mean(all_client_losses)), 4) if all_client_losses else 0.0
             mean_acc = round(float(np.mean(all_client_accs)), 4) if all_client_accs else 0.0
+
+            # 计算平均精确率、召回率、F1分数
+            all_precisions = [client_metrics[cid]['precision'] for cid in selected_clients if cid in client_metrics]
+            all_recalls = [client_metrics[cid]['recall'] for cid in selected_clients if cid in client_metrics]
+            all_f1_scores = [client_metrics[cid]['f1_score'] for cid in selected_clients if cid in client_metrics]
+
+            mean_precision = round(float(np.mean(all_precisions)), 4) if all_precisions else 0.0
+            mean_recall = round(float(np.mean(all_recalls)), 4) if all_recalls else 0.0
+            mean_f1 = round(float(np.mean(all_f1_scores)), 4) if all_f1_scores else 0.0
 
             # 聚合模型（如果有聚合逻辑）
             aggregated_model = self._aggregate(step, selected_clients, client_models)
             if aggregated_model:
                 self._apply_aggregated_model(aggregated_model, selected_clients)
 
-            # 构建本轮指标
+            # 构建本轮指标（对应 Round 实体）
             step_metrics = {
-                'step': step,
-                'mean_loss': mean_loss,
-                'mean_accuracy': mean_acc,
-                'selected_clients': selected_clients,
-                'client_metrics': client_metrics,
-                'all_client_accuracies': {k: round(v, 4) for k, v in self.client_acc.items()}
+                'round_num': step,
+                'loss': mean_loss,
+                'accuracy': mean_acc,
+                'precision': mean_precision,
+                'recall': mean_recall,
+                'f1_score': mean_f1
             }
 
-            self._log_info(f'Round: {step} | Mean Loss: {mean_loss} | Mean Acc: {mean_acc}')
+            self._log_info(
+                f'Round: {step} | Mean Loss: {mean_loss} | Mean Acc: {mean_acc} | '
+                f'Mean Precision: {mean_precision} | Mean Recall: {mean_recall} | Mean F1: {mean_f1}')
 
             # 轮次完成回调
             if self.step_callback:
-                self.step_callback(step, step_metrics)
+                self.step_callback(self.tid, step, step_metrics)
 
         self._log_info(f'Training completed: {self.algorithm_name} on {self.data_name}')
 
