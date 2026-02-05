@@ -15,6 +15,20 @@ from fl_core.models.cnn_lgfedavg import (
 class LGFedAvgTrainer(BaseTrainer):
     """LG-FedAvg 训练器：Local-Global Federated Averaging"""
 
+    def __init__(self, *args, inner_lr: float = 5e-3, inner_wd: float = 5e-5, **kwargs):
+        """
+        初始化 LG-FedAvg 训练器
+        
+        Args:
+            *args: 传递给基类的参数
+            inner_lr: 内部学习率（用于客户端训练）
+            inner_wd: 内部权重衰减（用于客户端训练）
+            **kwargs: 传递给基类的其他参数
+        """
+        super().__init__(*args, **kwargs)
+        self.inner_lr = inner_lr
+        self.inner_wd = inner_wd
+
     def _init_models(self) -> List[nn.Module]:
         """初始化 LG-FedAvg 模型集合"""
         net_set = [
@@ -118,9 +132,9 @@ class LGFedAvgTrainer(BaseTrainer):
         """
         inner_optim = torch.optim.SGD(
             net.parameters(),
-            lr=self.lr,
+            lr=self.inner_lr,
             momentum=0.9,
-            weight_decay=self.wd
+            weight_decay=self.inner_wd
         )
 
         # 内部更新 -> 获得 theta_delta
