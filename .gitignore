@@ -3,6 +3,8 @@
 
 ### mhfl-algo ###
 mhfl-algo/mhfl-algo.iml
+mhfl-algo/data/*
+!mhfl-algo/data/README.md
 
 ### mhfl-server ###
 mhfl-server/target
