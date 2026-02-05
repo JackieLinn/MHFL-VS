@@ -5,6 +5,7 @@ import random
 import logging
 from pathlib import Path
 from datetime import datetime
+import csv
 
 import numpy as np
 import torch
@@ -17,10 +18,34 @@ from fl_core.utils.tools import get_device, set_seed
 
 
 def get_data_path() -> Path:
+    """
+    获取数据路径，确保无论从哪里运行都能找到 mhfl-algo/data
+    
+    路径解析：
+    - __file__ = mhfl-algo/fl_core/trainer.py
+    - parent = mhfl-algo/fl_core/
+    - parent.parent = mhfl-algo/
+    """
     current_file = Path(__file__).resolve()
-    project_root = current_file.parent.parent.parent
+    project_root = current_file.parent.parent
     data_path = project_root / "data"
     return data_path
+
+
+def get_results_path() -> Path:
+    """
+    获取结果目录路径
+    
+    路径解析：
+    - __file__ = mhfl-algo/fl_core/trainer.py
+    - parent = mhfl-algo/fl_core/
+    - parent.parent = mhfl-algo/
+    """
+    current_file = Path(__file__).resolve()
+    project_root = current_file.parent.parent
+    results_path = project_root / "results"
+    results_path.mkdir(parents=True, exist_ok=True)
+    return results_path
 
 
 class BaseTrainer(ABC):
@@ -145,6 +170,16 @@ class BaseTrainer(ABC):
 
         # 客户端指标记录
         self.client_acc = defaultdict(float)
+        self.client_metrics_all = defaultdict(lambda: {
+            'loss': 0.0,
+            'accuracy': 0.0,
+            'precision': 0.0,
+            'recall': 0.0,
+            'f1_score': 0.0
+        })  # 存储所有客户端的最新指标
+
+        # 初始化CSV日志文件
+        self.csv_file_path = self._init_csv_log()
 
         # 打印基础参数（只打印用户传入的参数，不包括默认参数）
         self._log_info(
@@ -186,6 +221,127 @@ class BaseTrainer(ABC):
             message: 日志消息
         """
         logging.error(f"[Task-{self.tid}] {message}")
+
+    def _init_csv_log(self) -> Path:
+        """
+        初始化CSV日志文件
+        
+        Returns:
+            CSV文件路径
+        """
+        # 生成文件名（时间戳格式：年月日时分秒，如20260205143025）
+        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+        filename = (
+            f"{timestamp}_T{self.tid}_{self.algorithm_name}_{self.data_name}_"
+            f"{self.classes_per_node}_N{self.num_nodes}_C{self.fraction}_"
+            f"R{self.num_steps}_E{self.epochs}_low{self.low_prob}.csv"
+        )
+
+        results_path = get_results_path()
+        csv_file_path = results_path / filename
+
+        # 创建CSV文件并写入表头
+        with open(csv_file_path, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+
+            # 构建表头
+            headers = [
+                'mean_loss', 'mean_accuracy', 'mean_precision', 'mean_recall', 'mean_f1_score'
+            ]
+
+            # 添加每个客户端的5个指标
+            for client_id in range(self.num_nodes):
+                headers.extend([
+                    f'{client_id}_loss',
+                    f'{client_id}_accuracy',
+                    f'{client_id}_precision',
+                    f'{client_id}_recall',
+                    f'{client_id}_f1_score'
+                ])
+
+            writer.writerow(headers)
+
+        self._log_info(f"CSV log file created: {csv_file_path}")
+        return csv_file_path
+
+    def _write_csv_log(self, step: int, mean_metrics: Dict[str, float], client_metrics: Dict[int, Dict[str, float]]):
+        """
+        写入CSV日志
+        
+        Args:
+            step: 当前轮次
+            mean_metrics: 平均指标字典
+            client_metrics: 客户端指标字典 {client_id: {loss, accuracy, ...}}
+        """
+        # 更新所有客户端的指标（只更新有数据的客户端）
+        for client_id, metrics in client_metrics.items():
+            self.client_metrics_all[client_id] = {
+                'loss': metrics.get('loss', 0.0),
+                'accuracy': metrics.get('accuracy', 0.0),
+                'precision': metrics.get('precision', 0.0),
+                'recall': metrics.get('recall', 0.0),
+                'f1_score': metrics.get('f1_score', 0.0)
+            }
+
+        # 写入CSV文件
+        with open(self.csv_file_path, 'a', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+
+            # 构建行数据
+            row = [
+                mean_metrics.get('loss', 0.0),
+                mean_metrics.get('accuracy', 0.0),
+                mean_metrics.get('precision', 0.0),
+                mean_metrics.get('recall', 0.0),
+                mean_metrics.get('f1_score', 0.0)
+            ]
+
+            # 添加每个客户端的5个指标
+            for client_id in range(self.num_nodes):
+                client_metric = self.client_metrics_all[client_id]
+                row.extend([
+                    client_metric['loss'],
+                    client_metric['accuracy'],
+                    client_metric['precision'],
+                    client_metric['recall'],
+                    client_metric['f1_score']
+                ])
+
+            writer.writerow(row)
+
+        # 刷新文件，确保数据及时写入
+        self.csv_file_path.stat()  # 触发文件系统同步
+
+    def _rename_csv_log_completed(self):
+        """
+        训练完成后重命名CSV文件（添加Done前缀）
+        """
+        if not self.csv_file_path.exists():
+            return
+
+        # 获取原文件名
+        old_name = self.csv_file_path.name
+
+        # 检查是否已经包含Done
+        if old_name.startswith('Done_'):
+            return
+
+        # 构建新文件名（在时间戳后添加Done_）
+        parts = old_name.split('_', 1)
+        if len(parts) == 2:
+            timestamp = parts[0]
+            rest = parts[1]
+            new_name = f"{timestamp}_Done_{rest}"
+        else:
+            new_name = f"Done_{old_name}"
+
+        new_path = self.csv_file_path.parent / new_name
+
+        try:
+            self.csv_file_path.rename(new_path)
+            self._log_info(f"CSV log file renamed to: {new_path}")
+        except Exception as e:
+            self._log_error(f"Failed to rename CSV log file: {e}")
 
     def _init_dataset_config(self):
         if self.data_name == "cifar100":
@@ -438,10 +594,22 @@ class BaseTrainer(ABC):
                 f'Round: {step} | Mean Loss: {mean_loss} | Mean Acc: {mean_acc} | '
                 f'Mean Precision: {mean_precision} | Mean Recall: {mean_recall} | Mean F1: {mean_f1}')
 
-            # 轮次完成回调
+            # 写入CSV日志
+            mean_metrics = {
+                'loss': mean_loss,
+                'accuracy': mean_acc,
+                'precision': mean_precision,
+                'recall': mean_recall,
+                'f1_score': mean_f1
+            }
+            self._write_csv_log(step, mean_metrics, client_metrics)
+
+            # 轮次完成回调（在所有客户端训练完成、平均指标计算完成、日志输出完成后调用）
             if self.step_callback:
                 self.step_callback(self.tid, step, step_metrics)
 
+        # 训练完成后重命名CSV文件
+        self._rename_csv_log_completed()
         self._log_info(f'Training completed: {self.algorithm_name} on {self.data_name}')
 
     def _init_client_models(self):
