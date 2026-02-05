@@ -22,4 +22,8 @@ public class Const {
     public final static String VERIFY_CAPTCHA_LIMIT = "verify:captcha:limit:";
     public final static String VERIFY_CAPTCHA_DATA = "verify:captcha:data:";
     public final static String VERIFY_CAPTCHA_FAIL_COUNT = "verify:captcha:fail:";
+
+    // 联邦学习实验
+    public final static String TASK_EXPERIMENT_ROUND = "task:experiment:round:";
+    public final static String TASK_EXPERIMENT_CLIENT = "task:experiment:client:";
 }
