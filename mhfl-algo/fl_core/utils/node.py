@@ -1,4 +1,4 @@
-from dataset import gen_random_loaders
+from fl_core.utils.dataset import gen_random_loaders
 
 
 class BaseNodes:
