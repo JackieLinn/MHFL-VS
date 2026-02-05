@@ -5,6 +5,7 @@
 mhfl-algo/mhfl-algo.iml
 mhfl-algo/data/*
 !mhfl-algo/data/README.md
+mhfl-algo/.env
 
 ### mhfl-server ###
 mhfl-server/target
