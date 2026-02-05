@@ -12,6 +12,7 @@ import torch
 import torch.nn as nn
 import torch.utils.data
 from sklearn.metrics import precision_score, recall_score, f1_score
+from tqdm import tqdm
 
 from fl_core.utils.node import BaseNodes
 from fl_core.utils.tools import get_device, set_seed
@@ -503,8 +504,16 @@ class BaseTrainer(ABC):
         # 初始化客户端模型状态（子类可以重写）
         self._init_client_models()
 
-        # 训练循环
-        for step in range(self.num_steps):
+        # 训练循环（使用 tqdm 显示进度）
+        pbar = tqdm(
+            range(self.num_steps),
+            desc=f"[Task-{self.tid}] Training",
+            unit="round",
+            ncols=100,
+            bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]'
+        )
+
+        for step in pbar:
             # 随机选择客户端
             num_selected = int(self.fraction * self.num_nodes)
             selected_clients = random.sample(range(self.num_nodes), num_selected)
@@ -604,9 +613,18 @@ class BaseTrainer(ABC):
             }
             self._write_csv_log(step, mean_metrics, client_metrics)
 
+            # 更新进度条描述，显示当前轮次的指标
+            pbar.set_postfix({
+                'Loss': f'{mean_loss:.4f}',
+                'Acc': f'{mean_acc:.4f}'
+            })
+
             # 轮次完成回调（在所有客户端训练完成、平均指标计算完成、日志输出完成后调用）
             if self.step_callback:
                 self.step_callback(self.tid, step, step_metrics)
+
+        # 关闭进度条
+        pbar.close()
 
         # 训练完成后重命名CSV文件
         self._rename_csv_log_completed()
