@@ -1,7 +1,15 @@
 <script setup lang="ts">
 import {ref} from 'vue'
 import {useRouter} from 'vue-router'
-import {DataAnalysis, Monitor, Connection, TrendCharts, ArrowDown, User, SwitchButton} from '@element-plus/icons-vue'
+import {
+  DataAnalysis,
+  Monitor,
+  ArrowDown,
+  User,
+  SwitchButton,
+  List,
+  DataBoard
+} from '@element-plus/icons-vue'
 import {logout} from '@/api/auth'
 import ThemeSwitch from '@/components/ThemeSwitch.vue'
 
@@ -31,6 +39,21 @@ const handleLogout = () => {
       },
       () => loggingOut.value = false
   )
+}
+
+// 导航菜单
+const menuItems = [
+  {key: 'task', label: '任务管理', icon: List},
+  {key: 'monitor', label: '实时监控', icon: Monitor},
+  {key: 'analysis', label: '数据分析', icon: DataBoard}
+]
+
+// 当前选中的导航
+const activeMenu = ref('task')
+
+// 切换导航
+const handleMenuClick = (key: string) => {
+  activeMenu.value = key
 }
 </script>
 
@@ -85,48 +108,61 @@ const handleLogout = () => {
 
     <!-- 主内容区域 -->
     <main class="home-main">
-      <div class="main-content">
-        <!-- Logo -->
-        <div class="main-logo">
-          <el-icon :size="40" color="white">
-            <DataAnalysis/>
-          </el-icon>
+      <!-- 左侧导航栏 -->
+      <aside class="sidebar">
+        <div class="sidebar-menu">
+          <div
+              v-for="item in menuItems"
+              :key="item.key"
+              class="menu-item"
+              :class="{ active: activeMenu === item.key }"
+              @click="handleMenuClick(item.key)"
+          >
+            <el-icon class="menu-icon">
+              <component :is="item.icon"/>
+            </el-icon>
+            <span class="menu-label">{{ item.label }}</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- 右侧内容区域 -->
+      <div class="content-area">
+        <!-- 任务管理 -->
+        <div v-if="activeMenu === 'task'" class="content-panel">
+          <h2 class="panel-title">任务管理</h2>
+          <p class="panel-desc">在这里管理联邦学习训练任务</p>
+          <div class="panel-placeholder">
+            <el-icon :size="48" class="placeholder-icon">
+              <List/>
+            </el-icon>
+            <p>任务管理功能开发中...</p>
+          </div>
         </div>
 
-        <!-- 标题 -->
-        <h2 class="main-title">欢迎使用 MHFL-VS 可视化仿真平台</h2>
-        <p class="main-subtitle">
-          Model Heterogeneous Federated Learning End-to-End Visualization and Simulation Platform
-        </p>
-
-        <!-- 功能卡片 -->
-        <div class="feature-cards">
-          <div class="feature-card">
-            <el-icon :size="36" class="card-icon icon-indigo">
+        <!-- 实时监控 -->
+        <div v-if="activeMenu === 'monitor'" class="content-panel">
+          <h2 class="panel-title">实时监控</h2>
+          <p class="panel-desc">实时监控联邦学习训练过程</p>
+          <div class="panel-placeholder">
+            <el-icon :size="48" class="placeholder-icon">
               <Monitor/>
             </el-icon>
-            <h3 class="card-title">实时监控</h3>
-            <p class="card-desc">可视化监控联邦学习训练过程</p>
-          </div>
-
-          <div class="feature-card">
-            <el-icon :size="36" class="card-icon icon-purple">
-              <Connection/>
-            </el-icon>
-            <h3 class="card-title">模型异构</h3>
-            <p class="card-desc">支持不同结构模型的联邦学习</p>
-          </div>
-
-          <div class="feature-card">
-            <el-icon :size="36" class="card-icon icon-cyan">
-              <TrendCharts/>
-            </el-icon>
-            <h3 class="card-title">数据分析</h3>
-            <p class="card-desc">丰富的数据统计与分析功能</p>
+            <p>实时监控功能开发中...</p>
           </div>
         </div>
 
-        <p class="coming-soon">更多功能即将上线，敬请期待...</p>
+        <!-- 数据分析 -->
+        <div v-if="activeMenu === 'analysis'" class="content-panel">
+          <h2 class="panel-title">数据分析</h2>
+          <p class="panel-desc">查看和分析训练数据</p>
+          <div class="panel-placeholder">
+            <el-icon :size="48" class="placeholder-icon">
+              <DataBoard/>
+            </el-icon>
+            <p>数据分析功能开发中...</p>
+          </div>
+        </div>
       </div>
     </main>
 
@@ -229,102 +265,99 @@ const handleLogout = () => {
 .home-main {
   flex: 1;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 32px;
   overflow: hidden;
 }
 
-.main-content {
-  text-align: center;
-  max-width: 800px;
+/* ============ 左侧导航栏 ============ */
+.sidebar {
+  width: 240px;
+  background: var(--home-card-bg);
+  border-right: 1px solid var(--home-border);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
 }
 
-.main-logo {
-  width: 80px;
-  height: 80px;
-  margin: 0 auto 24px;
-  border-radius: 20px;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+.sidebar-menu {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.menu-item {
   display: flex;
   align-items: center;
-  justify-content: center;
-  box-shadow: 0 12px 32px rgba(99, 102, 241, 0.3);
-}
-
-.main-title {
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--home-text-primary);
-  margin-bottom: 12px;
-}
-
-.main-subtitle {
-  font-size: 14px;
-  color: var(--home-text-muted);
-  margin-bottom: 40px;
-}
-
-/* 功能卡片 */
-.feature-cards {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-  margin-bottom: 32px;
-}
-
-.feature-card {
-  padding: 24px;
-  background: var(--home-card-bg);
-  border: 1px solid var(--home-card-border);
-  border-radius: 16px;
-  transition: all 0.3s;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
   cursor: pointer;
+  transition: all 0.3s;
+  color: var(--home-text-secondary);
 }
 
-.feature-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 24px var(--home-card-shadow);
-  border-color: rgba(99, 102, 241, 0.3);
+.menu-item:hover {
+  background: var(--home-hover-bg);
+  color: var(--home-text-primary);
 }
 
-.card-icon {
-  margin-bottom: 16px;
-  transition: transform 0.3s;
-}
-
-.feature-card:hover .card-icon {
-  transform: scale(1.1);
-}
-
-.icon-indigo {
+.menu-item.active {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
   color: #6366f1;
+  font-weight: 500;
 }
 
-.icon-purple {
-  color: #a855f7;
+.menu-icon {
+  font-size: 18px;
 }
 
-.icon-cyan {
-  color: #06b6d4;
+.menu-label {
+  font-size: 14px;
 }
 
-.card-title {
-  font-size: 16px;
-  font-weight: 600;
+/* ============ 右侧内容区域 ============ */
+.content-area {
+  flex: 1;
+  overflow-y: auto;
+  background: var(--home-bg);
+}
+
+.content-panel {
+  padding: 32px;
+  height: 100%;
+}
+
+.panel-title {
+  font-size: 24px;
+  font-weight: 700;
   color: var(--home-text-primary);
   margin-bottom: 8px;
 }
 
-.card-desc {
-  font-size: 13px;
+.panel-desc {
+  font-size: 14px;
+  color: var(--home-text-muted);
+  margin-bottom: 32px;
+}
+
+.panel-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
   color: var(--home-text-muted);
 }
 
-.coming-soon {
+.placeholder-icon {
+  color: var(--home-text-muted);
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.panel-placeholder p {
   font-size: 14px;
   color: var(--home-text-muted);
-  font-style: italic;
 }
 
 /* ============ 底部 ============ */
@@ -339,12 +372,20 @@ const handleLogout = () => {
 
 /* ============ 响应式 ============ */
 @media (max-width: 768px) {
-  .feature-cards {
-    grid-template-columns: 1fr;
+  .sidebar {
+    width: 200px;
   }
 
-  .main-title {
-    font-size: 22px;
+  .menu-label {
+    font-size: 13px;
+  }
+
+  .content-panel {
+    padding: 24px;
+  }
+
+  .panel-title {
+    font-size: 20px;
   }
 }
 
