@@ -19,3 +19,6 @@ mhfl-server/src/main/java/ynu/jackielinn/server/controller/TestController.java
 mhfl-ui/mhfl-ui.iml
 mhfl-ui/.vscode
 mhfl-ui/node_modules
+
+### development-documentation ###
+AGENTS.md
