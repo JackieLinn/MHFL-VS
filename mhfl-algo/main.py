@@ -1,1 +1,1 @@
-print(1)
+# FastAPI应用入口文件
