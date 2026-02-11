@@ -1,9 +1,15 @@
+<script setup lang="ts">
+import {useI18n} from 'vue-i18n'
+
+const {t} = useI18n()
+</script>
+
 <template>
   <div class="admin-page">
-    <h2 class="page-title">系统管理</h2>
-    <p class="page-desc">管理系统成员、算法和数据集</p>
+    <h2 class="page-title">{{ $t('pages.admin.title') }}</h2>
+    <p class="page-desc">{{ $t('pages.admin.desc') }}</p>
     <div class="page-placeholder">
-      <p>系统管理功能开发中...</p>
+      <p>{{ $t('pages.admin.developing') }}</p>
     </div>
   </div>
 </template>

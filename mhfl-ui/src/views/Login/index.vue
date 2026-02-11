@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {ref} from 'vue'
 import ThemeSwitch from '@/components/ThemeSwitch.vue'
+import LocaleSwitch from '@/components/LocaleSwitch.vue'
 import LoginForm from './components/LoginForm.vue'
 import RegisterForm from './components/RegisterForm.vue'
 import ResetPasswordForm from './components/ResetPasswordForm.vue'
@@ -36,17 +37,18 @@ const switchPanel = (panel: PanelType) => {
       <div class="glow glow-2"></div>
     </div>
 
-    <!-- GitHub链接和主题切换 -->
+    <!-- GitHub链接、语言切换和主题切换 -->
     <div class="theme-switch-btn flex items-center gap-2">
       <a
           href="https://github.com/JackieLinn/MHFL-VS"
           target="_blank"
           rel="noopener noreferrer"
           class="w-9 h-9 rounded-lg flex-center bg-white/60 dark:bg-gray-800/60 backdrop-blur border border-gray-200/50 dark:border-gray-700/50 hover:border-indigo-400 dark:hover:border-indigo-500 text-gray-600 dark:text-gray-300 hover:text-indigo-500 transition-all cursor-pointer no-underline"
-          title="查看项目源码"
+          :title="$t('common.viewSource')"
       >
         <i class="i-mdi-github text-lg"></i>
       </a>
+      <LocaleSwitch/>
       <ThemeSwitch/>
     </div>
 
@@ -72,8 +74,8 @@ const switchPanel = (panel: PanelType) => {
 
           <div class="divider"></div>
 
-          <h2 class="brand-subtitle">模型异构联邦学习</h2>
-          <p class="brand-desc">全链路可视化与仿真平台</p>
+          <h2 class="brand-subtitle">{{ $t('login.brandSubtitle') }}</h2>
+          <p class="brand-desc">{{ $t('login.brandDesc') }}</p>
 
           <!-- 核心能力 -->
           <div class="capabilities">
@@ -84,8 +86,8 @@ const switchPanel = (panel: PanelType) => {
                 </el-icon>
               </div>
               <div class="capability-text">
-                <span class="capability-title">模型异构</span>
-                <span class="capability-desc">支持不同架构模型协同训练</span>
+                <span class="capability-title">{{ $t('login.capability1Title') }}</span>
+                <span class="capability-desc">{{ $t('login.capability1Desc') }}</span>
               </div>
             </div>
             <div class="capability-item">
@@ -95,8 +97,8 @@ const switchPanel = (panel: PanelType) => {
                 </el-icon>
               </div>
               <div class="capability-text">
-                <span class="capability-title">全链路可视化</span>
-                <span class="capability-desc">训练过程实时监控与分析</span>
+                <span class="capability-title">{{ $t('login.capability2Title') }}</span>
+                <span class="capability-desc">{{ $t('login.capability2Desc') }}</span>
               </div>
             </div>
             <div class="capability-item">
@@ -106,8 +108,8 @@ const switchPanel = (panel: PanelType) => {
                 </el-icon>
               </div>
               <div class="capability-text">
-                <span class="capability-title">仿真模拟</span>
-                <span class="capability-desc">多场景联邦学习实验环境</span>
+                <span class="capability-title">{{ $t('login.capability3Title') }}</span>
+                <span class="capability-desc">{{ $t('login.capability3Desc') }}</span>
               </div>
             </div>
           </div>
@@ -129,7 +131,7 @@ const switchPanel = (panel: PanelType) => {
           </Transition>
         </div>
 
-        <p class="copyright">© 2026 MHFL-VS Platform. All rights reserved.</p>
+        <p class="copyright">{{ $t('common.copyright') }}</p>
       </div>
     </div>
   </div>
@@ -404,6 +406,7 @@ const switchPanel = (panel: PanelType) => {
   color: var(--login-text-muted);
   letter-spacing: 1px;
   line-height: 1.6;
+  white-space: nowrap;
 }
 
 .divider {

@@ -1,0 +1,118 @@
+{
+  "common": {
+    "user": "用户",
+    "logout": "退出登录",
+    "viewSource": "查看项目源码",
+    "copyright": "© 2026 MHFL-VS Platform. All rights reserved."
+  },
+  "login": {
+    "title": "欢迎回来",
+    "subtitle": "MHFL-VS 可视化仿真平台",
+    "username": "用户名 / 邮箱 / 手机号",
+    "password": "密码",
+    "captcha": "图形验证码",
+    "clickToGet": "点击获取",
+    "remember": "记住我",
+    "forgotPassword": "忘记密码？",
+    "login": "登 录",
+    "noAccount": "还没有账号？",
+    "register": "立即注册",
+    "brandTitle": "MHFL-VS",
+    "brandSubtitle": "模型异构联邦学习",
+    "brandDesc": "全链路可视化与仿真平台",
+    "capability1Title": "模型异构",
+    "capability1Desc": "支持不同架构模型协同训练",
+    "capability2Title": "全链路可视化",
+    "capability2Desc": "训练过程实时监控与分析",
+    "capability3Title": "仿真模拟",
+    "capability3Desc": "多场景联邦学习实验环境",
+    "validation": {
+      "usernameRequired": "请输入用户名",
+      "passwordRequired": "请输入密码",
+      "passwordMin": "密码至少6位",
+      "captchaRequired": "请输入验证码",
+      "usernameLength": "3-20个字符",
+      "passwordLength": "6-20个字符",
+      "codeLength": "6位数字",
+      "confirmPasswordRequired": "请确认密码",
+      "passwordMismatch": "两次密码不一致",
+      "emailRequired": "请输入邮箱",
+      "emailInvalid": "邮箱格式不正确",
+      "phoneRequired": "请输入手机号",
+      "phoneInvalid": "手机号格式不正确",
+      "codeRequired": "请输入验证码",
+      "newPasswordRequired": "请输入新密码"
+    }
+  },
+  "register": {
+    "title": "创建账号",
+    "subtitle": "加入 MHFL-VS 平台",
+    "username": "用户名",
+    "password": "密码",
+    "confirmPassword": "确认密码",
+    "email": "邮箱地址",
+    "telephone": "手机号",
+    "code": "邮箱验证码",
+    "sendCode": "发送",
+    "register": "注 册",
+    "registering": "注册中...",
+    "hasAccount": "已有账号？",
+    "backToLogin": "返回登录",
+    "resendIn": "秒后重发"
+  },
+  "resetPassword": {
+    "title": "重置密码",
+    "subtitle1": "输入邮箱验证身份",
+    "subtitle2": "设置您的新密码",
+    "step1Title": "验证邮箱",
+    "step2Title": "设置新密码",
+    "step1Label": "验证邮箱",
+    "step2Label": "设置密码",
+    "email": "注册时的邮箱地址",
+    "code": "邮箱验证码",
+    "password": "新密码",
+    "confirmPassword": "确认新密码",
+    "sendCode": "发送",
+    "next": "下一步",
+    "reset": "重置密码",
+    "backToLogin": "返回登录",
+    "prevStep": "上一步",
+    "resendIn": "秒后重发"
+  },
+  "home": {
+    "platform": "MHFL-VS Platform",
+    "subtitle": "全链路可视化与仿真平台",
+    "cpu": "CPU",
+    "memory": "内存",
+    "gpu": "GPU",
+    "cores": "核",
+    "threads": "线程"
+  },
+  "sidebar": {
+    "dashboard": "仪表盘",
+    "monitor": "实时监控",
+    "admin": "系统管理"
+  },
+  "pages": {
+    "dashboard": {
+      "title": "仪表盘",
+      "desc": "欢迎使用 MHFL-VS 平台",
+      "developing": "仪表盘功能开发中..."
+    },
+    "monitor": {
+      "title": "实时监控",
+      "desc": "实时监控联邦学习训练过程",
+      "developing": "实时监控功能开发中..."
+    },
+    "admin": {
+      "title": "系统管理",
+      "desc": "管理系统成员、算法和数据集",
+      "developing": "系统管理功能开发中..."
+    }
+  },
+  "theme": {
+    "system": "跟随系统",
+    "light": "浅色模式",
+    "dark": "深色模式"
+  }
+}

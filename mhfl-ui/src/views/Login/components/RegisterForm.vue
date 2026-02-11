@@ -3,11 +3,13 @@ import {ref, reactive, computed} from 'vue'
 import {User, Lock, Message, Phone, Key} from '@element-plus/icons-vue'
 import {register, sendEmailCode, type RegisterParams} from '@/api/auth'
 import type {FormInstance, FormRules} from 'element-plus'
+import {useI18n} from 'vue-i18n'
 
 const emit = defineEmits<{
   (e: 'switch', panel: 'login'): void
 }>()
 
+const {t} = useI18n()
 const formRef = ref<FormInstance>()
 const loading = ref(false)
 const sendingCode = ref(false)
@@ -24,38 +26,48 @@ const form = reactive<RegisterParams & { confirmPassword: string }>({
 
 const validateConfirmPassword = (_rule: any, value: string, callback: any) => {
   if (value !== form.password) {
-    callback(new Error('两次密码不一致'))
+    callback(new Error(t('login.validation.passwordMismatch')))
   } else {
     callback()
   }
 }
 
-const rules: FormRules = {
+const rules = computed<FormRules>(() => ({
   username: [
-    {required: true, message: '请输入用户名', trigger: 'blur'},
-    {min: 3, max: 20, message: '3-20个字符', trigger: 'blur'},
+    {required: true, message: t('login.validation.usernameRequired'), trigger: 'blur'},
+    {min: 3, max: 20, message: t('login.validation.usernameLength'), trigger: 'blur'},
   ],
   password: [
-    {required: true, message: '请输入密码', trigger: 'blur'},
-    {min: 6, max: 20, message: '6-20个字符', trigger: 'blur'},
+    {required: true, message: t('login.validation.passwordRequired'), trigger: 'blur'},
+    {min: 6, max: 20, message: t('login.validation.passwordLength'), trigger: 'blur'},
   ],
   confirmPassword: [
-    {required: true, message: '请确认密码', trigger: 'blur'},
+    {required: true, message: t('login.validation.confirmPasswordRequired'), trigger: 'blur'},
     {validator: validateConfirmPassword, trigger: 'blur'},
   ],
   email: [
-    {required: true, message: '请输入邮箱', trigger: 'blur'},
-    {type: 'email', message: '邮箱格式不正确', trigger: 'blur'},
+    {required: true, message: t('login.validation.emailRequired'), trigger: 'blur'},
+    {type: 'email', message: t('login.validation.emailInvalid'), trigger: 'blur'},
   ],
   telephone: [
-    {required: true, message: '请输入手机号', trigger: 'blur'},
-    {pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur'},
+    {required: true, message: t('login.validation.phoneRequired'), trigger: 'blur'},
+    {pattern: /^1[3-9]\d{9}$/, message: t('login.validation.phoneInvalid'), trigger: 'blur'},
   ],
   code: [
-    {required: true, message: '请输入验证码', trigger: 'blur'},
-    {len: 6, message: '6位数字', trigger: 'blur'},
+    {required: true, message: t('login.validation.codeRequired'), trigger: 'blur'},
+    {len: 6, message: t('login.validation.codeLength'), trigger: 'blur'},
   ],
-}
+}))
+
+// 响应式placeholder
+const placeholders = computed(() => ({
+  username: t('register.username'),
+  telephone: t('register.telephone'),
+  email: t('register.email'),
+  code: t('register.code'),
+  password: t('register.password'),
+  confirmPassword: t('register.confirmPassword'),
+}))
 
 const canSendCode = computed(() => {
   return form.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email) && countdown.value === 0
@@ -103,8 +115,8 @@ const handleSubmit = async () => {
   <div class="w-full">
     <!-- 标题 -->
     <div class="text-center mb-6">
-      <h2 class="text-2xl font-bold mb-2 form-title">创建账号</h2>
-      <p class="text-sm form-subtitle">加入 MHFL-VS 可视化仿真平台</p>
+      <h2 class="text-2xl font-bold mb-2 form-title">{{ $t('register.title') }}</h2>
+      <p class="text-sm form-subtitle">{{ $t('register.subtitle') }}</p>
     </div>
 
     <!-- 表单 -->
@@ -115,7 +127,7 @@ const handleSubmit = async () => {
             <el-icon class="input-icon">
               <User/>
             </el-icon>
-            <el-input v-model="form.username" placeholder="用户名" class="custom-input"/>
+            <el-input v-model="form.username" :placeholder="placeholders.username" class="custom-input"/>
           </div>
         </el-form-item>
         <el-form-item prop="telephone" class="flex-1">
@@ -123,7 +135,7 @@ const handleSubmit = async () => {
             <el-icon class="input-icon">
               <Phone/>
             </el-icon>
-            <el-input v-model="form.telephone" placeholder="手机号" class="custom-input"/>
+            <el-input v-model="form.telephone" :placeholder="placeholders.telephone" class="custom-input"/>
           </div>
         </el-form-item>
       </div>
@@ -133,7 +145,7 @@ const handleSubmit = async () => {
           <el-icon class="input-icon">
             <Message/>
           </el-icon>
-          <el-input v-model="form.email" placeholder="邮箱地址" class="custom-input"/>
+          <el-input v-model="form.email" :placeholder="placeholders.email" class="custom-input"/>
         </div>
       </el-form-item>
 
@@ -143,10 +155,10 @@ const handleSubmit = async () => {
             <el-icon class="input-icon">
               <Key/>
             </el-icon>
-            <el-input v-model="form.code" placeholder="邮箱验证码" class="custom-input"/>
+            <el-input v-model="form.code" :placeholder="placeholders.code" class="custom-input"/>
           </div>
           <button type="button" class="code-btn" :disabled="!canSendCode || sendingCode" @click="handleSendCode">
-            {{ countdown > 0 ? `${countdown}s` : '发送' }}
+            {{ countdown > 0 ? `${countdown}s` : $t('register.sendCode') }}
           </button>
         </div>
       </el-form-item>
@@ -157,7 +169,7 @@ const handleSubmit = async () => {
             <el-icon class="input-icon">
               <Lock/>
             </el-icon>
-            <el-input v-model="form.password" type="password" placeholder="密码" show-password class="custom-input"/>
+            <el-input v-model="form.password" type="password" :placeholder="placeholders.password" show-password class="custom-input"/>
           </div>
         </el-form-item>
         <el-form-item prop="confirmPassword" class="flex-1">
@@ -165,7 +177,7 @@ const handleSubmit = async () => {
             <el-icon class="input-icon">
               <Lock/>
             </el-icon>
-            <el-input v-model="form.confirmPassword" type="password" placeholder="确认密码" show-password
+            <el-input v-model="form.confirmPassword" type="password" :placeholder="placeholders.confirmPassword" show-password
                       class="custom-input"/>
           </div>
         </el-form-item>
@@ -173,14 +185,14 @@ const handleSubmit = async () => {
 
       <el-form-item class="mt-6 mb-4">
         <button type="button" class="submit-btn" :disabled="loading" @click="handleSubmit">
-          <span v-if="!loading">注 册</span>
-          <span v-else>注册中...</span>
+          <span v-if="!loading">{{ $t('register.register') }}</span>
+          <span v-else>{{ $t('register.registering') }}</span>
         </button>
       </el-form-item>
 
       <div class="text-center">
-        <span class="text-sm mr-1 footer-text">已有账号？</span>
-        <span class="link-text" @click="emit('switch', 'login')">返回登录</span>
+        <span class="text-sm mr-1 footer-text">{{ $t('register.hasAccount') }}</span>
+        <span class="link-text" @click="emit('switch', 'login')">{{ $t('register.backToLogin') }}</span>
       </div>
     </el-form>
   </div>

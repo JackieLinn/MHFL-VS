@@ -1,9 +1,15 @@
+<script setup lang="ts">
+import {useI18n} from 'vue-i18n'
+
+const {t} = useI18n()
+</script>
+
 <template>
   <div class="monitor-page">
-    <h2 class="page-title">实时监控</h2>
-    <p class="page-desc">实时监控联邦学习训练过程</p>
+    <h2 class="page-title">{{ $t('pages.monitor.title') }}</h2>
+    <p class="page-desc">{{ $t('pages.monitor.desc') }}</p>
     <div class="page-placeholder">
-      <p>实时监控功能开发中...</p>
+      <p>{{ $t('pages.monitor.developing') }}</p>
     </div>
   </div>
 </template>

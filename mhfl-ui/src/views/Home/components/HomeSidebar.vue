@@ -2,16 +2,18 @@
 import {computed} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {DataBoard, View, Setting} from '@element-plus/icons-vue'
+import {useI18n} from 'vue-i18n'
 
 const route = useRoute()
 const router = useRouter()
+const {t} = useI18n()
 
-// 导航菜单
-const menuItems = [
-  {key: 'dashboard', label: '仪表盘', icon: DataBoard, path: '/home/dashboard'},
-  {key: 'monitor', label: '实时监控', icon: View, path: '/home/monitor'},
-  {key: 'admin', label: '系统管理', icon: Setting, path: '/home/admin'}
-]
+// 导航菜单（使用 computed 确保响应式）
+const menuItems = computed(() => [
+  {key: 'dashboard', label: t('sidebar.dashboard'), icon: DataBoard, path: '/home/dashboard'},
+  {key: 'monitor', label: t('sidebar.monitor'), icon: View, path: '/home/monitor'},
+  {key: 'admin', label: t('sidebar.admin'), icon: Setting, path: '/home/admin'}
+])
 
 // 当前激活的菜单项
 const activeMenu = computed(() => {

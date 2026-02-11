@@ -1,0 +1,118 @@
+{
+  "common": {
+    "user": "User",
+    "logout": "Logout",
+    "viewSource": "View Source Code",
+    "copyright": "© 2026 MHFL-VS Platform. All rights reserved."
+  },
+  "login": {
+    "title": "Welcome Back",
+    "subtitle": "MHFL-VS Visualization & Simulation Platform",
+    "username": "Username / Email / Phone",
+    "password": "Password",
+    "captcha": "Captcha",
+    "clickToGet": "Click to Get",
+    "remember": "Remember Me",
+    "forgotPassword": "Forgot Password?",
+    "login": "Login",
+    "noAccount": "Don't have an account?",
+    "register": "Sign Up",
+    "brandTitle": "MHFL-VS",
+    "brandSubtitle": "Model Heterogeneous Federated Learning",
+    "brandDesc": "End-to-End Visualization and Simulation",
+    "capability1Title": "Model Heterogeneity",
+    "capability1Desc": "Support collaborative training of different architectures",
+    "capability2Title": "End-to-End Visualization",
+    "capability2Desc": "Real-time monitoring and analysis of training process",
+    "capability3Title": "Simulation",
+    "capability3Desc": "Multi-scenario federated learning experimental environment",
+    "validation": {
+      "usernameRequired": "Please enter username",
+      "passwordRequired": "Please enter password",
+      "passwordMin": "Password must be at least 6 characters",
+      "captchaRequired": "Please enter captcha",
+      "usernameLength": "3-20 characters",
+      "passwordLength": "6-20 characters",
+      "codeLength": "6 digits",
+      "confirmPasswordRequired": "Please confirm password",
+      "passwordMismatch": "Passwords do not match",
+      "emailRequired": "Please enter email",
+      "emailInvalid": "Invalid email format",
+      "phoneRequired": "Please enter phone number",
+      "phoneInvalid": "Invalid phone number format",
+      "codeRequired": "Please enter verification code",
+      "newPasswordRequired": "Please enter new password"
+    }
+  },
+  "register": {
+    "title": "Create Account",
+    "subtitle": "Join MHFL-VS Platform",
+    "username": "Username",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "email": "Email Address",
+    "telephone": "Phone",
+    "code": "Email Verification Code",
+    "sendCode": "Send",
+    "register": "Register",
+    "registering": "Registering...",
+    "hasAccount": "Already have an account?",
+    "backToLogin": "Back to Login",
+    "resendIn": "Resend in {count}s"
+  },
+  "resetPassword": {
+    "title": "Reset Password",
+    "subtitle1": "Enter email to verify identity",
+    "subtitle2": "Set your new password",
+    "step1Title": "Verify Email",
+    "step2Title": "Set New Password",
+    "step1Label": "Verify Email",
+    "step2Label": "Set Password",
+    "email": "Registered Email Address",
+    "code": "Email Verification Code",
+    "password": "New Password",
+    "confirmPassword": "Confirm New Password",
+    "sendCode": "Send",
+    "next": "Next",
+    "reset": "Reset Password",
+    "backToLogin": "Back to Login",
+    "prevStep": "Previous Step",
+    "resendIn": "Resend in {count}s"
+  },
+  "home": {
+    "platform": "MHFL-VS Platform",
+    "subtitle": "End-to-End Visualization and Simulation Platform",
+    "cpu": "CPU",
+    "memory": "Memory",
+    "gpu": "GPU",
+    "cores": "Cores",
+    "threads": "Threads"
+  },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "monitor": "Real-time Monitor",
+    "admin": "System Admin"
+  },
+  "pages": {
+    "dashboard": {
+      "title": "Dashboard",
+      "desc": "Welcome to MHFL-VS Platform",
+      "developing": "Dashboard feature is under development..."
+    },
+    "monitor": {
+      "title": "Real-time Monitor",
+      "desc": "Monitor federated learning training process in real-time",
+      "developing": "Real-time monitor feature is under development..."
+    },
+    "admin": {
+      "title": "System Admin",
+      "desc": "Manage system members, algorithms and datasets",
+      "developing": "System admin feature is under development..."
+    }
+  },
+  "theme": {
+    "system": "Follow System",
+    "light": "Light Mode",
+    "dark": "Dark Mode"
+  }
+}

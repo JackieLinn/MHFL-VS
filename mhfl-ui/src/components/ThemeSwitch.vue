@@ -2,17 +2,19 @@
 import {computed} from 'vue'
 import {Monitor, Sunny, Moon} from '@element-plus/icons-vue'
 import {useTheme, type ThemeMode} from '@/stores/theme'
+import {useI18n} from 'vue-i18n'
 
 const {themeMode, setThemeMode} = useTheme()
+const {t} = useI18n()
 
-const themeOptions = [
-  {value: 'system' as ThemeMode, label: '跟随系统', icon: Monitor},
-  {value: 'light' as ThemeMode, label: '浅色模式', icon: Sunny},
-  {value: 'dark' as ThemeMode, label: '深色模式', icon: Moon},
-]
+const themeOptions = computed(() => [
+  {value: 'system' as ThemeMode, label: t('theme.system'), icon: Monitor},
+  {value: 'light' as ThemeMode, label: t('theme.light'), icon: Sunny},
+  {value: 'dark' as ThemeMode, label: t('theme.dark'), icon: Moon},
+])
 
 const currentIcon = computed(() => {
-  const option = themeOptions.find(o => o.value === themeMode.value)
+  const option = themeOptions.value.find(o => o.value === themeMode.value)
   return option ? option.icon : Monitor
 })
 

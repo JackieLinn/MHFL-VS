@@ -1,9 +1,15 @@
+<script setup lang="ts">
+import {useI18n} from 'vue-i18n'
+
+const {t} = useI18n()
+</script>
+
 <template>
   <div class="dashboard-page">
-    <h2 class="page-title">仪表盘</h2>
-    <p class="page-desc">欢迎使用 MHFL-VS 平台</p>
+    <h2 class="page-title">{{ $t('pages.dashboard.title') }}</h2>
+    <p class="page-desc">{{ $t('pages.dashboard.desc') }}</p>
     <div class="page-placeholder">
-      <p>仪表盘功能开发中...</p>
+      <p>{{ $t('pages.dashboard.developing') }}</p>
     </div>
   </div>
 </template>

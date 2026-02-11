@@ -1,15 +1,17 @@
 <script setup lang="ts">
-import {ref, reactive, onMounted} from 'vue'
+import {ref, reactive, computed, onMounted} from 'vue'
 import {useRouter} from 'vue-router'
 import {User, Lock, Picture, Loading} from '@element-plus/icons-vue'
 import {getCaptcha, login, type LoginParams, type CaptchaData} from '@/api/auth'
 import type {FormInstance, FormRules} from 'element-plus'
+import {useI18n} from 'vue-i18n'
 
 const emit = defineEmits<{
   (e: 'switch', panel: 'register' | 'reset'): void
 }>()
 
 const router = useRouter()
+const {t} = useI18n()
 const formRef = ref<FormInstance>()
 const loading = ref(false)
 const captchaLoading = ref(false)
@@ -23,14 +25,21 @@ const form = reactive<LoginParams>({
   remember: false,
 })
 
-const rules: FormRules<LoginParams> = {
-  username: [{required: true, message: '请输入用户名', trigger: 'blur'}],
+const rules = computed<FormRules<LoginParams>>(() => ({
+  username: [{required: true, message: t('login.validation.usernameRequired'), trigger: 'blur'}],
   password: [
-    {required: true, message: '请输入密码', trigger: 'blur'},
-    {min: 6, message: '密码至少6位', trigger: 'blur'},
+    {required: true, message: t('login.validation.passwordRequired'), trigger: 'blur'},
+    {min: 6, message: t('login.validation.passwordMin'), trigger: 'blur'},
   ],
-  captchaCode: [{required: true, message: '请输入验证码', trigger: 'blur'}],
-}
+  captchaCode: [{required: true, message: t('login.validation.captchaRequired'), trigger: 'blur'}],
+}))
+
+// 响应式placeholder
+const placeholders = computed(() => ({
+  username: t('login.username'),
+  password: t('login.password'),
+  captcha: t('login.captcha'),
+}))
 
 const refreshCaptcha = () => {
   captchaLoading.value = true
@@ -62,7 +71,10 @@ const handleSubmit = async () => {
 
           const needRefresh = message.includes('过期') ||
               message.includes('无效') ||
-              message.includes('请刷新')
+              message.includes('请刷新') ||
+              message.includes('expired') ||
+              message.includes('invalid') ||
+              message.includes('refresh')
           if (needRefresh) {
             refreshCaptcha()
           }
@@ -78,8 +90,8 @@ onMounted(() => refreshCaptcha())
   <div class="w-full">
     <!-- 标题 -->
     <div class="text-center mb-8">
-      <h2 class="text-2xl font-bold mb-2 form-title">欢迎回来</h2>
-      <p class="text-sm form-subtitle">MHFL-VS 可视化仿真平台</p>
+      <h2 class="text-2xl font-bold mb-2 form-title">{{ $t('login.title') }}</h2>
+      <p class="text-sm form-subtitle">{{ $t('login.subtitle') }}</p>
     </div>
 
     <!-- 表单 -->
@@ -89,7 +101,7 @@ onMounted(() => refreshCaptcha())
           <el-icon class="input-icon">
             <User/>
           </el-icon>
-          <el-input v-model="form.username" placeholder="用户名 / 邮箱 / 手机号" class="custom-input"/>
+          <el-input v-model="form.username" :placeholder="placeholders.username" class="custom-input"/>
         </div>
       </el-form-item>
 
@@ -98,7 +110,7 @@ onMounted(() => refreshCaptcha())
           <el-icon class="input-icon">
             <Lock/>
           </el-icon>
-          <el-input v-model="form.password" type="password" placeholder="密码" show-password class="custom-input"/>
+          <el-input v-model="form.password" type="password" :placeholder="placeholders.password" show-password class="custom-input"/>
         </div>
       </el-form-item>
 
@@ -108,27 +120,27 @@ onMounted(() => refreshCaptcha())
             <el-icon class="input-icon">
               <Picture/>
             </el-icon>
-            <el-input v-model="form.captchaCode" placeholder="图形验证码" class="custom-input"/>
+            <el-input v-model="form.captchaCode" :placeholder="placeholders.captcha" class="custom-input"/>
           </div>
           <div class="captcha-box" @click="refreshCaptcha">
-            <img v-if="captchaImage && !captchaLoading" :src="captchaImage" alt="验证码"
+            <img v-if="captchaImage && !captchaLoading" :src="captchaImage" :alt="$t('login.captcha')"
                  class="w-full h-full object-cover"/>
             <el-icon v-else-if="captchaLoading" class="text-indigo-500 animate-spin">
               <Loading/>
             </el-icon>
-            <span v-else class="text-xs captcha-placeholder">点击获取</span>
+            <span v-else class="text-xs captcha-placeholder">{{ $t('login.clickToGet') }}</span>
           </div>
         </div>
       </el-form-item>
 
       <div class="flex justify-between items-center mb-6">
-        <el-checkbox v-model="form.remember" class="custom-checkbox">记住我</el-checkbox>
-        <span class="link-text" @click="emit('switch', 'reset')">忘记密码？</span>
+        <el-checkbox v-model="form.remember" class="custom-checkbox">{{ $t('login.remember') }}</el-checkbox>
+        <span class="link-text" @click="emit('switch', 'reset')">{{ $t('login.forgotPassword') }}</span>
       </div>
 
       <el-form-item>
         <button type="button" class="submit-btn" :disabled="loading" @click="handleSubmit">
-          <span v-if="!loading">登 录</span>
+          <span v-if="!loading">{{ $t('login.login') }}</span>
           <el-icon v-else class="animate-spin">
             <Loading/>
           </el-icon>
@@ -136,8 +148,8 @@ onMounted(() => refreshCaptcha())
       </el-form-item>
 
       <div class="text-center mt-6">
-        <span class="text-sm mr-1 footer-text">还没有账号？</span>
-        <span class="link-text" @click="emit('switch', 'register')">立即注册</span>
+        <span class="text-sm mr-1 footer-text">{{ $t('login.noAccount') }}</span>
+        <span class="link-text" @click="emit('switch', 'register')">{{ $t('login.register') }}</span>
       </div>
     </el-form>
   </div>

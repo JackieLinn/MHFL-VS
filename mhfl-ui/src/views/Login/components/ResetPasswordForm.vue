@@ -3,11 +3,13 @@ import {ref, reactive, computed} from 'vue'
 import {Message, Key, Lock} from '@element-plus/icons-vue'
 import {sendEmailCode, confirmReset, resetPassword} from '@/api/auth'
 import type {FormInstance, FormRules} from 'element-plus'
+import {useI18n} from 'vue-i18n'
 
 const emit = defineEmits<{
   (e: 'switch', panel: 'login'): void
 }>()
 
+const {t} = useI18n()
 const formRef = ref<FormInstance>()
 const loading = ref(false)
 const sendingCode = ref(false)
@@ -23,35 +25,43 @@ const form = reactive({
 
 const validateConfirmPassword = (_rule: any, value: string, callback: any) => {
   if (value !== form.password) {
-    callback(new Error('两次密码不一致'))
+    callback(new Error(t('login.validation.passwordMismatch')))
   } else {
     callback()
   }
 }
 
-const rulesStep1: FormRules = {
+const rulesStep1 = computed<FormRules>(() => ({
   email: [
-    {required: true, message: '请输入邮箱', trigger: 'blur'},
-    {type: 'email', message: '邮箱格式不正确', trigger: 'blur'},
+    {required: true, message: t('login.validation.emailRequired'), trigger: 'blur'},
+    {type: 'email', message: t('login.validation.emailInvalid'), trigger: 'blur'},
   ],
   code: [
-    {required: true, message: '请输入验证码', trigger: 'blur'},
-    {len: 6, message: '6位数字', trigger: 'blur'},
+    {required: true, message: t('login.validation.codeRequired'), trigger: 'blur'},
+    {len: 6, message: t('login.validation.codeLength'), trigger: 'blur'},
   ],
-}
+}))
 
-const rulesStep2: FormRules = {
+const rulesStep2 = computed<FormRules>(() => ({
   password: [
-    {required: true, message: '请输入新密码', trigger: 'blur'},
-    {min: 6, max: 20, message: '6-20个字符', trigger: 'blur'},
+    {required: true, message: t('login.validation.newPasswordRequired'), trigger: 'blur'},
+    {min: 6, max: 20, message: t('login.validation.passwordLength'), trigger: 'blur'},
   ],
   confirmPassword: [
-    {required: true, message: '请确认密码', trigger: 'blur'},
+    {required: true, message: t('login.validation.confirmPasswordRequired'), trigger: 'blur'},
     {validator: validateConfirmPassword, trigger: 'blur'},
   ],
-}
+}))
 
-const currentRules = computed(() => step.value === 1 ? rulesStep1 : rulesStep2)
+const currentRules = computed(() => step.value === 1 ? rulesStep1.value : rulesStep2.value)
+
+// 响应式placeholder
+const placeholders = computed(() => ({
+  email: t('resetPassword.email'),
+  code: t('resetPassword.code'),
+  password: t('resetPassword.password'),
+  confirmPassword: t('resetPassword.confirmPassword'),
+}))
 
 const canSendCode = computed(() => {
   return form.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email) && countdown.value === 0
@@ -118,20 +128,20 @@ const handleBack = () => {
   <div class="w-full">
     <!-- 标题 -->
     <div class="text-center mb-6">
-      <h2 class="text-2xl font-bold mb-2 form-title">重置密码</h2>
-      <p class="text-sm form-subtitle">{{ step === 1 ? '输入邮箱验证身份' : '设置您的新密码' }}</p>
+      <h2 class="text-2xl font-bold mb-2 form-title">{{ $t('resetPassword.title') }}</h2>
+      <p class="text-sm form-subtitle">{{ step === 1 ? $t('resetPassword.subtitle1') : $t('resetPassword.subtitle2') }}</p>
     </div>
 
     <!-- 步骤指示器 -->
     <div class="flex items-center justify-center mb-8">
       <div :class="['step', { active: step >= 1 }]">
         <span class="step-num">1</span>
-        <span class="text-sm">验证邮箱</span>
+        <span class="text-sm">{{ $t('resetPassword.step1Label') }}</span>
       </div>
       <div :class="['step-line', { active: step >= 2 }]"></div>
       <div :class="['step', { active: step >= 2 }]">
         <span class="step-num">2</span>
-        <span class="text-sm">设置密码</span>
+        <span class="text-sm">{{ $t('resetPassword.step2Label') }}</span>
       </div>
     </div>
 
@@ -143,7 +153,7 @@ const handleBack = () => {
             <el-icon class="input-icon">
               <Message/>
             </el-icon>
-            <el-input v-model="form.email" placeholder="注册时的邮箱地址" class="custom-input"/>
+            <el-input v-model="form.email" :placeholder="placeholders.email" class="custom-input"/>
           </div>
         </el-form-item>
 
@@ -153,10 +163,10 @@ const handleBack = () => {
               <el-icon class="input-icon">
                 <Key/>
               </el-icon>
-              <el-input v-model="form.code" placeholder="邮箱验证码" class="custom-input"/>
+              <el-input v-model="form.code" :placeholder="placeholders.code" class="custom-input"/>
             </div>
             <button type="button" class="code-btn" :disabled="!canSendCode || sendingCode" @click="handleSendCode">
-              {{ countdown > 0 ? `${countdown}s` : '发送' }}
+              {{ countdown > 0 ? `${countdown}s` : $t('resetPassword.sendCode') }}
             </button>
           </div>
         </el-form-item>
@@ -168,7 +178,7 @@ const handleBack = () => {
             <el-icon class="input-icon">
               <Lock/>
             </el-icon>
-            <el-input v-model="form.password" type="password" placeholder="新密码" show-password class="custom-input"/>
+            <el-input v-model="form.password" type="password" :placeholder="placeholders.password" show-password class="custom-input"/>
           </div>
         </el-form-item>
 
@@ -177,7 +187,7 @@ const handleBack = () => {
             <el-icon class="input-icon">
               <Lock/>
             </el-icon>
-            <el-input v-model="form.confirmPassword" type="password" placeholder="确认新密码" show-password
+            <el-input v-model="form.confirmPassword" type="password" :placeholder="placeholders.confirmPassword" show-password
                       class="custom-input"/>
           </div>
         </el-form-item>
@@ -186,10 +196,10 @@ const handleBack = () => {
       <el-form-item class="mt-8">
         <div class="flex gap-3 w-full">
           <button type="button" class="back-btn" @click="handleBack">
-            {{ step === 1 ? '返回登录' : '上一步' }}
+            {{ step === 1 ? $t('resetPassword.backToLogin') : $t('resetPassword.prevStep') }}
           </button>
           <button type="button" class="submit-btn" :disabled="loading" @click="handleSubmit">
-            {{ step === 1 ? '下一步' : '重置密码' }}
+            {{ step === 1 ? $t('resetPassword.next') : $t('resetPassword.reset') }}
           </button>
         </div>
       </el-form-item>

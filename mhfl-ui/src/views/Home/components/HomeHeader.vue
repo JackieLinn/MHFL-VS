@@ -14,8 +14,11 @@ import {logout} from '@/api/auth'
 import {getSystemResources, type SystemResources} from '@/api/home'
 import {getUserInfo} from '@/api/user'
 import ThemeSwitch from '@/components/ThemeSwitch.vue'
+import LocaleSwitch from '@/components/LocaleSwitch.vue'
+import {useI18n} from 'vue-i18n'
 
 const router = useRouter()
+const {t} = useI18n()
 const loggingOut = ref(false)
 
 const userInfo = getUserInfo()
@@ -99,8 +102,8 @@ onUnmounted(() => {
         </el-icon>
       </div>
       <div class="header-title">
-        <h1>MHFL-VS Platform</h1>
-        <p>全链路可视化与仿真平台</p>
+        <h1>{{ $t('home.platform') }}</h1>
+        <p>{{ $t('home.subtitle') }}</p>
       </div>
     </div>
 
@@ -114,14 +117,14 @@ onUnmounted(() => {
             <Connection/>
           </el-icon>
           <div class="flex flex-col gap-0.5">
-            <span class="text-xs text-[var(--home-text-muted)] leading-none">CPU</span>
+            <span class="text-xs text-[var(--home-text-muted)] leading-none">{{ $t('home.cpu') }}</span>
             <span class="text-sm font-semibold leading-none"
                   :style="{color: getUsageColor(systemResources.cpu.usagePercent)}">
               {{ formatPercent(systemResources.cpu.usagePercent) }}
             </span>
             <span class="text-xs text-[var(--home-text-muted)] leading-none">
-              {{ systemResources.cpu.cores }}核{{
-                systemResources.cpu.coresLogical !== systemResources.cpu.cores ? ` / ${systemResources.cpu.coresLogical}线程` : ''
+              {{ systemResources.cpu.cores }} {{ $t('home.cores') }}{{
+                systemResources.cpu.coresLogical !== systemResources.cpu.cores ? ` / ${systemResources.cpu.coresLogical}${$t('home.threads')}` : ''
               }}
             </span>
           </div>
@@ -134,7 +137,7 @@ onUnmounted(() => {
             <DataLine/>
           </el-icon>
           <div class="flex flex-col gap-0.5">
-            <span class="text-xs text-[var(--home-text-muted)] leading-none">内存</span>
+            <span class="text-xs text-[var(--home-text-muted)] leading-none">{{ $t('home.memory') }}</span>
             <span class="text-sm font-semibold leading-none"
                   :style="{color: getUsageColor(systemResources.memory.usagePercent)}">
               {{ formatPercent(systemResources.memory.usagePercent) }}
@@ -152,7 +155,7 @@ onUnmounted(() => {
             <VideoPlay/>
           </el-icon>
           <div class="flex flex-col gap-0.5">
-            <span class="text-xs text-[var(--home-text-muted)] leading-none">GPU</span>
+            <span class="text-xs text-[var(--home-text-muted)] leading-none">{{ $t('home.gpu') }}</span>
             <span class="text-sm font-semibold leading-none"
                   :style="{color: getUsageColor(systemResources.gpu.usagePercent)}">
               {{ formatPercent(systemResources.gpu.usagePercent) }}
@@ -169,10 +172,12 @@ onUnmounted(() => {
           target="_blank"
           rel="noopener noreferrer"
           class="w-9 h-9 rounded-lg flex-center bg-white/60 dark:bg-gray-800/60 backdrop-blur border border-gray-200/50 dark:border-gray-700/50 hover:border-indigo-400 dark:hover:border-indigo-500 text-gray-600 dark:text-gray-300 hover:text-indigo-500 transition-all cursor-pointer no-underline"
-          title="查看项目源码"
+          :title="$t('common.viewSource')"
       >
         <i class="i-mdi-github text-lg"></i>
       </a>
+
+      <LocaleSwitch/>
 
       <ThemeSwitch/>
 
@@ -181,7 +186,7 @@ onUnmounted(() => {
           <el-avatar :size="32" class="user-avatar">
             {{ userInfo?.username?.charAt(0)?.toUpperCase() || 'U' }}
           </el-avatar>
-          <span class="user-name">{{ userInfo?.username || '用户' }}</span>
+          <span class="user-name">{{ userInfo?.username || $t('common.user') }}</span>
           <el-icon class="dropdown-arrow">
             <ArrowDown/>
           </el-icon>
@@ -198,7 +203,7 @@ onUnmounted(() => {
               <el-icon class="mr-2">
                 <SwitchButton/>
               </el-icon>
-              退出登录
+              {{ $t('common.logout') }}
             </el-dropdown-item>
           </el-dropdown-menu>
         </template>
