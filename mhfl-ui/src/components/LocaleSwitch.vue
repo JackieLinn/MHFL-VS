@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import {computed} from 'vue'
-import {useLocale, type Locale} from '@/stores/locale'
+import {useLocale} from '@/stores/locale'
+import type {Locale} from '@/locales'
+import cnFlag from '@/assets/flags/cn.svg'
+import usFlag from '@/assets/flags/us.svg'
 
 const {currentLocale, setLocale} = useLocale()
 
 const localeOptions: { value: Locale; label: string; flag: string }[] = [
-  {value: 'zh-CN', label: '简体中文', flag: '🇨🇳'},
-  {value: 'en-US', label: 'English', flag: '🇺🇸'},
+  {value: 'zh-CN', label: '简体中文', flag: cnFlag},
+  {value: 'en-US', label: 'English', flag: usFlag},
 ]
 
 const handleCommand = (command: Locale) => {
@@ -28,7 +30,7 @@ const handleCommand = (command: Locale) => {
             :command="option.value"
             :class="{'is-active': currentLocale === option.value}"
         >
-          <span class="mr-2">{{ option.flag }}</span>
+          <img :src="option.flag" alt="" class="w-5 h-3.5 mr-2 object-cover"/>
           {{ option.label }}
         </el-dropdown-item>
       </el-dropdown-menu>

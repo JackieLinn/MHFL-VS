@@ -1,5 +1,6 @@
 import {ref} from 'vue'
-import i18n, {type Locale} from '@/locales'
+import i18n from '@/locales'
+import type {Locale} from '@/locales'
 
 const LOCALE_KEY = 'mhfl_locale'
 
@@ -46,3 +47,6 @@ export const useLocale = () => {
         getLocale,
     }
 }
+
+// 导出Locale类型
+export type {Locale} from '@/locales'
