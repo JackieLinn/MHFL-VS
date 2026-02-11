@@ -4,6 +4,7 @@ import ThemeSwitch from '@/components/ThemeSwitch.vue'
 import LoginForm from './components/LoginForm.vue'
 import RegisterForm from './components/RegisterForm.vue'
 import ResetPasswordForm from './components/ResetPasswordForm.vue'
+import {Connection, DataAnalysis, Monitor, TrendCharts} from "@element-plus/icons-vue";
 
 type PanelType = 'login' | 'register' | 'reset'
 
@@ -35,8 +36,17 @@ const switchPanel = (panel: PanelType) => {
       <div class="glow glow-2"></div>
     </div>
 
-    <!-- 主题切换 -->
-    <div class="theme-switch-btn">
+    <!-- GitHub链接和主题切换 -->
+    <div class="theme-switch-btn flex items-center gap-2">
+      <a
+          href="https://github.com/JackieLinn/MHFL-VS"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="w-9 h-9 rounded-lg flex-center bg-white/60 dark:bg-gray-800/60 backdrop-blur border border-gray-200/50 dark:border-gray-700/50 hover:border-indigo-400 dark:hover:border-indigo-500 text-gray-600 dark:text-gray-300 hover:text-indigo-500 transition-all cursor-pointer no-underline"
+          title="查看项目源码"
+      >
+        <i class="i-mdi-github text-lg"></i>
+      </a>
       <ThemeSwitch/>
     </div>
 

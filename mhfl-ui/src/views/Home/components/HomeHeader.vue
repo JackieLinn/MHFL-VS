@@ -73,9 +73,11 @@ const getUsageColor = (percent: number | undefined): string => {
   return '#f56c6c'
 }
 
+// 立即获取资源数据，不等待组件挂载
+fetchSystemResources()
+
 // 组件挂载时开始轮询
 onMounted(() => {
-  fetchSystemResources()
   // 每3秒轮询一次
   resourceTimer = window.setInterval(fetchSystemResources, 3000)
 })
@@ -162,17 +164,17 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <ThemeSwitch/>
-
       <a
           href="https://github.com/JackieLinn/MHFL-VS"
           target="_blank"
           rel="noopener noreferrer"
-          class="flex items-center justify-center w-9 h-9 rounded-lg text-[var(--home-text-secondary)] transition-all hover:bg-[var(--home-hover-bg)] hover:text-[var(--home-text-primary)]"
+          class="w-9 h-9 rounded-lg flex-center bg-white/60 dark:bg-gray-800/60 backdrop-blur border border-gray-200/50 dark:border-gray-700/50 hover:border-indigo-400 dark:hover:border-indigo-500 text-gray-600 dark:text-gray-300 hover:text-indigo-500 transition-all cursor-pointer no-underline"
           title="查看项目源码"
       >
-        <i class="i-mdi-github text-xl transition-transform hover:scale-110"></i>
+        <i class="i-mdi-github text-lg"></i>
       </a>
+
+      <ThemeSwitch/>
 
       <el-dropdown trigger="click">
         <div class="user-dropdown">

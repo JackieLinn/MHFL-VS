@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {computed} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
-import {DataBoard, Monitor, Setting} from '@element-plus/icons-vue'
+import {DataBoard, View, Setting} from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -9,7 +9,7 @@ const router = useRouter()
 // 导航菜单
 const menuItems = [
   {key: 'dashboard', label: '仪表盘', icon: DataBoard, path: '/home/dashboard'},
-  {key: 'monitor', label: '实时监控', icon: Monitor, path: '/home/monitor'},
+  {key: 'monitor', label: '实时监控', icon: View, path: '/home/monitor'},
   {key: 'admin', label: '系统管理', icon: Setting, path: '/home/admin'}
 ]
 
