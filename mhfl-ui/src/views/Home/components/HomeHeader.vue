@@ -12,21 +12,11 @@ import {
 } from '@element-plus/icons-vue'
 import {logout} from '@/api/auth'
 import {getSystemResources, type SystemResources} from '@/api/home'
+import {getUserInfo} from '@/api/user'
 import ThemeSwitch from '@/components/ThemeSwitch.vue'
 
 const router = useRouter()
 const loggingOut = ref(false)
-
-// 获取用户信息
-const getUserInfo = () => {
-  const str = localStorage.getItem('access_token') || sessionStorage.getItem('access_token')
-  if (!str) return null
-  try {
-    return JSON.parse(str)
-  } catch {
-    return null
-  }
-}
 
 const userInfo = getUserInfo()
 
