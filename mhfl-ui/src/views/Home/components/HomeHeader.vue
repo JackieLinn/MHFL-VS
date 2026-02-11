@@ -164,6 +164,16 @@ onUnmounted(() => {
 
       <ThemeSwitch/>
 
+      <a
+          href="https://github.com/JackieLinn/MHFL-VS"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="flex items-center justify-center w-9 h-9 rounded-lg text-[var(--home-text-secondary)] transition-all hover:bg-[var(--home-hover-bg)] hover:text-[var(--home-text-primary)]"
+          title="查看项目源码"
+      >
+        <i class="i-mdi-github text-xl transition-transform hover:scale-110"></i>
+      </a>
+
       <el-dropdown trigger="click">
         <div class="user-dropdown">
           <el-avatar :size="32" class="user-avatar">
