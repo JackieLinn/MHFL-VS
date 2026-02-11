@@ -422,6 +422,7 @@ const switchPanel = (panel: PanelType) => {
   font-weight: 600;
   color: var(--login-text-primary);
   margin-bottom: 8px;
+  white-space: nowrap;
 }
 
 .brand-desc {
@@ -594,6 +595,7 @@ const switchPanel = (panel: PanelType) => {
 
   .brand-subtitle {
     font-size: 20px;
+    white-space: nowrap;
   }
 
   .brand-desc {
