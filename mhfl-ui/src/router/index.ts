@@ -15,6 +15,27 @@ const router = createRouter({
             name: "Home",
             component: () => import('@/views/Home/index.vue'),
             meta: {requiresAuth: true},
+            redirect: '/home/dashboard',
+            children: [
+                {
+                    path: "dashboard",
+                    name: "Dashboard",
+                    component: () => import('@/views/Dashboard/index.vue'),
+                    meta: {requiresAuth: true},
+                },
+                {
+                    path: "monitor",
+                    name: "Monitor",
+                    component: () => import('@/views/Monitor/index.vue'),
+                    meta: {requiresAuth: true},
+                },
+                {
+                    path: "admin",
+                    name: "Admin",
+                    component: () => import('@/views/Admin/index.vue'),
+                    meta: {requiresAuth: true},
+                },
+            ]
         },
         {
             path: "/",
@@ -36,7 +57,7 @@ router.beforeEach((to, from, next) => {
 
     // 情况2: 用户已登录，但试图访问登录页 (Login)
     if (!isUnauthorized && to.name === 'Login') {
-        next('/home');
+        next('/home/dashboard');
         return;
     }
 
