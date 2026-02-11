@@ -35,6 +35,11 @@ const handleLogout = () => {
   )
 }
 
+// 打开GitHub链接
+const openGitHub = () => {
+  window.open('https://github.com/JackieLinn/MHFL-VS', '_blank', 'noopener,noreferrer')
+}
+
 // 系统资源信息
 const systemResources = ref<SystemResources | null>(null)
 const loadingResources = ref(false)
@@ -167,15 +172,14 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <a
-          href="https://github.com/JackieLinn/MHFL-VS"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="w-9 h-9 rounded-lg flex-center bg-white/60 dark:bg-gray-800/60 backdrop-blur border border-gray-200/50 dark:border-gray-700/50 hover:border-indigo-400 dark:hover:border-indigo-500 text-gray-600 dark:text-gray-300 hover:text-indigo-500 transition-all cursor-pointer no-underline"
+      <button
+          type="button"
+          class="w-9 h-9 rounded-lg flex-center bg-white/60 dark:bg-gray-800/60 backdrop-blur border border-gray-200/50 dark:border-gray-700/50 hover:border-indigo-400 dark:hover:border-indigo-500 text-gray-600 dark:text-gray-300 hover:text-indigo-500 transition-all cursor-pointer"
           :title="$t('common.viewSource')"
+          @click="openGitHub"
       >
         <i class="i-mdi-github text-lg"></i>
-      </a>
+      </button>
 
       <LocaleSwitch/>
 
