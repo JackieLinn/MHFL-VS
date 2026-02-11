@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {ref} from 'vue'
+import {ref, onMounted, onUnmounted} from 'vue'
 import {useRouter} from 'vue-router'
 import {
   DataAnalysis,
@@ -8,9 +8,13 @@ import {
   User,
   SwitchButton,
   List,
-  DataBoard
+  DataBoard,
+  Connection,
+  DataLine,
+  VideoPlay
 } from '@element-plus/icons-vue'
 import {logout} from '@/api/auth'
+import {getSystemResources, type SystemResources} from '@/api/home'
 import ThemeSwitch from '@/components/ThemeSwitch.vue'
 
 const router = useRouter()
@@ -55,6 +59,61 @@ const activeMenu = ref('task')
 const handleMenuClick = (key: string) => {
   activeMenu.value = key
 }
+
+// 系统资源信息
+const systemResources = ref<SystemResources | null>(null)
+const loadingResources = ref(false)
+let resourceTimer: number | null = null
+
+// 获取系统资源
+const fetchSystemResources = () => {
+  if (loadingResources.value) return
+
+  loadingResources.value = true
+  getSystemResources(
+      (data) => {
+        systemResources.value = data
+        loadingResources.value = false
+      },
+      () => {
+        loadingResources.value = false
+      }
+  )
+}
+
+// 格式化百分比
+const formatPercent = (value: number | undefined): string => {
+  if (value === undefined) return '0%'
+  return `${value.toFixed(1)}%`
+}
+
+// 格式化GB（仅返回数字，不带单位）
+const formatGB = (value: number | undefined): string => {
+  if (value === undefined) return '0.0'
+  return value.toFixed(1)
+}
+
+// 获取使用率颜色
+const getUsageColor = (percent: number | undefined): string => {
+  if (percent === undefined) return '#909399'
+  if (percent < 50) return '#67c23a'
+  if (percent < 80) return '#e6a23c'
+  return '#f56c6c'
+}
+
+// 组件挂载时开始轮询
+onMounted(() => {
+  fetchSystemResources()
+  // 每3秒轮询一次
+  resourceTimer = window.setInterval(fetchSystemResources, 3000)
+})
+
+// 组件卸载时清除定时器
+onUnmounted(() => {
+  if (resourceTimer !== null) {
+    clearInterval(resourceTimer)
+  }
+})
 </script>
 
 <template>
@@ -73,7 +132,68 @@ const handleMenuClick = (key: string) => {
         </div>
       </div>
 
-      <div class="header-right">
+      <div class="header-right flex items-center gap-4">
+        <!-- 系统资源展示 -->
+        <div class="flex items-center gap-5 pr-4 mr-2 border-r border-[var(--home-border)]">
+          <!-- CPU -->
+          <div v-if="systemResources?.cpu"
+               class="flex items-center gap-2 px-2 py-1 rounded-md transition-colors hover:bg-[var(--home-hover-bg)]">
+            <el-icon class="text-lg" :color="getUsageColor(systemResources.cpu.usagePercent)">
+              <Connection/>
+            </el-icon>
+            <div class="flex flex-col gap-0.5">
+              <span class="text-xs text-[var(--home-text-muted)] leading-none">CPU</span>
+              <span class="text-sm font-semibold leading-none"
+                    :style="{color: getUsageColor(systemResources.cpu.usagePercent)}">
+                {{ formatPercent(systemResources.cpu.usagePercent) }}
+              </span>
+              <span class="text-xs text-[var(--home-text-muted)] leading-none">
+                {{
+                  systemResources.cpu.cores
+                }}核{{
+                  systemResources.cpu.coresLogical !== systemResources.cpu.cores ? ` / ${systemResources.cpu.coresLogical}线程` : ''
+                }}
+              </span>
+            </div>
+          </div>
+
+          <!-- 内存 -->
+          <div v-if="systemResources?.memory"
+               class="flex items-center gap-2 px-2 py-1 rounded-md transition-colors hover:bg-[var(--home-hover-bg)]">
+            <el-icon class="text-lg" :color="getUsageColor(systemResources.memory.usagePercent)">
+              <DataLine/>
+            </el-icon>
+            <div class="flex flex-col gap-0.5">
+              <span class="text-xs text-[var(--home-text-muted)] leading-none">内存</span>
+              <span class="text-sm font-semibold leading-none"
+                    :style="{color: getUsageColor(systemResources.memory.usagePercent)}">
+                {{ formatPercent(systemResources.memory.usagePercent) }}
+              </span>
+              <span class="text-xs text-[var(--home-text-muted)] leading-none">
+                {{ formatGB(systemResources.memory.used) }} / {{ formatGB(systemResources.memory.total) }} GB
+              </span>
+            </div>
+          </div>
+
+          <!-- GPU -->
+          <div v-if="systemResources?.gpu"
+               class="flex items-center gap-2 px-2 py-1 rounded-md transition-colors hover:bg-[var(--home-hover-bg)]">
+            <el-icon class="text-lg" :color="getUsageColor(systemResources.gpu.usagePercent)">
+              <VideoPlay/>
+            </el-icon>
+            <div class="flex flex-col gap-0.5">
+              <span class="text-xs text-[var(--home-text-muted)] leading-none">GPU</span>
+              <span class="text-sm font-semibold leading-none"
+                    :style="{color: getUsageColor(systemResources.gpu.usagePercent)}">
+                {{ formatPercent(systemResources.gpu.usagePercent) }}
+              </span>
+              <span class="text-xs text-[var(--home-text-muted)] leading-none">
+                {{ formatGB(systemResources.gpu.used) }} / {{ formatGB(systemResources.gpu.total) }} GB
+              </span>
+            </div>
+          </div>
+        </div>
+
         <ThemeSwitch/>
 
         <el-dropdown trigger="click">
@@ -225,11 +345,6 @@ const handleMenuClick = (key: string) => {
   color: var(--home-text-muted);
 }
 
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
 
 .user-dropdown {
   display: flex;

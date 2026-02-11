@@ -47,3 +47,7 @@ mybatis-plus:
     db-config:
       logic-delete-value: 1, delete_time = NOW()
       logic-not-delete-value: 0
+
+python:
+  fastapi:
+    url: http://localhost:8000

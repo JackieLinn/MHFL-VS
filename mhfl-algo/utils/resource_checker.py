@@ -38,11 +38,11 @@ def check_gpu(device_index: int = 0) -> Optional[Dict[str, float]]:
         free_gb = mem_info.free / 1024 / 1024 / 1024
         usage_percent = (mem_info.used / mem_info.total) * 100
 
-        print(f"=== GPU {device_index}: {gpu_name.decode('utf-8') if isinstance(gpu_name, bytes) else gpu_name} ===")
-        print(f"总显存: {total_gb:.2f} GB")
-        print(f"已用:   {used_gb:.2f} GB")
-        print(f"剩余:   {free_gb:.2f} GB")
-        print(f"使用率: {usage_percent:.2f}%")
+        # print(f"=== GPU {device_index}: {gpu_name.decode('utf-8') if isinstance(gpu_name, bytes) else gpu_name} ===")
+        # print(f"总显存: {total_gb:.2f} GB")
+        # print(f"已用:   {used_gb:.2f} GB")
+        # print(f"剩余:   {free_gb:.2f} GB")
+        # print(f"使用率: {usage_percent:.2f}%")
 
         return {
             'total': round(total_gb, 2),
@@ -78,10 +78,10 @@ def check_cpu() -> Dict[str, float]:
     cpu_count = psutil.cpu_count(logical=False)  # 物理核心数
     cpu_count_logical = psutil.cpu_count(logical=True)  # 逻辑核心数
 
-    print(f"=== CPU ===")
-    print(f"使用率: {cpu_percent:.2f}%")
-    print(f"物理核心数: {cpu_count}")
-    print(f"逻辑核心数: {cpu_count_logical}")
+    # print(f"=== CPU ===")
+    # print(f"使用率: {cpu_percent:.2f}%")
+    # print(f"物理核心数: {cpu_count}")
+    # print(f"逻辑核心数: {cpu_count_logical}")
 
     return {
         'usage_percent': round(cpu_percent, 2),
@@ -112,11 +112,11 @@ def check_memory() -> Dict[str, float]:
     free_gb = mem.available / 1024 / 1024 / 1024
     usage_percent = mem.percent
 
-    print(f"=== 内存 ===")
-    print(f"总内存: {total_gb:.2f} GB")
-    print(f"已用:   {used_gb:.2f} GB")
-    print(f"剩余:   {free_gb:.2f} GB")
-    print(f"使用率: {usage_percent:.2f}%")
+    # print(f"=== 内存 ===")
+    # print(f"总内存: {total_gb:.2f} GB")
+    # print(f"已用:   {used_gb:.2f} GB")
+    # print(f"剩余:   {free_gb:.2f} GB")
+    # print(f"使用率: {usage_percent:.2f}%")
 
     return {
         'total': round(total_gb, 2),
