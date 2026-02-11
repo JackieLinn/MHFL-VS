@@ -1,4 +1,4 @@
-package ynu.jackielinn.server.service;
+package ynu.jackielinn.server.monitor;
 
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
