@@ -17,4 +17,27 @@ create table account
 )
     comment '用户表';
 
+create table algorithm
+(
+    id             bigint auto_increment comment '算法 ID'
+        primary key,
+    algorithm_name varchar(255)      not null comment '算法名',
+    create_time    datetime          not null comment '创建时间',
+    update_time    datetime          not null comment '更新时间',
+    delete_time    datetime          null comment '删除时间',
+    is_deleted     tinyint default 0 not null comment '删除标记'
+)
+    comment '算法表';
+
+create table dataset
+(
+    id          bigint auto_increment comment '数据集 ID'
+        primary key,
+    data_name   varchar(255)      not null comment '数据集名字',
+    create_time datetime          not null comment '创建时间',
+    update_time datetime          not null comment '更新时间',
+    delete_time datetime          null comment '删除时间',
+    is_deleted  tinyint default 0 not null comment '删除标记'
+)
+    comment '数据集表';
 
