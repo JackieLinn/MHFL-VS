@@ -1,12 +1,31 @@
 <script setup lang="ts">
-import {computed} from 'vue'
+import {computed, ref, onMounted} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
-import {DataBoard, View, Setting} from '@element-plus/icons-vue'
+import {DataBoard, View, Setting, Fold, Expand} from '@element-plus/icons-vue'
 import {useI18n} from 'vue-i18n'
 
 const route = useRoute()
 const router = useRouter()
 const {t} = useI18n()
+
+const SIDEBAR_COLLAPSED_KEY = 'mhfl_sidebar_collapsed'
+
+// 侧边栏收缩状态
+const isCollapsed = ref(false)
+
+// 初始化状态
+onMounted(() => {
+  const saved = localStorage.getItem(SIDEBAR_COLLAPSED_KEY)
+  if (saved === 'true') {
+    isCollapsed.value = true
+  }
+})
+
+// 切换收缩状态
+const toggleCollapse = () => {
+  isCollapsed.value = !isCollapsed.value
+  localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(isCollapsed.value))
+}
 
 // 导航菜单（使用 computed 确保响应式）
 const menuItems = computed(() => [
@@ -31,20 +50,30 @@ const handleMenuClick = (path: string) => {
 </script>
 
 <template>
-  <aside class="sidebar">
-    <div class="sidebar-menu">
+  <aside class="sidebar flex flex-col flex-shrink-0 relative transition-all" :class="{ collapsed: isCollapsed }">
+    <div class="p-4 flex flex-col gap-2 flex-1">
       <div
           v-for="item in menuItems"
           :key="item.key"
-          class="menu-item"
-          :class="{ active: activeMenu === item.key }"
+          class="menu-item flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all whitespace-nowrap overflow-hidden"
+          :class="{ active: activeMenu === item.key, 'justify-center px-3': isCollapsed }"
           @click="handleMenuClick(item.path)"
+          :title="isCollapsed ? item.label : ''"
       >
-        <el-icon class="menu-icon">
+        <el-icon class="text-lg flex-shrink-0">
           <component :is="item.icon"/>
         </el-icon>
-        <span class="menu-label">{{ item.label }}</span>
+        <span class="menu-label text-sm transition-opacity" v-show="!isCollapsed">{{ item.label }}</span>
       </div>
+    </div>
+
+    <!-- 收缩/展开按钮 -->
+    <div class="collapse-btn p-3 cursor-pointer flex items-center justify-center transition-all border-t"
+         @click="toggleCollapse">
+      <el-icon class="text-lg transition-transform">
+        <Fold v-if="!isCollapsed"/>
+        <Expand v-else/>
+      </el-icon>
     </div>
   </aside>
 </template>
@@ -54,26 +83,14 @@ const handleMenuClick = (path: string) => {
   width: 240px;
   background: var(--home-card-bg);
   border-right: 1px solid var(--home-border);
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
+  transition: width 0.3s ease;
 }
 
-.sidebar-menu {
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.sidebar.collapsed {
+  width: 64px;
 }
 
 .menu-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s;
   color: var(--home-text-secondary);
 }
 
@@ -88,17 +105,28 @@ const handleMenuClick = (path: string) => {
   font-weight: 500;
 }
 
-.menu-icon {
-  font-size: 18px;
+.sidebar.collapsed .menu-label {
+  opacity: 0;
+  width: 0;
 }
 
-.menu-label {
-  font-size: 14px;
+.collapse-btn {
+  border-color: var(--home-border);
+  color: var(--home-text-secondary);
+}
+
+.collapse-btn:hover {
+  background: var(--home-hover-bg);
+  color: var(--home-text-primary);
 }
 
 @media (max-width: 768px) {
   .sidebar {
     width: 200px;
+  }
+
+  .sidebar.collapsed {
+    width: 64px;
   }
 
   .menu-label {
