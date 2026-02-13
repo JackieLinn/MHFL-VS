@@ -45,7 +45,7 @@ mybatis-plus:
     map-underscore-to-camel-case: true
   global-config:
     db-config:
-      logic-delete-value: 1, delete_time = NOW()
+      logic-delete-value: 1
       logic-not-delete-value: 0
 
 python:
