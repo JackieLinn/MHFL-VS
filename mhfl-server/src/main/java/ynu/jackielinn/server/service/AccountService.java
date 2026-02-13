@@ -9,6 +9,7 @@ import ynu.jackielinn.server.dto.request.EmailRegisterRO;
 import ynu.jackielinn.server.dto.request.EmailResetRO;
 import ynu.jackielinn.server.dto.request.ListAccountRO;
 import ynu.jackielinn.server.dto.request.UpdateAccountRO;
+import ynu.jackielinn.server.dto.response.AccountVO;
 import ynu.jackielinn.server.entity.Account;
 
 public interface AccountService extends IService<Account>, UserDetailsService {
@@ -29,5 +30,7 @@ public interface AccountService extends IService<Account>, UserDetailsService {
 
     String updateAccount(UpdateAccountRO ro, Long userId);
 
-    IPage<Account> listAccounts(ListAccountRO ro);
+    IPage<AccountVO> listAccounts(ListAccountRO ro);
+
+    AccountVO getAccountInfo(Long userId);
 }

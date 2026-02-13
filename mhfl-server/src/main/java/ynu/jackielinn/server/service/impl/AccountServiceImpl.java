@@ -21,6 +21,7 @@ import ynu.jackielinn.server.dto.request.EmailRegisterRO;
 import ynu.jackielinn.server.dto.request.EmailResetRO;
 import ynu.jackielinn.server.dto.request.ListAccountRO;
 import ynu.jackielinn.server.dto.request.UpdateAccountRO;
+import ynu.jackielinn.server.dto.response.AccountVO;
 import ynu.jackielinn.server.entity.Account;
 import ynu.jackielinn.server.common.Gender;
 import ynu.jackielinn.server.mapper.AccountMapper;
@@ -368,10 +369,10 @@ public class AccountServiceImpl extends ServiceImpl<AccountMapper, Account> impl
      * 关键字为空则查询全部，不为空则在用户名、邮箱、电话号码中模糊查询（叠加查询，OR 连接）
      *
      * @param ro 查询条件对象
-     * @return 分页结果
+     * @return 分页结果（AccountVO，排除敏感信息）
      */
     @Override
-    public IPage<Account> listAccounts(ListAccountRO ro) {
+    public IPage<AccountVO> listAccounts(ListAccountRO ro) {
         // 处理默认值（@ModelAttribute 绑定可能不会应用 @Builder.Default）
         long current = ro.getCurrent() != null ? ro.getCurrent() : 1L;
         long size = ro.getSize() != null ? ro.getSize() : 10L;
@@ -413,7 +414,31 @@ public class AccountServiceImpl extends ServiceImpl<AccountMapper, Account> impl
         // 按 id 从小到大排序
         wrapper.orderByAsc(Account::getId);
 
-        return this.page(page, wrapper);
+        // 查询Account分页结果
+        IPage<Account> accountPage = this.page(page, wrapper);
+
+        // 转换为AccountVO分页结果
+        Page<AccountVO> voPage = new Page<>(accountPage.getCurrent(), accountPage.getSize(), accountPage.getTotal());
+        voPage.setRecords(accountPage.getRecords().stream()
+                .map(account -> account.asViewObject(AccountVO.class))
+                .toList());
+
+        return voPage;
+    }
+
+    /**
+     * 用户查询自己的信息（只能查询自己的信息）
+     *
+     * @param userId 用户ID（当前登录用户的ID，从JWT token中获取）
+     * @return 用户信息（AccountVO，排除敏感信息）
+     */
+    @Override
+    public AccountVO getAccountInfo(Long userId) {
+        Account account = this.getById(userId);
+        if (account == null) {
+            return null;
+        }
+        return account.asViewObject(AccountVO.class);
     }
 
     /**

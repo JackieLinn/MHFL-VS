@@ -15,7 +15,7 @@ import ynu.jackielinn.server.common.BaseController;
 import ynu.jackielinn.server.dto.request.CreateAccountRO;
 import ynu.jackielinn.server.dto.request.ListAccountRO;
 import ynu.jackielinn.server.dto.request.UpdateAccountRO;
-import ynu.jackielinn.server.entity.Account;
+import ynu.jackielinn.server.dto.response.AccountVO;
 import ynu.jackielinn.server.service.AccountService;
 
 @RestController
@@ -88,12 +88,32 @@ public class AccountController extends BaseController {
      * 管理员查询用户列表（支持关键字模糊查询和时间范围查询，分页）
      *
      * @param ro 查询条件对象（关键字、分页参数、时间范围）
-     * @return 分页结果
+     * @return 分页结果（AccountVO，排除敏感信息）
      */
     @Operation(summary = "管理员查询用户列表接口", description = "管理员查询用户列表，支持关键字模糊查询（用户名、邮箱、电话号码）和时间范围查询，分页查询")
     @GetMapping("/admin/list")
-    public ApiResponse<IPage<Account>> listAccounts(@Valid @ModelAttribute ListAccountRO ro) {
-        IPage<Account> result = accountService.listAccounts(ro);
+    public ApiResponse<IPage<AccountVO>> listAccounts(@Valid @ModelAttribute ListAccountRO ro) {
+        IPage<AccountVO> result = accountService.listAccounts(ro);
         return ApiResponse.success(result);
+    }
+
+    /**
+     * 用户查询自己的信息（只能查询自己的信息）
+     *
+     * @param request HttpServletRequest，用于获取当前登录用户 id（从 JWT token 中解析）
+     * @return 用户信息（AccountVO，排除敏感信息）
+     */
+    @Operation(summary = "查询当前用户信息接口", description = "查询当前登录用户的信息，只能查询自己的信息")
+    @GetMapping("/info")
+    public ApiResponse<AccountVO> getAccountInfo(HttpServletRequest request) {
+        Long currentUserId = (Long) request.getAttribute("id");
+        if (currentUserId == null) {
+            return ApiResponse.failure(401, "未登录或登录已过期");
+        }
+        AccountVO accountVO = accountService.getAccountInfo(currentUserId);
+        if (accountVO == null) {
+            return ApiResponse.failure(404, "用户不存在");
+        }
+        return ApiResponse.success(accountVO);
     }
 }
