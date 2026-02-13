@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ynu.jackielinn.server.common.ApiResponse;
+import ynu.jackielinn.server.common.BaseController;
 import ynu.jackielinn.server.utils.Const;
 
 import java.io.IOException;
@@ -26,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 @RestController
 @RequestMapping("/captcha")
 @Tag(name = "Captcha", description = "图形验证码相关接口")
-public class CaptchaController {
+public class CaptchaController extends BaseController {
 
     @Resource
     StringRedisTemplate stringRedisTemplate;

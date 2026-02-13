@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ynu.jackielinn.server.common.ApiResponse;
+import ynu.jackielinn.server.common.BaseController;
 import ynu.jackielinn.server.dto.response.SystemResourcesVO;
 import ynu.jackielinn.server.service.ResourceService;
 
@@ -17,7 +18,7 @@ import ynu.jackielinn.server.service.ResourceService;
 @RestController
 @RequestMapping("/api/system")
 @Tag(name = "系统资源管理", description = "系统资源查询相关接口")
-public class ResourceController {
+public class ResourceController extends BaseController {
 
     @Resource
     private ResourceService resourceService;

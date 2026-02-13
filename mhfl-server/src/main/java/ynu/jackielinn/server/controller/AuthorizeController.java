@@ -13,16 +13,14 @@ import ynu.jackielinn.server.dto.request.ConfirmResetRO;
 import ynu.jackielinn.server.dto.request.EmailRegisterRO;
 import ynu.jackielinn.server.dto.request.EmailResetRO;
 import ynu.jackielinn.server.common.ApiResponse;
+import ynu.jackielinn.server.common.BaseController;
 import ynu.jackielinn.server.service.AccountService;
-
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 @Validated
 @RestController
 @RequestMapping("/auth")
 @Tag(name = "验证相关接口", description = "与验证相关的操作接口")
-public class AuthorizeController {
+public class AuthorizeController extends BaseController {
 
     @Resource
     AccountService accountService;
@@ -78,27 +76,5 @@ public class AuthorizeController {
     @PostMapping("/reset-password")
     public ApiResponse<Void> resetPassword(@RequestBody @Valid EmailResetRO ro) {
         return this.messageHandle(ro, accountService::resetEmailAccountPassword);
-    }
-
-    /**
-     * 针对于返回值为String作为错误信息的方法进行统一处理
-     *
-     * @param action 具体操作
-     * @return 响应结果
-     */
-    private ApiResponse<Void> messageHandle(Supplier<String> action) {
-        String message = action.get();
-        return message == null ? ApiResponse.success() : ApiResponse.failure(400, message);
-    }
-
-    /**
-     * 处理函数式接口 Function<T, String> 定义的操作，并返回一个 RestBean<Void> 类型的结果
-     *
-     * @param vo       输入参数
-     * @param function 函数式接口，接受输入参数并返回一个字符串
-     * @return 处理结果
-     */
-    private <T> ApiResponse<Void> messageHandle(T vo, Function<T, String> function) {
-        return messageHandle(() -> function.apply(vo));
     }
 }
