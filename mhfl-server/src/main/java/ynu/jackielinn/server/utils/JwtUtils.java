@@ -156,9 +156,9 @@ public class JwtUtils {
      * @param jwt DecodedJWT 对象，包含已解析的 Token 信息
      * @return 用户 ID
      */
-    public Integer toId(DecodedJWT jwt) {
+    public Long toId(DecodedJWT jwt) {
         Map<String, Claim> claims = jwt.getClaims();
-        return claims.get("id").asInt();
+        return claims.get("id").asLong();
     }
 
     /**
