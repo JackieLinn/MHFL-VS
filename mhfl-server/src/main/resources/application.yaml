@@ -1,7 +1,17 @@
 server:
   port: 8088
 
+web:
+  upload:
+    base-dir: mhfl-server/uploads
+app:
+  base-url: http://localhost:8088
+
 spring:
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      enabled: true
   config:
     import: optional:classpath:application-secret.yaml
   datasource:

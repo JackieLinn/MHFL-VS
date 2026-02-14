@@ -54,7 +54,7 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         // 定义无需认证的公共路径
-        var publicPaths = new String[]{"/doc/**", "/auth/**", "/captcha/**", "/error"};
+        var publicPaths = new String[]{"/doc/**", "/auth/**", "/captcha/**", "/error/**", "/uploads/**"};
         return http
                 // 配置接口访问权限
                 .authorizeHttpRequests(conf -> conf

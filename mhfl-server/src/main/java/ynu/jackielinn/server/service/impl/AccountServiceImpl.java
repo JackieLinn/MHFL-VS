@@ -441,6 +441,16 @@ public class AccountServiceImpl extends ServiceImpl<AccountMapper, Account> impl
         return account.asViewObject(AccountVO.class);
     }
 
+    @Override
+    public String updateAvatar(Long userId, String avatarUrl) {
+        Account account = this.getById(userId);
+        if (account == null) {
+            return "用户不存在";
+        }
+        Account update = Account.builder().id(userId).avatar(avatarUrl).build();
+        return this.updateById(update) ? null : "更新头像失败，请联系管理员";
+    }
+
     /**
      * 初始化默认管理员账号和测试用户
      * 在应用启动时检查 account 表是否有数据，没有则创建默认管理员和测试用户

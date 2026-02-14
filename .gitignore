@@ -14,6 +14,7 @@ mhfl-server/target
 mhfl-server/docker-data
 mhfl-server/src/main/resources/application-secret.yaml
 mhfl-server/src/main/java/ynu/jackielinn/server/controller/TestController.java
+mhfl-server/uploads
 
 ### mhfl-ui ###
 mhfl-ui/mhfl-ui.iml

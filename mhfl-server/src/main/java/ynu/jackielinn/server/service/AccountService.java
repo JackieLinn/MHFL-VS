@@ -33,4 +33,13 @@ public interface AccountService extends IService<Account>, UserDetailsService {
     IPage<AccountVO> listAccounts(ListAccountRO ro);
 
     AccountVO getAccountInfo(Long userId);
+
+    /**
+     * 更新用户头像 URL（仅更新 avatar 字段）
+     *
+     * @param userId    用户 ID
+     * @param avatarUrl 头像完整 URL
+     * @return null 表示成功，否则为错误信息
+     */
+    String updateAvatar(Long userId, String avatarUrl);
 }
