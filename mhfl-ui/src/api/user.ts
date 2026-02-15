@@ -3,12 +3,13 @@
  * 包含用户信息获取等接口
  */
 
-// 用户信息类型
+// 用户信息类型（与本地 access_token 存储一致）
 export interface UserInfo {
     token: string
     expire: string
     username: string
     id: number | string
+    role?: string
 }
 
 /**

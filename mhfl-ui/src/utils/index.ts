@@ -18,6 +18,7 @@ interface AuthItem {
     expire: string;
     username: string;
     id: number | string;
+    role?: string;
 }
 
 const authItemName = "access_token";
@@ -72,9 +73,9 @@ const takeAccessToken = (): string | null => {
     }
 };
 
-// 存储 Token
-const storeAccessToken = (remember: boolean, token: string, expire: string, username: string, id: number | string): void => {
-    const authObj: AuthItem = {token, expire, username, id};
+// 存储 Token（role 可选，用于前端判断是否展示管理员菜单等）
+const storeAccessToken = (remember: boolean, token: string, expire: string, username: string, id: number | string, role?: string): void => {
+    const authObj: AuthItem = {token, expire, username, id, role};
     const str = JSON.stringify(authObj);
     if (remember)
         localStorage.setItem(authItemName, str);

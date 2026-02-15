@@ -3,6 +3,7 @@ import {computed, ref, onMounted} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {DataBoard, View, Setting, Fold, Expand} from '@element-plus/icons-vue'
 import {useI18n} from 'vue-i18n'
+import {getUserInfo} from '@/api/user'
 
 const route = useRoute()
 const router = useRouter()
@@ -27,12 +28,17 @@ const toggleCollapse = () => {
   localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(isCollapsed.value))
 }
 
-// 导航菜单（使用 computed 确保响应式）
-const menuItems = computed(() => [
+// 仅 admin 角色显示「系统管理」
+type MenuItem = { key: string; label: string; icon: typeof DataBoard; path: string; adminOnly?: boolean }
+const allMenuItems = computed<MenuItem[]>(() => [
   {key: 'dashboard', label: t('sidebar.dashboard'), icon: DataBoard, path: '/home/dashboard'},
   {key: 'monitor', label: t('sidebar.monitor'), icon: View, path: '/home/monitor'},
-  {key: 'admin', label: t('sidebar.admin'), icon: Setting, path: '/home/admin'}
+  {key: 'admin', label: t('sidebar.admin'), icon: Setting, path: '/home/admin', adminOnly: true}
 ])
+const menuItems = computed(() => {
+  const isAdmin = getUserInfo()?.role === 'admin'
+  return allMenuItems.value.filter((item) => !item.adminOnly || isAdmin)
+})
 
 // 当前激活的菜单项
 const activeMenu = computed(() => {

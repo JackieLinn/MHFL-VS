@@ -90,7 +90,7 @@ export const login = (
     internalPost('/auth/login', formData.toString(), {
         'Content-Type': 'application/x-www-form-urlencoded'
     }, (data: any) => {
-        storeAccessToken(params.remember, data.token, data.expire, data.username, data.id)
+        storeAccessToken(params.remember, data.token, data.expire, data.username, data.id, data.role)
         ElMessage.success(`欢迎回来，${data.username}`)
         success(data)
     }, failure)
