@@ -88,6 +88,25 @@
     "cores": "Cores",
     "threads": "Threads"
   },
+  "header": {
+    "userProfile": "Profile",
+    "logout": "Logout",
+    "username": "Username",
+    "gender": "Gender",
+    "email": "Email",
+    "telephone": "Phone",
+    "birthday": "Birthday",
+    "age": "Age",
+    "notSet": "Not set",
+    "edit": "Edit",
+    "save": "Save",
+    "cancel": "Cancel",
+    "uploadAvatar": "Upload avatar",
+    "changeAvatar": "Change avatar",
+    "male": "Male",
+    "female": "Female",
+    "unknown": "Unknown"
+  },
   "sidebar": {
     "dashboard": "Dashboard",
     "monitor": "Real-time Monitor",

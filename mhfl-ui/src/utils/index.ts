@@ -173,6 +173,39 @@ const internalGet = (
         });
 };
 
+const internalPut = (
+    url: string,
+    data: any,
+    headers: any,
+    success: (data: any) => void,
+    failure?: (message: string, code: number, url: string) => void
+) => {
+    instance.put(url, data, {headers})
+        .then((response: AxiosResponse<ResponseData>) => {
+            handleResponse(response, url, success, failure);
+        })
+        .catch((err: AxiosError) => {
+            defaultError(err);
+            failure?.('网络错误', 0, url);
+        });
+};
+
+const internalDelete = (
+    url: string,
+    headers: any,
+    success: (data: any) => void,
+    failure?: (message: string, code: number, url: string) => void
+) => {
+    instance.delete(url, {headers})
+        .then((response: AxiosResponse<ResponseData>) => {
+            handleResponse(response, url, success, failure);
+        })
+        .catch((err: AxiosError) => {
+            defaultError(err);
+            failure?.('网络错误', 0, url);
+        });
+};
+
 // =========================================================================
 // 统一导出函数
 // =========================================================================
@@ -192,6 +225,33 @@ const post = (
     failure?: (message: string, code: number, url: string) => void
 ) => {
     internalPost(url, data, accessHeader(), success, failure);
+};
+
+const put = (
+    url: string,
+    data: any,
+    success: (data: any) => void,
+    failure?: (message: string, code: number, url: string) => void
+) => {
+    internalPut(url, data, {...accessHeader(), 'Content-Type': 'application/json'}, success, failure);
+};
+
+const del = (
+    url: string,
+    success: (data: any) => void,
+    failure?: (message: string, code: number, url: string) => void
+) => {
+    internalDelete(url, accessHeader(), success, failure);
+};
+
+/** 上传表单（如 multipart/form-data），不设置 Content-Type，由浏览器自动带 boundary */
+const postForm = (
+    url: string,
+    formData: FormData,
+    success: (data: any) => void,
+    failure?: (message: string, code: number, url: string) => void
+) => {
+    internalPost(url, formData, accessHeader(), success, failure);
 };
 
 const login = (
@@ -231,6 +291,9 @@ export {
     logout,
     get,
     post,
+    put,
+    del,
+    postForm,
     unauthorized,
     takeAccessToken,
     deleteAccessToken,

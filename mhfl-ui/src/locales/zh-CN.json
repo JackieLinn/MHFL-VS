@@ -88,6 +88,25 @@
     "cores": "核",
     "threads": "线程"
   },
+  "header": {
+    "userProfile": "用户信息",
+    "logout": "退出登录",
+    "username": "用户名",
+    "gender": "性别",
+    "email": "邮箱",
+    "telephone": "电话",
+    "birthday": "生日",
+    "age": "年龄",
+    "notSet": "未设置",
+    "edit": "编辑",
+    "save": "保存",
+    "cancel": "取消",
+    "uploadAvatar": "上传头像",
+    "changeAvatar": "更换头像",
+    "male": "男",
+    "female": "女",
+    "unknown": "未知"
+  },
   "sidebar": {
     "dashboard": "仪表盘",
     "monitor": "实时监控",
