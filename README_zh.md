@@ -5,6 +5,10 @@
   联邦学习训练过程的可视化与仿真，支持实时查看训练进度与曲线。
 </p>
 
+<p align="center">
+  中文 · <a href="README.md">English</a>
+</p>
+
 ---
 
 ### 🛠 技术栈
