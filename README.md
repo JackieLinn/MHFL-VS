@@ -1,4 +1,4 @@
-<h2 align="center">MHFL-VS</h2>
+<h1 align="center">MHFL-VS</h1>
 <p align="center"><i>Model Heterogeneous Federated Learning End-to-End Visualization and Simulation</i></p>
 
 <p align="center">

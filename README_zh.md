@@ -1,4 +1,4 @@
-<h2 align="center">MHFL-VS</h2>
+<h1 align="center">MHFL-VS</h1>
 <p align="center"><i>模型异构联邦学习 · 全链路可视化与仿真平台</i></p>
 
 <p align="center">
