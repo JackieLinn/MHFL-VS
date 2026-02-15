@@ -126,7 +126,29 @@
     "admin": {
       "title": "System Admin",
       "desc": "Manage system members, algorithms and datasets",
-      "developing": "System admin feature is under development..."
+      "developing": "System admin feature is under development...",
+      "tabMembers": "Members",
+      "tabDatasets": "Datasets",
+      "tabAlgorithms": "Algorithms",
+      "searchKeyword": "Keyword (username/email/phone)",
+      "searchStartTime": "Created from",
+      "searchEndTime": "Created to",
+      "search": "Search",
+      "createUser": "Add user",
+      "deleteUser": "Delete",
+      "id": "ID",
+      "role": "Role",
+      "createTime": "Created",
+      "updateTime": "Updated",
+      "confirmDelete": "Delete this user?",
+      "confirm": "Confirm",
+      "createUserTitle": "Add user",
+      "defaultPasswordHint": "Default password: 123456",
+      "createSuccess": "User added successfully",
+      "deleteSuccess": "Deleted successfully",
+      "total": "Total {total}",
+      "datasetDeveloping": "Dataset management under development...",
+      "algorithmDeveloping": "Algorithm management under development..."
     }
   },
   "theme": {

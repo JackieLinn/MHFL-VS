@@ -126,7 +126,29 @@
     "admin": {
       "title": "系统管理",
       "desc": "管理系统成员、算法和数据集",
-      "developing": "系统管理功能开发中..."
+      "developing": "系统管理功能开发中...",
+      "tabMembers": "人员管理",
+      "tabDatasets": "数据集管理",
+      "tabAlgorithms": "算法管理",
+      "searchKeyword": "关键字（用户名/邮箱/电话）",
+      "searchStartTime": "创建时间起",
+      "searchEndTime": "创建时间止",
+      "search": "搜索",
+      "createUser": "导入用户",
+      "deleteUser": "删除",
+      "id": "ID",
+      "role": "角色",
+      "createTime": "创建时间",
+      "updateTime": "更新时间",
+      "confirmDelete": "确定删除该用户吗？",
+      "confirm": "确定",
+      "createUserTitle": "导入用户",
+      "defaultPasswordHint": "默认密码：123456",
+      "createSuccess": "导入成功",
+      "deleteSuccess": "删除成功",
+      "total": "共 {total} 条",
+      "datasetDeveloping": "数据集管理开发中...",
+      "algorithmDeveloping": "算法管理开发中..."
     }
   },
   "theme": {

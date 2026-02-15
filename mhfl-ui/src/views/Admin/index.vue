@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import {useI18n} from 'vue-i18n'
+import AccountManage from './components/AccountManage.vue'
+import DatasetManage from './components/DatasetManage.vue'
+import AlgorithmManage from './components/AlgorithmManage.vue'
 
 const {t} = useI18n()
 </script>
@@ -8,9 +11,18 @@ const {t} = useI18n()
   <div class="admin-page">
     <h2 class="page-title">{{ $t('pages.admin.title') }}</h2>
     <p class="page-desc">{{ $t('pages.admin.desc') }}</p>
-    <div class="page-placeholder">
-      <p>{{ $t('pages.admin.developing') }}</p>
-    </div>
+
+    <el-tabs type="border-card" class="admin-tabs">
+      <el-tab-pane :label="$t('pages.admin.tabMembers')">
+        <AccountManage/>
+      </el-tab-pane>
+      <el-tab-pane :label="$t('pages.admin.tabDatasets')">
+        <DatasetManage/>
+      </el-tab-pane>
+      <el-tab-pane :label="$t('pages.admin.tabAlgorithms')">
+        <AlgorithmManage/>
+      </el-tab-pane>
+    </el-tabs>
   </div>
 </template>
 
@@ -18,6 +30,9 @@ const {t} = useI18n()
 .admin-page {
   padding: 32px;
   height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .page-title {
@@ -30,20 +45,48 @@ const {t} = useI18n()
 .page-desc {
   font-size: 14px;
   color: var(--home-text-muted);
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 
-.page-placeholder {
+.admin-tabs {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 400px;
-  color: var(--home-text-muted);
+  min-height: 0;
+  background: var(--home-card-bg);
+  border-color: var(--home-border);
 }
 
-.page-placeholder p {
-  font-size: 14px;
-  color: var(--home-text-muted);
+.admin-tabs :deep(.el-tabs__header) {
+  margin: 0;
+  background: var(--home-hover-bg);
+  border-bottom: 1px solid var(--home-border);
+}
+
+.admin-tabs :deep(.el-tabs__nav-wrap)::after {
+  display: none;
+}
+
+.admin-tabs :deep(.el-tabs__item) {
+  color: var(--home-text-secondary);
+}
+
+.admin-tabs :deep(.el-tabs__item.is-active) {
+  color: var(--home-text-primary);
+  font-weight: 500;
+}
+
+.admin-tabs :deep(.el-tabs__ink-bar) {
+  background: #6366f1;
+}
+
+.admin-tabs :deep(.el-tabs__content) {
+  flex: 1;
+  overflow: auto;
+  padding: 20px;
+}
+
+.admin-tabs :deep(.el-tabs__panel) {
+  height: 100%;
 }
 </style>
