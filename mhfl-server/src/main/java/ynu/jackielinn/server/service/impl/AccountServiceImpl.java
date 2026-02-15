@@ -31,6 +31,7 @@ import ynu.jackielinn.server.utils.FlowUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Period;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -417,10 +418,11 @@ public class AccountServiceImpl extends ServiceImpl<AccountMapper, Account> impl
         // 查询Account分页结果
         IPage<Account> accountPage = this.page(page, wrapper);
 
-        // 转换为AccountVO分页结果
+        // 转换为AccountVO分页结果（年龄用 asViewObject 的 consumer 填充）
         Page<AccountVO> voPage = new Page<>(accountPage.getCurrent(), accountPage.getSize(), accountPage.getTotal());
         voPage.setRecords(accountPage.getRecords().stream()
-                .map(account -> account.asViewObject(AccountVO.class))
+                .map(account -> account.asViewObject(AccountVO.class, vo -> vo.setAge(
+                        vo.getBirthday() == null ? null : Period.between(vo.getBirthday(), LocalDate.now()).getYears())))
                 .toList());
 
         return voPage;
@@ -438,7 +440,8 @@ public class AccountServiceImpl extends ServiceImpl<AccountMapper, Account> impl
         if (account == null) {
             return null;
         }
-        return account.asViewObject(AccountVO.class);
+        return account.asViewObject(AccountVO.class, vo -> vo.setAge(
+                vo.getBirthday() == null ? null : Period.between(vo.getBirthday(), LocalDate.now()).getYears()));
     }
 
     @Override

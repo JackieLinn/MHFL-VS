@@ -47,6 +47,9 @@ public class AccountVO {
     @JsonFormat(pattern = "yyyy-MM-dd", timezone = "GMT+8")
     private LocalDate birthday;
 
+    @Schema(description = "年龄（根据生日与当前日期计算，生日为空则为空）")
+    private Integer age;
+
     @Schema(description = "创建时间")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime createTime;
