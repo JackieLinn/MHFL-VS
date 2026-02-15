@@ -178,6 +178,15 @@ html.dark {
     --home-card-bg: rgba(255, 255, 255, 0.8);
     --home-card-border: rgba(99, 102, 241, 0.12);
     --home-card-shadow: rgba(99, 102, 241, 0.1);
+    /* 系统管理-角色行底色与徽章 */
+    --admin-role-bg: rgba(99, 102, 241, 0.06);
+    --admin-role-border: rgba(99, 102, 241, 0.2);
+    --admin-badge-bg: rgba(99, 102, 241, 0.2);
+    --admin-badge-text: #4338ca;
+    --user-role-bg: rgba(100, 116, 139, 0.06);
+    --user-role-border: rgba(100, 116, 139, 0.15);
+    --user-badge-bg: rgba(100, 116, 139, 0.18);
+    --user-badge-text: #475569;
 }
 
 /* 深色模式 */
@@ -192,6 +201,14 @@ html.dark {
     --home-card-bg: rgba(255, 255, 255, 0.03);
     --home-card-border: rgba(255, 255, 255, 0.08);
     --home-card-shadow: rgba(0, 0, 0, 0.2);
+    --admin-role-bg: rgba(99, 102, 241, 0.12);
+    --admin-role-border: rgba(99, 102, 241, 0.25);
+    --admin-badge-bg: rgba(99, 102, 241, 0.35);
+    --admin-badge-text: #a5b4fc;
+    --user-role-bg: rgba(148, 163, 184, 0.06);
+    --user-role-border: rgba(148, 163, 184, 0.15);
+    --user-badge-bg: rgba(148, 163, 184, 0.2);
+    --user-badge-text: #94a3b8;
 }
 
 /* 暗色主题下 Element Plus 变量 */

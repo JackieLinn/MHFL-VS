@@ -138,6 +138,8 @@
       "deleteUser": "删除",
       "id": "ID",
       "role": "角色",
+      "roleAdmin": "管理员",
+      "roleUser": "用户",
       "createTime": "创建时间",
       "updateTime": "更新时间",
       "confirmDelete": "确定删除该用户吗？",

@@ -138,6 +138,8 @@
       "deleteUser": "Delete",
       "id": "ID",
       "role": "Role",
+      "roleAdmin": "Admin",
+      "roleUser": "User",
       "createTime": "Created",
       "updateTime": "Updated",
       "confirmDelete": "Delete this user?",

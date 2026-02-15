@@ -160,45 +160,68 @@ const totalText = computed(() => t('pages.admin.total', {total: total.value}))
       <el-button type="success" :icon="Plus" @click="openCreate">{{ $t('pages.admin.createUser') }}</el-button>
     </div>
 
-    <!-- 列表：一行一个用户 -->
+    <!-- 列表：一行一个用户，网格对齐，角色底色区分 -->
     <div v-loading="loading" class="account-list flex flex-col gap-3">
       <div
           v-for="user in list"
           :key="user.id"
-          class="account-row flex items-center gap-4 px-4 py-3 rounded-xl border border-[var(--home-border)] bg-[var(--home-card-bg)]"
+          class="account-row"
+          :class="user.role === 'admin' ? 'role-admin' : 'role-user'"
       >
-        <img
-            :src="avatarUrl(user)"
-            :alt="user.username"
-            class="w-12 h-12 rounded-full object-cover flex-shrink-0 border border-[var(--home-border)]"
-        />
-        <div class="row-fields flex flex-wrap items-center gap-x-6 gap-y-1 flex-1 min-w-0">
-          <span class="field"><span class="field-label">{{ $t('pages.admin.id') }}:</span> {{ user.id }}</span>
-          <span class="field"><span class="field-label">{{ $t('header.username') }}:</span> {{ user.username }}</span>
-          <span class="field"><span class="field-label">{{ $t('header.gender') }}:</span> {{ genderLabel(user.gender) }}</span>
-          <span class="field"><span class="field-label">{{ $t('header.email') }}:</span> {{
-              user.email || notSet()
-            }}</span>
-          <span class="field"><span class="field-label">{{
-              $t('header.telephone')
-            }}:</span> {{ user.telephone || notSet() }}</span>
-          <span class="field"><span class="field-label">{{ $t('pages.admin.role') }}:</span> {{ user.role || notSet() }}</span>
-          <span class="field"><span class="field-label">{{ $t('header.birthday') }}:</span> {{
-              user.birthday || notSet()
-            }}</span>
-          <span class="field"><span class="field-label">{{
-              $t('header.age')
-            }}:</span> {{ user.age != null ? user.age : notSet() }}</span>
-          <span class="field"><span class="field-label">{{
-              $t('pages.admin.createTime')
-            }}:</span> {{ user.createTime || '—' }}</span>
-          <span class="field"><span class="field-label">{{
-              $t('pages.admin.updateTime')
-            }}:</span> {{ user.updateTime || '—' }}</span>
+        <div class="row-avatar">
+          <img
+              :src="avatarUrl(user)"
+              :alt="user.username"
+              class="avatar-img"
+          />
         </div>
-        <el-button type="danger" size="small" :icon="Delete" text @click="handleDelete(user)">
-          {{ $t('pages.admin.deleteUser') }}
-        </el-button>
+        <div class="row-cell cell-id">
+          <span class="cell-label">{{ $t('pages.admin.id') }}</span>
+          <span class="cell-value">{{ user.id }}</span>
+        </div>
+        <div class="row-cell cell-username">
+          <span class="cell-label">{{ $t('header.username') }}</span>
+          <span class="cell-value text-ellipsis" :title="user.username">{{ user.username }}</span>
+        </div>
+        <div class="row-cell cell-gender">
+          <span class="cell-label">{{ $t('header.gender') }}</span>
+          <span class="cell-value">{{ genderLabel(user.gender) }}</span>
+        </div>
+        <div class="row-cell cell-email">
+          <span class="cell-label">{{ $t('header.email') }}</span>
+          <span class="cell-value text-ellipsis" :title="user.email || ''">{{ user.email || notSet() }}</span>
+        </div>
+        <div class="row-cell cell-telephone">
+          <span class="cell-label">{{ $t('header.telephone') }}</span>
+          <span class="cell-value text-ellipsis" :title="user.telephone || ''">{{ user.telephone || notSet() }}</span>
+        </div>
+        <div class="row-cell cell-role">
+          <span class="cell-label">{{ $t('pages.admin.role') }}</span>
+          <span class="role-badge" :class="user.role === 'admin' ? 'badge-admin' : 'badge-user'">
+            {{ user.role === 'admin' ? $t('pages.admin.roleAdmin') : $t('pages.admin.roleUser') }}
+          </span>
+        </div>
+        <div class="row-cell cell-birthday">
+          <span class="cell-label">{{ $t('header.birthday') }}</span>
+          <span class="cell-value">{{ user.birthday || notSet() }}</span>
+        </div>
+        <div class="row-cell cell-age">
+          <span class="cell-label">{{ $t('header.age') }}</span>
+          <span class="cell-value">{{ user.age != null ? user.age : notSet() }}</span>
+        </div>
+        <div class="row-cell cell-create">
+          <span class="cell-label">{{ $t('pages.admin.createTime') }}</span>
+          <span class="cell-value text-ellipsis" :title="user.createTime || ''">{{ user.createTime || '—' }}</span>
+        </div>
+        <div class="row-cell cell-update">
+          <span class="cell-label">{{ $t('pages.admin.updateTime') }}</span>
+          <span class="cell-value text-ellipsis" :title="user.updateTime || ''">{{ user.updateTime || '—' }}</span>
+        </div>
+        <div class="row-action">
+          <el-button type="danger" size="small" :icon="Delete" text @click="handleDelete(user)">
+            {{ $t('pages.admin.deleteUser') }}
+          </el-button>
+        </div>
       </div>
     </div>
 
@@ -225,7 +248,7 @@ const totalText = computed(() => t('pages.admin.total', {total: total.value}))
     >
       <el-form label-position="top" :model="createForm">
         <el-form-item :label="$t('header.username')" required>
-          <el-input v-model="createForm.username" :placeholder="$t('header.username')" maxlength="32" show-word-limit/>
+          <el-input v-model="createForm.username" :placeholder="$t('header.username')" maxlength="30" show-word-limit/>
         </el-form-item>
         <el-form-item :label="$t('header.email')" required>
           <el-input v-model="createForm.email" type="email" :placeholder="$t('header.email')"/>
@@ -250,22 +273,90 @@ const totalText = computed(() => t('pages.admin.total', {total: total.value}))
   border-color: var(--home-border);
 }
 
-.field {
-  font-size: 13px;
-  color: var(--home-text-primary);
-}
-
-.field-label {
-  color: var(--home-text-muted);
-  margin-right: 4px;
-}
-
+/* 一行一个用户：网格对齐 */
 .account-row {
-  transition: background 0.2s;
+  display: grid;
+  grid-template-columns: 52px 56px 96px 56px 1fr 1fr 88px 96px 48px 150px 150px auto;
+  gap: 12px 16px;
+  align-items: center;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--home-border);
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.account-row.role-admin {
+  background: var(--admin-role-bg);
+  border-color: var(--admin-role-border);
+}
+
+.account-row.role-user {
+  background: var(--user-role-bg);
+  border-color: var(--user-role-border);
 }
 
 .account-row:hover {
-  background: var(--home-hover-bg) !important;
+  filter: brightness(0.97);
+}
+
+.row-avatar {
+  grid-column: 1;
+}
+
+.avatar-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--home-border);
+}
+
+.row-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.cell-label {
+  font-size: 11px;
+  color: var(--home-text-muted);
+  line-height: 1.2;
+}
+
+.cell-value {
+  font-size: 13px;
+  color: var(--home-text-primary);
+  line-height: 1.3;
+}
+
+.text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.role-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  width: fit-content;
+}
+
+.badge-admin {
+  background: var(--admin-badge-bg);
+  color: var(--admin-badge-text);
+}
+
+.badge-user {
+  background: var(--user-badge-bg);
+  color: var(--user-badge-text);
+}
+
+.row-action {
+  justify-self: end;
 }
 
 .pagination-wrap :deep(.el-pagination) {
@@ -279,4 +370,5 @@ const totalText = computed(() => t('pages.admin.total', {total: total.value}))
 .create-dialog :deep(.el-form-item__label) {
   color: var(--home-text-primary);
 }
+
 </style>
