@@ -325,10 +325,10 @@ const onPageSizeChange = () => {
   border-top: 1px solid var(--home-border);
 }
 
-/* 一行一个用户：网格对齐 */
+/* 一行一个用户：网格对齐，右侧列也参与伸缩，侧栏收起时整行均匀变宽 */
 .account-row {
   display: grid;
-  grid-template-columns: 52px 56px 96px 56px 1fr 1fr 88px 96px 48px 150px 150px auto;
+  grid-template-columns: 52px 56px 96px 56px 1fr 1fr minmax(88px, 1fr) minmax(96px, 1fr) 48px minmax(140px, 1fr) minmax(140px, 1fr) auto;
   gap: 12px 16px;
   align-items: center;
   padding: 12px 16px;
