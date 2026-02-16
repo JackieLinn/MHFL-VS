@@ -149,6 +149,7 @@
       "createSuccess": "User added successfully",
       "deleteSuccess": "Deleted successfully",
       "total": "Total {total}",
+      "pageSize": "Per page",
       "datasetDeveloping": "Dataset management under development...",
       "algorithmDeveloping": "Algorithm management under development..."
     }

@@ -149,6 +149,7 @@
       "createSuccess": "导入成功",
       "deleteSuccess": "删除成功",
       "total": "共 {total} 条",
+      "pageSize": "每页条数",
       "datasetDeveloping": "数据集管理开发中...",
       "algorithmDeveloping": "算法管理开发中..."
     }

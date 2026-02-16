@@ -28,7 +28,7 @@ const {t} = useI18n()
 
 <style scoped>
 .admin-page {
-  padding: 32px;
+  padding: 32px 32px 16px 32px;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -82,11 +82,19 @@ const {t} = useI18n()
 
 .admin-tabs :deep(.el-tabs__content) {
   flex: 1;
-  overflow: auto;
-  padding: 20px;
+  min-height: 0;
+  overflow: hidden;
+  padding: 20px 20px 0 20px;
+  display: flex;
+  flex-direction: column;
 }
 
-.admin-tabs :deep(.el-tabs__panel) {
-  height: 100%;
+/* Tab 内容区（直接子元素）占满高度，便于内部列表滚动 */
+.admin-tabs :deep(.el-tabs__content > *) {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 </style>

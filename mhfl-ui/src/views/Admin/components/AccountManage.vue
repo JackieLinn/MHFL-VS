@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {ref, computed, onMounted} from 'vue'
+import {ref, computed, onMounted, watch} from 'vue'
 import {useI18n} from 'vue-i18n'
 import {ElMessage, ElMessageBox} from 'element-plus'
 import {Search, Plus, Delete} from '@element-plus/icons-vue'
@@ -35,9 +35,10 @@ const keyword = ref('')
 const startTime = ref('')
 const endTime = ref('')
 
-// 分页（后端默认 10 一页）
+// 分页
 const currentPage = ref(1)
-const pageSize = 10
+const pageSizeOptions = [5, 10, 20, 50] as const
+const pageSize = ref(10)
 const total = ref(0)
 const list = ref<AccountVO[]>([])
 const loading = ref(false)
@@ -50,7 +51,7 @@ const fetchList = () => {
         startTime: startTime.value || undefined,
         endTime: endTime.value || undefined,
         current: currentPage.value,
-        size: pageSize
+        size: pageSize.value
       },
       (data) => {
         list.value = data.records
@@ -67,6 +68,15 @@ const onSearch = () => {
   currentPage.value = 1
   fetchList()
 }
+
+// 监听关键字变化：清空时自动刷新
+watch(keyword, (newVal) => {
+  if (!newVal || newVal.trim() === '') {
+    // 清空关键字时自动刷新，重置到第一页
+    currentPage.value = 1
+    fetchList()
+  }
+})
 
 onMounted(() => {
   fetchList()
@@ -127,12 +137,17 @@ const handleDelete = (user: AccountVO) => {
 }
 
 const totalText = computed(() => t('pages.admin.total', {total: total.value}))
+
+const onPageSizeChange = () => {
+  currentPage.value = 1
+  fetchList()
+}
 </script>
 
 <template>
   <div class="account-manage">
-    <!-- 搜索栏 -->
-    <div class="search-bar flex flex-wrap items-end gap-4 mb-4">
+    <!-- 顶部固定：搜索栏、搜索、导入用户 -->
+    <div class="account-manage-header flex flex-wrap items-end gap-4">
       <el-input
           v-model="keyword"
           :placeholder="$t('pages.admin.searchKeyword')"
@@ -160,7 +175,7 @@ const totalText = computed(() => t('pages.admin.total', {total: total.value}))
       <el-button type="success" :icon="Plus" @click="openCreate">{{ $t('pages.admin.createUser') }}</el-button>
     </div>
 
-    <!-- 列表：一行一个用户，网格对齐，角色底色区分 -->
+    <!-- 中间可滚动：列表 -->
     <div v-loading="loading" class="account-list flex flex-col gap-3">
       <div
           v-for="user in list"
@@ -225,17 +240,25 @@ const totalText = computed(() => t('pages.admin.total', {total: total.value}))
       </div>
     </div>
 
-    <!-- 分页 -->
-    <div class="pagination-wrap flex items-center justify-between mt-4">
-      <span class="text-sm text-[var(--home-text-muted)]">{{ totalText }}</span>
-      <el-pagination
-          v-model:current-page="currentPage"
-          :page-size="pageSize"
-          :total="total"
-          layout="prev, pager, next"
-          background
-          @current-change="fetchList"
-      />
+    <!-- 底部固定：每页条数、共 x 条、分页（一行不换行） -->
+    <div class="account-manage-footer flex items-center justify-between gap-4 flex-nowrap">
+      <div class="footer-left flex items-center gap-3 flex-shrink-0">
+        <span class="text-sm text-[var(--home-text-muted)] whitespace-nowrap">{{ $t('pages.admin.pageSize') }}</span>
+        <el-select v-model="pageSize" class="page-size-select w-24 flex-shrink-0" @change="onPageSizeChange">
+          <el-option v-for="n in pageSizeOptions" :key="n" :label="`${n}`" :value="n"/>
+        </el-select>
+        <span class="text-sm text-[var(--home-text-muted)] whitespace-nowrap">{{ totalText }}</span>
+      </div>
+      <div class="flex-shrink-0">
+        <el-pagination
+            v-model:current-page="currentPage"
+            :page-size="pageSize"
+            :total="total"
+            layout="prev, pager, next"
+            background
+            @current-change="fetchList"
+        />
+      </div>
     </div>
 
     <!-- 创建用户弹窗 -->
@@ -267,10 +290,39 @@ const totalText = computed(() => t('pages.admin.total', {total: total.value}))
 </template>
 
 <style scoped>
-.search-bar :deep(.el-input__wrapper),
-.search-bar :deep(.el-date-editor) {
+/* 整体：顶部/底部固定，中间滚动 */
+.account-manage {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding-bottom: 3px;
+}
+
+.account-manage-header {
+  flex-shrink: 0;
+  margin-bottom: 16px;
+}
+
+.account-manage-header :deep(.el-input__wrapper),
+.account-manage-header :deep(.el-date-editor) {
   background: var(--home-card-bg);
   border-color: var(--home-border);
+}
+
+.account-list {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding-right: 4px;
+}
+
+.account-manage-footer {
+  flex-shrink: 0;
+  margin-top: 16px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+  border-top: 1px solid var(--home-border);
 }
 
 /* 一行一个用户：网格对齐 */
@@ -359,10 +411,15 @@ const totalText = computed(() => t('pages.admin.total', {total: total.value}))
   justify-self: end;
 }
 
-.pagination-wrap :deep(.el-pagination) {
+.account-manage-footer :deep(.el-pagination) {
   --el-pagination-bg-color: var(--home-card-bg);
   --el-pagination-button-color: var(--home-text-primary);
   --el-pagination-text-color: var(--home-text-secondary);
+}
+
+.account-manage-footer :deep(.page-size-select .el-input__wrapper) {
+  background: var(--home-card-bg);
+  border-color: var(--home-border);
 }
 
 .create-dialog :deep(.el-dialog__header),
