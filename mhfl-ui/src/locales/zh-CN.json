@@ -151,7 +151,19 @@
       "total": "共 {total} 条",
       "pageSize": "每页条数",
       "datasetDeveloping": "数据集管理开发中...",
-      "algorithmDeveloping": "算法管理开发中..."
+      "algorithmDeveloping": "算法管理开发中...",
+      "searchDatasetKeyword": "关键字（数据集名字）",
+      "createDataset": "创建数据集",
+      "createDatasetTitle": "创建数据集",
+      "editDatasetTitle": "编辑数据集",
+      "deleteDataset": "删除",
+      "datasetName": "数据集名字",
+      "datasetNamePlaceholder": "请输入数据集名字",
+      "datasetNameRequired": "请输入数据集名字",
+      "createDatasetSuccess": "创建成功",
+      "updateDatasetSuccess": "更新成功",
+      "deleteDatasetSuccess": "删除成功",
+      "confirmDeleteDataset": "确定删除数据集「{name}」吗？"
     }
   },
   "theme": {

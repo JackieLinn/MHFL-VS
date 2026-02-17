@@ -151,7 +151,19 @@
       "total": "Total {total}",
       "pageSize": "Per page",
       "datasetDeveloping": "Dataset management under development...",
-      "algorithmDeveloping": "Algorithm management under development..."
+      "algorithmDeveloping": "Algorithm management under development...",
+      "searchDatasetKeyword": "Keyword (dataset name)",
+      "createDataset": "Create Dataset",
+      "createDatasetTitle": "Create Dataset",
+      "editDatasetTitle": "Edit Dataset",
+      "deleteDataset": "Delete",
+      "datasetName": "Dataset Name",
+      "datasetNamePlaceholder": "Please enter dataset name",
+      "datasetNameRequired": "Please enter dataset name",
+      "createDatasetSuccess": "Dataset created successfully",
+      "updateDatasetSuccess": "Dataset updated successfully",
+      "deleteDatasetSuccess": "Dataset deleted successfully",
+      "confirmDeleteDataset": "Delete dataset \"{name}\"?"
     }
   },
   "theme": {
