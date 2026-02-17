@@ -14,6 +14,7 @@ import ynu.jackielinn.server.service.DatasetService;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> implements DatasetService {
@@ -99,8 +100,9 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
     }
 
     /**
-     * 管理员查询数据集列表（支持关键字模糊查询和时间范围查询，分页）
+     * 管理员查询数据集列表（支持关键字模糊查询和时间范围查询，分页或不分页）
      * 关键字为空则查询全部，不为空则在数据集名字中模糊查询
+     * 当 all=true 时，返回全部结果（不分页）；否则返回分页结果
      *
      * @param ro 查询条件对象
      * @return 分页结果（DatasetVO，排除敏感信息）
@@ -108,9 +110,7 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
     @Override
     public IPage<DatasetVO> listDatasets(ListDatasetRO ro) {
         // 处理默认值（@ModelAttribute 绑定可能不会应用 @Builder.Default）
-        long current = ro.getCurrent() != null ? ro.getCurrent() : 1L;
-        long size = ro.getSize() != null ? ro.getSize() : 10L;
-        Page<Dataset> page = new Page<>(current, size);
+        boolean all = ro.getAll() != null && ro.getAll();
         LambdaQueryWrapper<Dataset> wrapper = new LambdaQueryWrapper<>();
 
         // 关键字模糊查询（数据集名字）
@@ -141,8 +141,24 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
         // 按 id 从小到大排序
         wrapper.orderByAsc(Dataset::getId);
 
-        // 查询Dataset分页结果
-        IPage<Dataset> datasetPage = this.page(page, wrapper);
+        IPage<Dataset> datasetPage;
+        if (all) {
+            // 不分页：查询所有结果
+            List<Dataset> allDatasets = this.list(wrapper);
+            // 创建一个分页对象，但包含所有数据
+            Page<Dataset> allPage = new Page<>();
+            allPage.setRecords(allDatasets);
+            allPage.setTotal(allDatasets.size());
+            allPage.setCurrent(1);
+            allPage.setSize(allDatasets.size());
+            datasetPage = allPage;
+        } else {
+            // 分页查询
+            long current = ro.getCurrent() != null ? ro.getCurrent() : 1L;
+            long size = ro.getSize() != null ? ro.getSize() : 10L;
+            Page<Dataset> page = new Page<>(current, size);
+            datasetPage = this.page(page, wrapper);
+        }
 
         // 转换为DatasetVO分页结果
         Page<DatasetVO> voPage = new Page<>(datasetPage.getCurrent(), datasetPage.getSize(), datasetPage.getTotal());

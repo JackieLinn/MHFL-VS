@@ -26,11 +26,15 @@ public class ListDatasetRO {
     @Builder.Default
     private Long current = 1L;
 
-    @Schema(description = "每页数量（默认10）")
+    @Schema(description = "每页数量（默认10），如果 all=true 则忽略此参数")
     @Min(value = 1, message = "每页数量必须大于0")
     @Max(value = 100, message = "每页数量不能超过100")
     @Builder.Default
     private Long size = 10L;
+
+    @Schema(description = "是否返回全部结果（不分页），默认 false")
+    @Builder.Default
+    private Boolean all = false;
 
     @Schema(description = "起始创建时间（可选，格式：yyyy-MM-dd）")
     @JsonFormat(pattern = "yyyy-MM-dd", timezone = "GMT+8")
