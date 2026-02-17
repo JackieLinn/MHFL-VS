@@ -163,7 +163,19 @@
       "createDatasetSuccess": "Dataset created successfully",
       "updateDatasetSuccess": "Dataset updated successfully",
       "deleteDatasetSuccess": "Dataset deleted successfully",
-      "confirmDeleteDataset": "Delete dataset \"{name}\"?"
+      "confirmDeleteDataset": "Delete dataset \"{name}\"?",
+      "searchAlgorithmKeyword": "Keyword (algorithm name)",
+      "createAlgorithm": "Create Algorithm",
+      "createAlgorithmTitle": "Create Algorithm",
+      "editAlgorithmTitle": "Edit Algorithm",
+      "deleteAlgorithm": "Delete",
+      "algorithmName": "Algorithm Name",
+      "algorithmNamePlaceholder": "Please enter algorithm name",
+      "algorithmNameRequired": "Please enter algorithm name",
+      "createAlgorithmSuccess": "Algorithm created successfully",
+      "updateAlgorithmSuccess": "Algorithm updated successfully",
+      "deleteAlgorithmSuccess": "Algorithm deleted successfully",
+      "confirmDeleteAlgorithm": "Delete algorithm \"{name}\"?"
     }
   },
   "theme": {

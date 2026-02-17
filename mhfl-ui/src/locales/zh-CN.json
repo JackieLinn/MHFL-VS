@@ -163,7 +163,19 @@
       "createDatasetSuccess": "创建成功",
       "updateDatasetSuccess": "更新成功",
       "deleteDatasetSuccess": "删除成功",
-      "confirmDeleteDataset": "确定删除数据集「{name}」吗？"
+      "confirmDeleteDataset": "确定删除数据集「{name}」吗？",
+      "searchAlgorithmKeyword": "关键字（算法名字）",
+      "createAlgorithm": "创建算法",
+      "createAlgorithmTitle": "创建算法",
+      "editAlgorithmTitle": "编辑算法",
+      "deleteAlgorithm": "删除",
+      "algorithmName": "算法名字",
+      "algorithmNamePlaceholder": "请输入算法名字",
+      "algorithmNameRequired": "请输入算法名字",
+      "createAlgorithmSuccess": "创建成功",
+      "updateAlgorithmSuccess": "更新成功",
+      "deleteAlgorithmSuccess": "删除成功",
+      "confirmDeleteAlgorithm": "确定删除算法「{name}」吗？"
     }
   },
   "theme": {
