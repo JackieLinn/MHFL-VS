@@ -1,6 +1,7 @@
 package ynu.jackielinn.server.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -281,7 +282,9 @@ public class AccountServiceImpl extends ServiceImpl<AccountMapper, Account> impl
 
     /**
      * 管理员逻辑删除用户（手动设置 is_deleted = 1 和 delete_time）
-     * 使用 updateById 会触发 updateFill，自动更新 update_time 为删除时间
+     * 由于 deleted 字段使用了 @TableLogic 注解，updateById 不会更新该字段
+     * 因此使用 LambdaUpdateWrapper 显式更新 is_deleted 和 delete_time
+     * update_time 会通过 updateFill 自动更新
      *
      * @param id             要删除的用户 id
      * @param currentAdminId 当前管理员 id（从 JWT token 中获取）
@@ -297,13 +300,14 @@ public class AccountServiceImpl extends ServiceImpl<AccountMapper, Account> impl
         if (id.equals(currentAdminId)) {
             return "不能删除自己的账户";
         }
-        // 手动设置删除时间和删除标记，使用 updateById 会触发 updateFill，自动更新 update_time
-        Account deleteAccount = Account.builder()
-                .id(id)
-                .deleted(1)
-                .deleteTime(LocalDateTime.now())
-                .build();
-        if (this.updateById(deleteAccount)) {
+        // 使用 LambdaUpdateWrapper 显式更新 is_deleted 和 delete_time
+        // 由于 deleted 字段使用了 @TableLogic，updateById 不会更新该字段
+        LocalDateTime now = LocalDateTime.now();
+        LambdaUpdateWrapper<Account> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.eq(Account::getId, id)
+                .set(Account::getDeleted, 1)
+                .set(Account::getDeleteTime, now);
+        if (this.update(updateWrapper)) {
             return null;
         }
         return "删除失败，请联系管理员";
