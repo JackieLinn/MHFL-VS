@@ -6,9 +6,6 @@ import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import ynu.jackielinn.server.common.ApiResponse;
 import ynu.jackielinn.server.common.BaseController;
@@ -52,17 +49,10 @@ public class AccountController extends BaseController {
         if (currentAdminId == null) {
             return ApiResponse.failure(401, "未登录或登录已过期");
         }
-        // 验证当前用户是管理员（虽然路径已经通过 Spring Security 保护，但双重验证更安全）
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null) {
-            return ApiResponse.failure(403, "未认证");
-        }
-        // 检查是否有 ROLE_admin 权限）
-        boolean isAdmin = authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .anyMatch(auth -> auth.equals("ROLE_admin"));
-        if (!isAdmin) {
-            return ApiResponse.failure(403, "无权限执行此操作");
+        // 验证管理员权限
+        ApiResponse<Void> adminCheck = checkAdmin(request);
+        if (adminCheck != null) {
+            return adminCheck;
         }
         return this.messageHandle(() -> accountService.deleteAccount(id, currentAdminId));
     }
