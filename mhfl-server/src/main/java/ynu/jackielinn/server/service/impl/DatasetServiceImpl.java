@@ -86,11 +86,12 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
             return "此数据集名字已被其他数据集使用，请更换一个新的名字";
         }
 
-        // 使用 LambdaUpdateWrapper 更新数据集名字
-        LambdaUpdateWrapper<Dataset> updateWrapper = new LambdaUpdateWrapper<>();
-        updateWrapper.eq(Dataset::getId, id)
-                .set(Dataset::getDataName, dataName);
-        if (this.update(updateWrapper)) {
+        // 使用 updateById 更新数据集名字，会自动触发 updateFill，更新 update_time
+        Dataset updateDataset = Dataset.builder()
+                .id(id)
+                .dataName(dataName)
+                .build();
+        if (this.updateById(updateDataset)) {
             return null;
         } else {
             return "更新失败，请联系管理员";
