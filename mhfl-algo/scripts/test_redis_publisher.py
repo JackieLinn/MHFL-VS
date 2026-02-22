@@ -1,9 +1,3 @@
-"""
-Redis 发布工具类集成测试脚本
-运行前请确保 Redis 已启动，且 config/settings 中的 Redis 配置正确。
-使用方式：在 mhfl-algo 目录下执行
-  python scripts/test_redis_publisher.py
-"""
 import sys
 from pathlib import Path
 

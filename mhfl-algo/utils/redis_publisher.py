@@ -1,7 +1,3 @@
-"""
-Redis 发布工具类
-用于将训练过程中的 Round 和 Client 数据发布到 Redis Pub/Sub
-"""
 import json
 import logging
 from datetime import datetime
