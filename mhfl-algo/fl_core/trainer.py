@@ -3,6 +3,7 @@ from typing import Dict, List, Callable, Optional, Any
 from collections import defaultdict
 import random
 import logging
+import threading
 from pathlib import Path
 from datetime import datetime
 import csv
@@ -89,6 +90,8 @@ class BaseTrainer(ABC):
             step_callback: Optional[Callable[[int, int, Dict[str, Any]], None]] = None,  # (tid, step, metrics)
             client_callback: Optional[Callable[[int, int, int, Dict[str, Any]], None]] = None,
             # (tid, step, client_id, metrics)
+            # 停止信号：由外部设置后，训练循环会在下一轮或下一客户端前退出
+            stop_event: Optional[threading.Event] = None,
     ):
         """
         初始化训练器
@@ -113,9 +116,11 @@ class BaseTrainer(ABC):
             gpu: GPU 设备编号
             step_callback: 每轮训练完成后的回调函数 (tid, step, metrics)
             client_callback: 每个客户端训练完成后的回调函数 (tid, step, client_id, metrics)
+            stop_event: 若设置则训练循环会定期检查，is_set() 时退出
         """
         # Task ID
         self.tid = tid
+        self.stop_event = stop_event
 
         # 基础参数
         self.data_name = data_name
@@ -514,6 +519,9 @@ class BaseTrainer(ABC):
         )
 
         for step in pbar:
+            if self.stop_event is not None and self.stop_event.is_set():
+                self._log_info("Training stopped by user")
+                break
             # 随机选择客户端
             num_selected = int(self.fraction * self.num_nodes)
             selected_clients = random.sample(range(self.num_nodes), num_selected)
@@ -529,6 +537,9 @@ class BaseTrainer(ABC):
 
             # 训练每个选中的客户端
             for client_id in selected_clients:
+                if self.stop_event is not None and self.stop_event.is_set():
+                    self._log_info("Training stopped by user")
+                    break
                 # 获取客户端模型
                 net = self.net_set[client_id % len(self.net_set)]
                 net = net.to(self.device)
@@ -571,6 +582,8 @@ class BaseTrainer(ABC):
                 if self.client_callback:
                     self.client_callback(self.tid, step, client_id, metrics)
 
+            if self.stop_event is not None and self.stop_event.is_set():
+                break
             # 计算平均指标（所有选中客户端的平均值）
             mean_loss = round(float(np.mean(all_client_losses)), 4) if all_client_losses else 0.0
             mean_acc = round(float(np.mean(all_client_accs)), 4) if all_client_accs else 0.0
