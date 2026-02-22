@@ -13,4 +13,13 @@ public class RoundServiceImpl extends ServiceImpl<RoundMapper, Round> implements
     public void saveRound(Round round) {
         save(round);
     }
+
+    @Override
+    public Round getByTidAndRoundNum(Long tid, Integer roundNum) {
+        return lambdaQuery()
+                .eq(Round::getTid, tid)
+                .eq(Round::getRoundNum, roundNum)
+                .last("limit 1")
+                .one();
+    }
 }

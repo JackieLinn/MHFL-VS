@@ -21,7 +21,8 @@ public enum Status {
     IN_PROGRESS(1, "Task is currently running"),
     SUCCESS(2, "Task completed successfully"),
     RECOMMENDED(3, "Recommended as a built-in method"),
-    FAILED(4, "Task failed to complete");
+    FAILED(4, "Task failed to complete"),
+    CANCELLED(5, "Task cancelled by user");
 
     @EnumValue
     @JsonValue
