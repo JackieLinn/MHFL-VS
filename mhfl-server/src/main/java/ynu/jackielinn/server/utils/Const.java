@@ -26,4 +26,5 @@ public class Const {
     // 联邦学习实验
     public final static String TASK_EXPERIMENT_ROUND = "task:experiment:round:";
     public final static String TASK_EXPERIMENT_CLIENT = "task:experiment:client:";
+    public final static String TASK_EXPERIMENT_STATUS = "task:experiment:status:";
 }
