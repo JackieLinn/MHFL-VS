@@ -7,6 +7,7 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -33,11 +34,24 @@ public class WebSocketSessionManager {
             if (taskSessions.isEmpty()) {
                 sessions.remove(taskId);
             }
+            log.debug("WebSocket session removed for task {}, remaining: {}", taskId, taskSessions.size());
         }
     }
 
     /**
-     * 向订阅了该 taskId 的所有会话推送消息（先写库后推送，由调用方保证顺序）
+     * 获取某任务当前所有会话（只读快照，用于判断是否可取消 Redis 订阅等）。
+     */
+    public Set<WebSocketSession> getSessions(Long taskId) {
+        Set<WebSocketSession> taskSessions = sessions.get(taskId);
+        if (taskSessions == null || taskSessions.isEmpty()) {
+            return Collections.emptySet();
+        }
+        return Collections.unmodifiableSet(taskSessions);
+    }
+
+    /**
+     * 向订阅了该 taskId 的所有会话推送消息（先写库后推送，由调用方保证顺序）。
+     * 发送失败或已关闭的会话会被移除，避免泄漏。
      */
     public void sendToTask(Long taskId, Object payload) {
         Set<WebSocketSession> taskSessions = sessions.get(taskId);
@@ -52,14 +66,16 @@ public class WebSocketSessionManager {
             return;
         }
         TextMessage message = new TextMessage(text);
-        for (WebSocketSession session : taskSessions) {
+        for (WebSocketSession session : Set.copyOf(taskSessions)) {
             if (!session.isOpen()) {
+                removeSession(taskId, session);
                 continue;
             }
             try {
                 session.sendMessage(message);
             } catch (IOException e) {
-                log.warn("Send to task {} session failed: {}", taskId, e.getMessage());
+                log.warn("Send to task {} session {} failed: {}, removing session", taskId, session.getId(), e.getMessage());
+                removeSession(taskId, session);
             }
         }
     }
