@@ -34,10 +34,10 @@ public class Task extends BaseEntity {
     private Double fraction;
 
     @TableField("classes_per_node")
-    private Integer classes_per_node;
+    private Integer classesPerNode;
 
     @TableField("low_prob")
-    private Double low_prob;
+    private Double lowProb;
 
     @TableField("num_steps")
     private Integer numSteps;
