@@ -1,6 +1,7 @@
 package ynu.jackielinn.server.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -62,6 +63,23 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
                 .build();
         save(task);
         return task.getId();
+    }
+
+    @Override
+    public String deleteTask(Long id, Long currentUserId, boolean isAdmin) {
+        Task task = getById(id);
+        if (task == null) {
+            return "任务不存在";
+        }
+        if (!isAdmin && !task.getUid().equals(currentUserId)) {
+            return "无权限删除该任务";
+        }
+        LocalDateTime now = LocalDateTime.now();
+        LambdaUpdateWrapper<Task> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.eq(Task::getId, id)
+                .set(Task::getDeleted, 1)
+                .set(Task::getDeleteTime, now);
+        return update(updateWrapper) ? null : "删除失败，请联系管理员";
     }
 
     @Override

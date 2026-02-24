@@ -29,4 +29,15 @@ public interface TaskService extends IService<Task> {
      * @return 分页结果（TaskVO，含 dataName/algorithmName/username）
      */
     IPage<TaskVO> listTasks(ListTaskRO ro, Long currentUserId, boolean isAdmin);
+
+    /**
+     * 逻辑删除任务（本人只能删本人的，管理员可删任意）
+     * 显式设置 is_deleted、delete_time，与 Account 删除一致
+     *
+     * @param id            任务 id
+     * @param currentUserId 当前用户 id
+     * @param isAdmin       是否为管理员
+     * @return null 表示成功，否则为错误信息
+     */
+    String deleteTask(Long id, Long currentUserId, boolean isAdmin);
 }

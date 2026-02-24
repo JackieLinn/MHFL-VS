@@ -63,4 +63,21 @@ public class TaskController extends BaseController {
         IPage<TaskVO> result = taskService.listTasks(ro, uid, isAdmin);
         return ApiResponse.success(result);
     }
+
+    /**
+     * 逻辑删除任务（本人只能删本人的，管理员可删任意）
+     *
+     * @param id      任务 id
+     * @param request 用于获取当前用户 id 与是否管理员
+     * @return 操作结果
+     */
+    @Operation(summary = "删除任务接口", description = "逻辑删除任务，将 is_deleted 置为 1；本人或管理员可删")
+    @DeleteMapping("/{id}")
+    public ApiResponse<Void> deleteTask(@PathVariable Long id, HttpServletRequest request) {
+        Long uid = (Long) request.getAttribute("id");
+        if (uid == null) {
+            return ApiResponse.failure(401, "未登录或登录已过期");
+        }
+        return messageHandle(() -> taskService.deleteTask(id, uid, isAdmin()));
+    }
 }
