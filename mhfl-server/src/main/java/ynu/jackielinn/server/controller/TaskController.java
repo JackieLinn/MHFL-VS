@@ -1,5 +1,6 @@
 package ynu.jackielinn.server.controller;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
@@ -9,6 +10,8 @@ import org.springframework.web.bind.annotation.*;
 import ynu.jackielinn.server.common.ApiResponse;
 import ynu.jackielinn.server.common.BaseController;
 import ynu.jackielinn.server.dto.request.CreateTaskRO;
+import ynu.jackielinn.server.dto.request.ListTaskRO;
+import ynu.jackielinn.server.dto.response.TaskVO;
 import ynu.jackielinn.server.service.TaskService;
 
 @RestController
@@ -39,5 +42,25 @@ public class TaskController extends BaseController {
         } catch (IllegalArgumentException e) {
             return ApiResponse.failure(400, e.getMessage());
         }
+    }
+
+    /**
+     * 任务列表（分页）。非管理员仅返回当前用户任务，管理员返回全部。
+     * 关键字叠加搜索：数据集名、算法名；管理员还可按用户名搜索。
+     *
+     * @param ro      查询条件（keyword、current、size、startTime、endTime）
+     * @param request 用于获取当前用户 id
+     * @return 分页结果 TaskVO（含 dataName、algorithmName、username）
+     */
+    @Operation(summary = "任务列表接口", description = "分页查询任务列表，支持关键字与时间范围；管理员看全部，普通用户仅看自己的")
+    @GetMapping("/list")
+    public ApiResponse<IPage<TaskVO>> listTasks(@Valid @ModelAttribute ListTaskRO ro, HttpServletRequest request) {
+        Long uid = (Long) request.getAttribute("id");
+        if (uid == null) {
+            return ApiResponse.failure(401, "未登录或登录已过期");
+        }
+        boolean isAdmin = isAdmin();
+        IPage<TaskVO> result = taskService.listTasks(ro, uid, isAdmin);
+        return ApiResponse.success(result);
     }
 }

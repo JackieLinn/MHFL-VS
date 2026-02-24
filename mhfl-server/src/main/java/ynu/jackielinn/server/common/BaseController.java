@@ -61,4 +61,19 @@ public abstract class BaseController {
         }
         return null;
     }
+
+    /**
+     * 判断当前用户是否为管理员
+     *
+     * @return 是管理员返回 true，否则返回 false
+     */
+    protected boolean isAdmin() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            return false;
+        }
+        return authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch("ROLE_admin"::equals);
+    }
 }
