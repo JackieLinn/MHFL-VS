@@ -41,3 +41,76 @@ create table dataset
 )
     comment '数据集表';
 
+create table task
+(
+    id               bigint auto_increment comment '任务 ID'
+        primary key,
+    uid              bigint             not null comment '用户 ID（外键）',
+    did              bigint             not null comment '数据集 ID（外键）',
+    aid              bigint             not null comment '算法 ID（外键）',
+    num_nodes        int                not null comment '客户端数量',
+    fraction         double             not null comment '抽取比例',
+    classes_per_node int                not null comment '客户端分配的类别数量',
+    low_prob         double             not null comment 'non-IID 程度',
+    num_steps        int                not null comment '训练总轮数',
+    epochs           int                not null comment '客户端训练轮数',
+    loss             double  default -1 not null comment '损失值',
+    accuracy         double  default -1 not null comment '正确率',
+    `precision`      double  default -1 not null comment '精确率',
+    recall           double  default -1 not null comment '召回率',
+    f1_score         double  default -1 not null comment 'F1 分数',
+    status           tinyint            not null comment '任务状态',
+    create_time      datetime           not null comment '创建时间',
+    update_time      datetime           not null comment '更新时间',
+    delete_time      datetime           null comment '删除时间',
+    is_deleted       tinyint default 0  not null comment '删除标记',
+    constraint task_account_id_fk
+        foreign key (uid) references account (id),
+    constraint task_algorithm_id_fk
+        foreign key (aid) references algorithm (id),
+    constraint task_dataset_id_fk
+        foreign key (did) references dataset (id)
+)
+    comment '任务表';
+
+create table round
+(
+    id          bigint auto_increment comment '轮次 ID'
+        primary key,
+    tid         bigint             not null comment '任务 ID（外键）',
+    round_num   int                not null comment '第 tid 个任务的第几轮',
+    loss        double  default -1 not null comment '损失值',
+    accuracy    double  default -1 not null comment '正确率',
+    `precision` double  default -1 not null comment '精确率',
+    recall      double  default -1 not null comment '召回率',
+    f1_score    double  default -1 not null comment ' F1 分数',
+    create_time datetime           not null comment '创建时间',
+    update_time datetime           not null comment '更新时间',
+    delete_time datetime           null comment '删除时间',
+    is_deleted  tinyint default 0  not null comment '删除标记',
+    constraint round_task_id_fk
+        foreign key (tid) references task (id)
+)
+    comment '轮次表';
+
+create table client
+(
+    id           bigint auto_increment comment '客户端 ID'
+        primary key,
+    rid          bigint             not null comment '轮次 ID（外键）',
+    client_index int                not null comment '客户端索引',
+    loss         double  default -1 not null comment '损失值',
+    accuracy     double  default -1 not null comment '正确率',
+    `precision`  double  default -1 not null comment '精确率',
+    recall       double  default -1 not null comment '召回率',
+    f1_score     double  default -1 not null comment 'F1 分数',
+    timestamp    datetime           not null comment '时间戳',
+    create_time  datetime           not null comment '创建时间',
+    update_time  datetime           not null comment '更新时间',
+    delete_time  datetime           null comment '删除时间',
+    is_deleted   tinyint default 0  not null comment '删除标记',
+    constraint client_round_id_fk
+        foreign key (rid) references round (id)
+)
+    comment '客户端表';
+
