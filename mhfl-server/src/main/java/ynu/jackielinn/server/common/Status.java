@@ -7,17 +7,18 @@ import lombok.Getter;
 
 /**
  * 任务状态枚举
- * 0: 未知
+ * 0: 未开始
  * 1: 进行中
  * 2: 成功
  * 3: 推荐
  * 4: 失败
+ * 5: 已取消
  */
 @Getter
 @AllArgsConstructor
 public enum Status {
 
-    UNKNOWN(0, "Unknown"),
+    NOT_STARTED(0, "Task is not started"),
     IN_PROGRESS(1, "Task is currently running"),
     SUCCESS(2, "Task completed successfully"),
     RECOMMENDED(3, "Recommended as a built-in method"),
@@ -34,7 +35,7 @@ public enum Status {
      * 根据 code 获取对应的 Status 枚举
      *
      * @param code 状态代码
-     * @return 对应的 Status 枚举，如果不存在则返回 UNKNOWN
+     * @return 对应的 Status 枚举，如果不存在则返回 NOT_STARTED
      */
     public static Status fromCode(int code) {
         for (Status status : Status.values()) {
@@ -42,6 +43,6 @@ public enum Status {
                 return status;
             }
         }
-        return UNKNOWN;
+        return NOT_STARTED;
     }
 }
