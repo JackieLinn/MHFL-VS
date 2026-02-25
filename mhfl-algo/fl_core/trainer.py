@@ -1,9 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import Dict, List, Callable, Optional, Any
+from typing import Dict, List, Callable, Optional, Any, Protocol, runtime_checkable
 from collections import defaultdict
 import random
 import logging
-import threading
 from pathlib import Path
 from datetime import datetime
 import csv
@@ -17,6 +16,13 @@ from tqdm import tqdm
 
 from fl_core.utils.node import BaseNodes
 from fl_core.utils.tools import get_device, set_seed
+
+
+@runtime_checkable
+class StopEventLike(Protocol):
+    """threading.Event 或 multiprocessing.Manager().Event() 代理等，仅需 is_set()。"""
+
+    def is_set(self) -> bool: ...
 
 
 def get_data_path() -> Path:
@@ -90,8 +96,8 @@ class BaseTrainer(ABC):
             step_callback: Optional[Callable[[int, int, Dict[str, Any]], None]] = None,  # (tid, step, metrics)
             client_callback: Optional[Callable[[int, int, int, Dict[str, Any]], None]] = None,
             # (tid, step, client_id, metrics)
-            # 停止信号：由外部设置后，训练循环会在下一轮或下一客户端前退出
-            stop_event: Optional[threading.Event] = None,
+            # 停止信号：由外部设置后，训练循环会在下一轮或下一客户端前退出（支持 threading.Event 或 Manager().Event()）
+            stop_event: Optional[StopEventLike] = None,
     ):
         """
         初始化训练器
