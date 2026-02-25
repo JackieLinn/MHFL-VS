@@ -29,7 +29,7 @@ public class Round extends BaseEntity {
     @TableField("accuracy")
     private Double accuracy;
 
-    @TableField("precision")
+    @TableField("`precision`")
     private Double precision;
 
     @TableField("recall")
