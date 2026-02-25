@@ -58,4 +58,13 @@ public interface TaskService extends IService<Task> {
      * @return null 表示成功，否则为错误信息
      */
     String startTask(Long taskId, Long currentUserId);
+
+    /**
+     * 停止训练：仅任务创建者可操作；调用 Python 停止后更新任务状态为 CANCELLED，并推送状态、断开该任务的 WebSocket 连接。
+     *
+     * @param taskId        任务 id
+     * @param currentUserId 当前用户 id（须为任务创建者）
+     * @return null 表示成功，否则为错误信息
+     */
+    String stopTask(Long taskId, Long currentUserId);
 }

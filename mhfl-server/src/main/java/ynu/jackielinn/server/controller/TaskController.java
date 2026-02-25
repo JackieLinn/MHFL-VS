@@ -118,4 +118,25 @@ public class TaskController extends BaseController {
         }
         return ApiResponse.success(null);
     }
+
+    /**
+     * 停止训练（仅任务创建者可操作，调用 Python 停止后更新状态为 CANCELLED 并断开该任务的 WebSocket 连接）
+     *
+     * @param id      任务 id
+     * @param request 用于获取当前用户 id
+     * @return 操作结果
+     */
+    @Operation(summary = "停止训练接口", description = "根据任务 id 调用 Python 停止训练；仅任务创建者可操作；成功后更新状态并断开监控连接")
+    @PostMapping("/{id}/stop")
+    public ApiResponse<Void> stopTask(@PathVariable Long id, HttpServletRequest request) {
+        Long uid = (Long) request.getAttribute("id");
+        if (uid == null) {
+            return ApiResponse.failure(401, "未登录或登录已过期");
+        }
+        String err = taskService.stopTask(id, uid);
+        if (err != null) {
+            return ApiResponse.failure(400, err);
+        }
+        return ApiResponse.success(null);
+    }
 }

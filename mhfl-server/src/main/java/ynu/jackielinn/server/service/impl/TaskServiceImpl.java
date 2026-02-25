@@ -23,11 +23,14 @@ import ynu.jackielinn.server.entity.Algorithm;
 import ynu.jackielinn.server.entity.Dataset;
 import ynu.jackielinn.server.entity.Task;
 import ynu.jackielinn.server.mapper.TaskMapper;
+import ynu.jackielinn.server.dto.message.StatusMessage;
 import ynu.jackielinn.server.service.AccountService;
 import ynu.jackielinn.server.service.AlgorithmService;
 import ynu.jackielinn.server.service.DatasetService;
 import ynu.jackielinn.server.service.TaskService;
+import ynu.jackielinn.server.websocket.WebSocketSessionManager;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -53,6 +56,9 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
 
     @Resource
     private RestTemplate restTemplate;
+
+    @Resource
+    private WebSocketSessionManager sessionManager;
 
     @Override
     public Long createTask(CreateTaskRO ro, Long uid) {
@@ -257,5 +263,43 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
         } catch (Exception e) {
             return "调用训练服务失败: " + e.getMessage();
         }
+    }
+
+    @Override
+    public String stopTask(Long taskId, Long currentUserId) {
+        Task task = getById(taskId);
+        if (task == null) {
+            return "任务不存在";
+        }
+        if (!task.getUid().equals(currentUserId)) {
+            return "无权限停止该任务（仅任务创建者可停止）";
+        }
+        if (task.getStatus() != Status.IN_PROGRESS) {
+            return "任务未在训练中，无需停止";
+        }
+        String url = pythonFastApiUrl + "/api/train/stop/" + taskId;
+        try {
+            ResponseEntity<String> response = restTemplate.postForEntity(url, null, String.class);
+            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+                return "停止训练失败，请联系管理员";
+            }
+            com.alibaba.fastjson2.JSONObject json = com.alibaba.fastjson2.JSON.parseObject(response.getBody());
+            if (json.getIntValue("code") != 200) {
+                return json.getString("message") != null ? json.getString("message") : "任务未在运行或停止失败";
+            }
+        } catch (Exception e) {
+            return "调用训练服务失败: " + e.getMessage();
+        }
+        task.setStatus(Status.CANCELLED);
+        updateById(task);
+        StatusMessage statusMessage = StatusMessage.builder()
+                .taskId(taskId)
+                .status("CANCELLED")
+                .message("用户停止训练")
+                .timestamp(Instant.now().toString())
+                .build();
+        sessionManager.sendToTask(taskId, statusMessage);
+        sessionManager.closeAllSessionsForTask(taskId);
+        return null;
     }
 }

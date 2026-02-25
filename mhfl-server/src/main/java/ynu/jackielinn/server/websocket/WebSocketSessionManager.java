@@ -3,6 +3,7 @@ package ynu.jackielinn.server.websocket;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
@@ -76,6 +77,26 @@ public class WebSocketSessionManager {
             } catch (IOException e) {
                 log.warn("Send to task {} session {} failed: {}, removing session", taskId, session.getId(), e.getMessage());
                 removeSession(taskId, session);
+            }
+        }
+    }
+
+    /**
+     * 关闭某任务下所有 WebSocket 会话（用于停止训练后主动断开监控连接）。
+     */
+    public void closeAllSessionsForTask(Long taskId) {
+        Set<WebSocketSession> taskSessions = sessions.get(taskId);
+        if (taskSessions == null || taskSessions.isEmpty()) {
+            return;
+        }
+        for (WebSocketSession session : Set.copyOf(taskSessions)) {
+            removeSession(taskId, session);
+            if (session.isOpen()) {
+                try {
+                    session.close(CloseStatus.NORMAL.withReason("训练已停止"));
+                } catch (IOException e) {
+                    log.warn("Close session {} for task {} failed: {}", session.getId(), taskId, e.getMessage());
+                }
             }
         }
     }
