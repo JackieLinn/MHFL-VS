@@ -65,12 +65,15 @@ public class TrainingMessageHandlerImpl implements TrainingMessageHandler {
             synchronized (lockFor(message.getTaskId(), message.getRoundNum())) {
                 Round round = roundService.getByTidAndRoundNum(message.getTaskId(), message.getRoundNum());
                 if (round != null) {
-                    round.setLoss(message.getLoss());
-                    round.setAccuracy(message.getAccuracy());
-                    round.setPrecision(message.getPrecision());
-                    round.setRecall(message.getRecall());
-                    round.setF1Score(message.getF1Score());
-                    roundService.updateById(round);
+                    Round partialRound = Round.builder()
+                            .id(round.getId())
+                            .loss(message.getLoss())
+                            .accuracy(message.getAccuracy())
+                            .precision(message.getPrecision())
+                            .recall(message.getRecall())
+                            .f1Score(message.getF1Score())
+                            .build();
+                    roundService.updateById(partialRound);
                 } else {
                     Round newRound = Round.builder()
                             .tid(message.getTaskId())
@@ -90,21 +93,24 @@ public class TrainingMessageHandlerImpl implements TrainingMessageHandler {
             boolean isLastRound = numSteps != null && message.getRoundNum() != null
                     && message.getRoundNum().equals(numSteps - 1);
             if (task != null && isLastRound) {
-                task.setStatus(Status.SUCCESS);
-                taskService.updateById(task);
+                Task partialTask = Task.builder().id(task.getId()).status(Status.SUCCESS).build();
+                taskService.updateById(partialTask);
                 log.info("Task {} completed successfully (last round)", message.getTaskId());
             } else if (task != null && task.getStatus() != Status.IN_PROGRESS) {
-                task.setStatus(Status.IN_PROGRESS);
-                taskService.updateById(task);
+                Task partialTask = Task.builder().id(task.getId()).status(Status.IN_PROGRESS).build();
+                taskService.updateById(partialTask);
             }
             if (task != null && message.getAccuracy() != null) {
                 if (task.getAccuracy() == null || message.getAccuracy() > task.getAccuracy()) {
-                    task.setAccuracy(message.getAccuracy());
-                    task.setLoss(message.getLoss());
-                    task.setPrecision(message.getPrecision());
-                    task.setRecall(message.getRecall());
-                    task.setF1Score(message.getF1Score());
-                    taskService.updateById(task);
+                    Task partialTask = Task.builder()
+                            .id(task.getId())
+                            .accuracy(message.getAccuracy())
+                            .loss(message.getLoss())
+                            .precision(message.getPrecision())
+                            .recall(message.getRecall())
+                            .f1Score(message.getF1Score())
+                            .build();
+                    taskService.updateById(partialTask);
                 }
             }
 
@@ -163,8 +169,8 @@ public class TrainingMessageHandlerImpl implements TrainingMessageHandler {
 
             Task task = taskService.getById(message.getTaskId());
             if (task != null) {
-                task.setStatus(status);
-                taskService.updateById(task);
+                Task partialTask = Task.builder().id(task.getId()).status(status).build();
+                taskService.updateById(partialTask);
                 log.info("Task {} status updated to {}", message.getTaskId(), status);
                 if (status == Status.SUCCESS || status == Status.FAILED || status == Status.CANCELLED) {
                     lastRoundTime.remove(message.getTaskId());
