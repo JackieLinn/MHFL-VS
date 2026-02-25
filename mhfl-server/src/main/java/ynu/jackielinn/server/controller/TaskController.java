@@ -80,4 +80,21 @@ public class TaskController extends BaseController {
         }
         return messageHandle(() -> taskService.deleteTask(id, uid, isAdmin()));
     }
+
+    /**
+     * 设为推荐/取消推荐（仅管理员）。SUCCESS 与 RECOMMENDED 互相切换。
+     *
+     * @param id      任务 id
+     * @param request 用于校验管理员
+     * @return 操作结果
+     */
+    @Operation(summary = "设置推荐接口", description = "仅管理员；仅 SUCCESS/RECOMMENDED 可操作，两者互相切换")
+    @PutMapping("/{id}/recommend")
+    public ApiResponse<Void> setRecommend(@PathVariable Long id, HttpServletRequest request) {
+        ApiResponse<Void> adminCheck = checkAdmin(request);
+        if (adminCheck != null) {
+            return adminCheck;
+        }
+        return messageHandle(() -> taskService.setRecommend(id));
+    }
 }

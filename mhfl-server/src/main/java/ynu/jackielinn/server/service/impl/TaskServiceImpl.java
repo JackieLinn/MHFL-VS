@@ -83,6 +83,21 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
     }
 
     @Override
+    public String setRecommend(Long id) {
+        Task task = getById(id);
+        if (task == null) {
+            return "任务不存在";
+        }
+        Status status = task.getStatus();
+        if (status != Status.SUCCESS && status != Status.RECOMMENDED) {
+            return "只有训练成功(SUCCESS)或已推荐(RECOMMENDED)的任务才能设置推荐";
+        }
+        Status newStatus = status == Status.SUCCESS ? Status.RECOMMENDED : Status.SUCCESS;
+        task.setStatus(newStatus);
+        return updateById(task) ? null : "设置失败，请联系管理员";
+    }
+
+    @Override
     public IPage<TaskVO> listTasks(ListTaskRO ro, Long currentUserId, boolean isAdmin) {
         long current = ro.getCurrent() != null ? ro.getCurrent() : 1L;
         long size = ro.getSize() != null ? ro.getSize() : 10L;

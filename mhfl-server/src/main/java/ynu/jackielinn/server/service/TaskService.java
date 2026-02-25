@@ -40,4 +40,13 @@ public interface TaskService extends IService<Task> {
      * @return null 表示成功，否则为错误信息
      */
     String deleteTask(Long id, Long currentUserId, boolean isAdmin);
+
+    /**
+     * 设置/取消推荐（仅管理员）。仅当任务状态为 SUCCESS 或 RECOMMENDED 时可操作：
+     * SUCCESS -> RECOMMENDED，RECOMMENDED -> SUCCESS。
+     *
+     * @param id 任务 id
+     * @return null 表示成功，否则为错误信息
+     */
+    String setRecommend(Long id);
 }
