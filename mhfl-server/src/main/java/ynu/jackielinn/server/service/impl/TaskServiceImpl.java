@@ -227,8 +227,11 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
         if (!task.getUid().equals(currentUserId)) {
             return "无权限启动该任务（仅任务创建者可启动）";
         }
-        if (task.getStatus() == Status.IN_PROGRESS) {
-            return "任务已在训练中";
+        if (task.getStatus() != Status.NOT_STARTED) {
+            if (task.getStatus() == Status.IN_PROGRESS) {
+                return "任务已在训练中";
+            }
+            return "该任务已训练过，不能再次训练";
         }
         Dataset dataset = datasetService.getById(task.getDid());
         if (dataset == null) {
