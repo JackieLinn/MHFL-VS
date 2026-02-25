@@ -49,4 +49,13 @@ public interface TaskService extends IService<Task> {
      * @return null 表示成功，否则为错误信息
      */
     String setRecommend(Long id);
+
+    /**
+     * 启动训练：仅任务创建者（uid 与当前用户一致）可启动；校验状态后组装请求并调用 Python /api/train/start。
+     *
+     * @param taskId        任务 id
+     * @param currentUserId 当前用户 id（须为任务创建者）
+     * @return null 表示成功，否则为错误信息
+     */
+    String startTask(Long taskId, Long currentUserId);
 }

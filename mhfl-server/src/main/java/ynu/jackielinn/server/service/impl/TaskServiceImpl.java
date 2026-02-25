@@ -6,7 +6,14 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import jakarta.annotation.Resource;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import ynu.jackielinn.server.dto.request.TrainStartRO;
 import ynu.jackielinn.server.common.Status;
 import ynu.jackielinn.server.dto.request.CreateTaskRO;
 import ynu.jackielinn.server.dto.request.ListTaskRO;
@@ -40,6 +47,12 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
 
     @Resource
     private AccountService accountService;
+
+    @Value("${python.fastapi.url:http://localhost:8000}")
+    private String pythonFastApiUrl;
+
+    @Resource
+    private RestTemplate restTemplate;
 
     @Override
     public Long createTask(CreateTaskRO ro, Long uid) {
@@ -192,5 +205,57 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
                     vo.setUsername(usernameMap.get(task.getUid()));
                 }))
                 .toList();
+    }
+
+    @Override
+    public String startTask(Long taskId, Long currentUserId) {
+        Task task = getById(taskId);
+        if (task == null) {
+            return "任务不存在";
+        }
+        if (!task.getUid().equals(currentUserId)) {
+            return "无权限启动该任务（仅任务创建者可启动）";
+        }
+        if (task.getStatus() == Status.IN_PROGRESS) {
+            return "任务已在训练中";
+        }
+        Dataset dataset = datasetService.getById(task.getDid());
+        if (dataset == null) {
+            return "数据集不存在";
+        }
+        Algorithm algorithm = algorithmService.getById(task.getAid());
+        if (algorithm == null) {
+            return "算法不存在";
+        }
+        TrainStartRO ro = TrainStartRO.builder()
+                .taskId(task.getId().intValue())
+                .dataName(dataset.getDataName())
+                .algorithmName(algorithm.getAlgorithmName())
+                .numNodes(task.getNumNodes())
+                .fraction(task.getFraction())
+                .classesPerNode(task.getClassesPerNode())
+                .lowProb(task.getLowProb())
+                .numSteps(task.getNumSteps())
+                .epochs(task.getEpochs())
+                .build();
+        String url = pythonFastApiUrl + "/api/train/start";
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<TrainStartRO> entity = new HttpEntity<>(ro, headers);
+        try {
+            ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
+            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+                return "启动训练失败，请联系管理员";
+            }
+            com.alibaba.fastjson2.JSONObject json = com.alibaba.fastjson2.JSON.parseObject(response.getBody());
+            if (json.getIntValue("code") != 200) {
+                return json.getString("message") != null ? json.getString("message") : "启动训练失败";
+            }
+            task.setStatus(Status.IN_PROGRESS);
+            updateById(task);
+            return null;
+        } catch (Exception e) {
+            return "调用训练服务失败: " + e.getMessage();
+        }
     }
 }

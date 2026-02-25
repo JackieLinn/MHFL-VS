@@ -97,4 +97,25 @@ public class TaskController extends BaseController {
         }
         return messageHandle(() -> taskService.setRecommend(id));
     }
+
+    /**
+     * 启动训练（仅任务创建者可操作，根据 taskId 调用 Python，成功后任务状态为 IN_PROGRESS）
+     *
+     * @param id      任务 id
+     * @param request 用于获取当前用户 id
+     * @return 操作结果
+     */
+    @Operation(summary = "启动训练接口", description = "根据任务 id 调用 Python 启动训练；仅任务创建者可操作")
+    @PostMapping("/{id}/start")
+    public ApiResponse<Void> startTask(@PathVariable Long id, HttpServletRequest request) {
+        Long uid = (Long) request.getAttribute("id");
+        if (uid == null) {
+            return ApiResponse.failure(401, "未登录或登录已过期");
+        }
+        String err = taskService.startTask(id, uid);
+        if (err != null) {
+            return ApiResponse.failure(400, err);
+        }
+        return ApiResponse.success(null);
+    }
 }

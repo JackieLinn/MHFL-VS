@@ -17,6 +17,8 @@ import ynu.jackielinn.server.service.TrainingMessageHandler;
 import ynu.jackielinn.server.websocket.WebSocketSessionManager;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -76,6 +78,16 @@ public class TrainingMessageHandlerImpl implements TrainingMessageHandler {
                 task.setStatus(Status.IN_PROGRESS);
                 taskService.updateById(task);
             }
+            if (task != null && message.getAccuracy() != null) {
+                if (task.getAccuracy() == null || message.getAccuracy() > task.getAccuracy()) {
+                    task.setAccuracy(message.getAccuracy());
+                    task.setLoss(message.getLoss());
+                    task.setPrecision(message.getPrecision());
+                    task.setRecall(message.getRecall());
+                    task.setF1Score(message.getF1Score());
+                    taskService.updateById(task);
+                }
+            }
 
             sessionManager.sendToTask(message.getTaskId(), message);
         } catch (Exception e) {
@@ -108,7 +120,7 @@ public class TrainingMessageHandlerImpl implements TrainingMessageHandler {
                     .precision(message.getPrecision())
                     .recall(message.getRecall())
                     .f1Score(message.getF1Score())
-                    .timestamp(LocalDateTime.now())
+                    .timestamp(parseTimestamp(message.getTimestamp()))
                     .build();
             clientService.saveClient(client);
 
@@ -154,5 +166,24 @@ public class TrainingMessageHandlerImpl implements TrainingMessageHandler {
             case "CANCELLED" -> Status.CANCELLED;
             default -> null;
         };
+    }
+
+    private static final DateTimeFormatter ISO_LOCAL_DATE_TIME = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+
+    /**
+     * 将 Python 发来的 ISO 时间戳转为 LocalDateTime，与 Java 写入 MySQL 兼容。
+     */
+    private static LocalDateTime parseTimestamp(String timestamp) {
+        if (timestamp == null || timestamp.isBlank()) {
+            return LocalDateTime.now();
+        }
+        try {
+            if (timestamp.contains("Z") || timestamp.indexOf('+') > 10 || (timestamp.lastIndexOf('-') > 10 && timestamp.contains("T"))) {
+                return ZonedDateTime.parse(timestamp, DateTimeFormatter.ISO_DATE_TIME).toLocalDateTime();
+            }
+            return LocalDateTime.parse(timestamp, ISO_LOCAL_DATE_TIME);
+        } catch (Exception e) {
+            return LocalDateTime.now();
+        }
     }
 }
