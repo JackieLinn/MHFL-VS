@@ -2,6 +2,7 @@ package ynu.jackielinn.server.service.impl;
 
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 import ynu.jackielinn.server.common.Status;
 import ynu.jackielinn.server.dto.message.ClientMessage;
@@ -11,6 +12,7 @@ import ynu.jackielinn.server.entity.Client;
 import ynu.jackielinn.server.entity.Round;
 import ynu.jackielinn.server.entity.Task;
 import ynu.jackielinn.server.service.ClientService;
+import ynu.jackielinn.server.service.RedisSubscriptionService;
 import ynu.jackielinn.server.service.RoundService;
 import ynu.jackielinn.server.service.TaskService;
 import ynu.jackielinn.server.service.TrainingMessageHandler;
@@ -41,36 +43,53 @@ public class TrainingMessageHandlerImpl implements TrainingMessageHandler {
     @Resource
     WebSocketSessionManager sessionManager;
 
+    @Resource
+    private ApplicationContext applicationContext;
+
     private final ConcurrentHashMap<Long, Long> lastRoundTime = new ConcurrentHashMap<>();
+
+    /**
+     * 按 (taskId, roundNum) 加锁，避免 Client 与 Round 消息并发时重复创建 Round
+     */
+    private final ConcurrentHashMap<String, Object> roundLocks = new ConcurrentHashMap<>();
+
+    private Object lockFor(Long taskId, Integer roundNum) {
+        return roundLocks.computeIfAbsent(taskId + ":" + roundNum, k -> new Object());
+    }
 
     @Override
     public void handleRoundMessage(RoundMessage message) {
         try {
             lastRoundTime.put(message.getTaskId(), System.currentTimeMillis());
 
-            Round round = roundService.getByTidAndRoundNum(message.getTaskId(), message.getRoundNum());
-            if (round != null) {
-                round.setLoss(message.getLoss());
-                round.setAccuracy(message.getAccuracy());
-                round.setPrecision(message.getPrecision());
-                round.setRecall(message.getRecall());
-                round.setF1Score(message.getF1Score());
-                roundService.updateById(round);
-            } else {
-                Round newRound = Round.builder()
-                        .tid(message.getTaskId())
-                        .roundNum(message.getRoundNum())
-                        .loss(message.getLoss())
-                        .accuracy(message.getAccuracy())
-                        .precision(message.getPrecision())
-                        .recall(message.getRecall())
-                        .f1Score(message.getF1Score())
-                        .build();
-                roundService.saveRound(newRound);
+            synchronized (lockFor(message.getTaskId(), message.getRoundNum())) {
+                Round round = roundService.getByTidAndRoundNum(message.getTaskId(), message.getRoundNum());
+                if (round != null) {
+                    round.setLoss(message.getLoss());
+                    round.setAccuracy(message.getAccuracy());
+                    round.setPrecision(message.getPrecision());
+                    round.setRecall(message.getRecall());
+                    round.setF1Score(message.getF1Score());
+                    roundService.updateById(round);
+                } else {
+                    Round newRound = Round.builder()
+                            .tid(message.getTaskId())
+                            .roundNum(message.getRoundNum())
+                            .loss(message.getLoss())
+                            .accuracy(message.getAccuracy())
+                            .precision(message.getPrecision())
+                            .recall(message.getRecall())
+                            .f1Score(message.getF1Score())
+                            .build();
+                    roundService.saveRound(newRound);
+                }
             }
 
             Task task = taskService.getById(message.getTaskId());
-            if (task != null && message.getRoundNum().equals(task.getNumSteps())) {
+            Integer numSteps = task != null ? task.getNumSteps() : null;
+            boolean isLastRound = numSteps != null && message.getRoundNum() != null
+                    && message.getRoundNum().equals(numSteps - 1);
+            if (task != null && isLastRound) {
                 task.setStatus(Status.SUCCESS);
                 taskService.updateById(task);
                 log.info("Task {} completed successfully (last round)", message.getTaskId());
@@ -98,31 +117,34 @@ public class TrainingMessageHandlerImpl implements TrainingMessageHandler {
     @Override
     public void handleClientMessage(ClientMessage message) {
         try {
-            Round round = roundService.getByTidAndRoundNum(message.getTaskId(), message.getRoundNum());
-            if (round == null) {
-                round = Round.builder()
-                        .tid(message.getTaskId())
-                        .roundNum(message.getRoundNum())
-                        .loss(0.0)
-                        .accuracy(0.0)
-                        .precision(0.0)
-                        .recall(0.0)
-                        .f1Score(0.0)
-                        .build();
-                roundService.saveRound(round);
-            }
+            Round round;
+            synchronized (lockFor(message.getTaskId(), message.getRoundNum())) {
+                round = roundService.getByTidAndRoundNum(message.getTaskId(), message.getRoundNum());
+                if (round == null) {
+                    round = Round.builder()
+                            .tid(message.getTaskId())
+                            .roundNum(message.getRoundNum())
+                            .loss(0.0)
+                            .accuracy(0.0)
+                            .precision(0.0)
+                            .recall(0.0)
+                            .f1Score(0.0)
+                            .build();
+                    roundService.saveRound(round);
+                }
 
-            Client client = Client.builder()
-                    .rid(round.getId())
-                    .clientIndex(message.getClientIndex())
-                    .loss(message.getLoss())
-                    .accuracy(message.getAccuracy())
-                    .precision(message.getPrecision())
-                    .recall(message.getRecall())
-                    .f1Score(message.getF1Score())
-                    .timestamp(parseTimestamp(message.getTimestamp()))
-                    .build();
-            clientService.saveClient(client);
+                Client client = Client.builder()
+                        .rid(round.getId())
+                        .clientIndex(message.getClientIndex())
+                        .loss(message.getLoss())
+                        .accuracy(message.getAccuracy())
+                        .precision(message.getPrecision())
+                        .recall(message.getRecall())
+                        .f1Score(message.getF1Score())
+                        .timestamp(parseTimestamp(message.getTimestamp()))
+                        .build();
+                clientService.saveClient(client);
+            }
 
             sessionManager.sendToTask(message.getTaskId(), message);
         } catch (Exception e) {
@@ -146,6 +168,7 @@ public class TrainingMessageHandlerImpl implements TrainingMessageHandler {
                 log.info("Task {} status updated to {}", message.getTaskId(), status);
                 if (status == Status.SUCCESS || status == Status.FAILED || status == Status.CANCELLED) {
                     lastRoundTime.remove(message.getTaskId());
+                    applicationContext.getBean(RedisSubscriptionService.class).unsubscribeTask(message.getTaskId());
                 }
             }
 

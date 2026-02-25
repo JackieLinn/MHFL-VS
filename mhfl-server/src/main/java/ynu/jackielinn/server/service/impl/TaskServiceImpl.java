@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import jakarta.annotation.Resource;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -27,6 +28,7 @@ import ynu.jackielinn.server.dto.message.StatusMessage;
 import ynu.jackielinn.server.service.AccountService;
 import ynu.jackielinn.server.service.AlgorithmService;
 import ynu.jackielinn.server.service.DatasetService;
+import ynu.jackielinn.server.service.RedisSubscriptionService;
 import ynu.jackielinn.server.service.TaskService;
 import ynu.jackielinn.server.websocket.WebSocketSessionManager;
 
@@ -59,6 +61,9 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
 
     @Resource
     private WebSocketSessionManager sessionManager;
+
+    @Resource
+    private ApplicationContext applicationContext;
 
     @Override
     public Long createTask(CreateTaskRO ro, Long uid) {
@@ -259,6 +264,7 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
             }
             task.setStatus(Status.IN_PROGRESS);
             updateById(task);
+            applicationContext.getBean(RedisSubscriptionService.class).subscribeTask(taskId);
             return null;
         } catch (Exception e) {
             return "调用训练服务失败: " + e.getMessage();

@@ -10,6 +10,7 @@ import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
+import ynu.jackielinn.server.common.Status;
 import ynu.jackielinn.server.entity.Task;
 import ynu.jackielinn.server.service.RedisSubscriptionService;
 import ynu.jackielinn.server.service.TaskService;
@@ -73,7 +74,10 @@ public class TaskWebSocketHandler extends TextWebSocketHandler {
             sessionManager.removeSession(taskId, session);
             Set<WebSocketSession> remaining = sessionManager.getSessions(taskId);
             if (remaining.isEmpty()) {
-                subscriptionService.unsubscribeTask(taskId);
+                Task task = taskService.getById(taskId);
+                if (task != null && isTerminalStatus(task.getStatus())) {
+                    subscriptionService.unsubscribeTask(taskId);
+                }
             }
         }
         log.info("WebSocket closed for task {}, authenticated: {}, status: {}", taskId, authenticated, status);
@@ -161,5 +165,10 @@ public class TaskWebSocketHandler extends TextWebSocketHandler {
             }
         }
         return null;
+    }
+
+    private static boolean isTerminalStatus(Status status) {
+        return status == Status.SUCCESS || status == Status.RECOMMENDED
+                || status == Status.FAILED || status == Status.CANCELLED;
     }
 }
