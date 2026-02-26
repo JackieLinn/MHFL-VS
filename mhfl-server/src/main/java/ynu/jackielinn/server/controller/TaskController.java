@@ -207,4 +207,29 @@ public class TaskController extends BaseController {
         }
         return ApiResponse.success(list);
     }
+
+    /**
+     * 某任务下指定 client_index 的全部 Client 记录，按 roundNum 升序。用于点进某张客户端卡片后的详情表格/曲线。
+     *
+     * @param id          任务 id
+     * @param clientIndex 客户端索引（路径参数）
+     * @param request     用于获取当前用户 id
+     * @return List<ClientVO>，无权限或任务不存在时 404
+     */
+    @Operation(summary = "任务下某客户端详情接口", description = "返回该 task 下该 client_index 的全部 Client 记录，按 roundNum 升序")
+    @GetMapping("/{id}/clients/{clientIndex}")
+    public ApiResponse<List<ClientVO>> getTaskClientDetail(
+            @PathVariable Long id,
+            @PathVariable Integer clientIndex,
+            HttpServletRequest request) {
+        Long uid = (Long) request.getAttribute("id");
+        if (uid == null) {
+            return ApiResponse.failure(401, "未登录或登录已过期");
+        }
+        List<ClientVO> list = taskService.getTaskClientDetail(id, clientIndex, uid, isAdmin());
+        if (list == null) {
+            return ApiResponse.failure(404, "任务不存在或无权限查看");
+        }
+        return ApiResponse.success(list);
+    }
 }

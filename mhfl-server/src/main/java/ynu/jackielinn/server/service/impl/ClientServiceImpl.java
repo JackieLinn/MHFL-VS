@@ -28,4 +28,16 @@ public class ClientServiceImpl extends ServiceImpl<ClientMapper, Client> impleme
                 .last("limit 1")
                 .one();
     }
+
+    @Override
+    public List<Client> listByRidsAndClientIndex(List<Long> rids, Integer clientIndex) {
+        if (rids == null || rids.isEmpty()) {
+            return List.of();
+        }
+        return lambdaQuery()
+                .in(Client::getRid, rids)
+                .eq(Client::getClientIndex, clientIndex)
+                .orderByAsc(Client::getTimestamp)
+                .list();
+    }
 }

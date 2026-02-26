@@ -102,4 +102,15 @@ public interface TaskService extends IService<Task> {
      * @return 有权限返回 List&lt;ClientVO&gt;（长度 numNodes），无权限或任务不存在返回 null
      */
     List<ClientVO> getTaskClientsLatest(Long taskId, Long currentUserId, boolean isAdmin);
+
+    /**
+     * 某任务下指定 client_index 的全部 Client 记录，按 roundNum 升序。用于客户端详情表格/曲线。
+     *
+     * @param taskId        任务 id
+     * @param clientIndex   客户端索引
+     * @param currentUserId 当前用户 id
+     * @param isAdmin       是否为管理员
+     * @return 有权限返回 List&lt;ClientVO&gt;，无权限或任务不存在返回 null
+     */
+    List<ClientVO> getTaskClientDetail(Long taskId, Integer clientIndex, Long currentUserId, boolean isAdmin);
 }

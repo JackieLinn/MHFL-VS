@@ -403,4 +403,33 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
         }
         return result;
     }
+
+    @Override
+    public List<ClientVO> getTaskClientDetail(Long taskId, Integer clientIndex, Long currentUserId, boolean isAdmin) {
+        Task task = getById(taskId);
+        if (task == null) {
+            return null;
+        }
+        if (!task.getUid().equals(currentUserId)
+                && task.getStatus() != Status.RECOMMENDED
+                && !isAdmin) {
+            return null;
+        }
+        List<Round> rounds = roundService.listByTidOrderByRoundNum(taskId);
+        List<Long> rids = rounds.stream().map(Round::getId).toList();
+        Map<Long, Integer> ridToRoundNum = rounds.stream().collect(Collectors.toMap(Round::getId, Round::getRoundNum));
+        List<Client> clients = clientService.listByRidsAndClientIndex(rids, clientIndex);
+        List<ClientVO> list = new ArrayList<>(clients.stream()
+                .map(c -> {
+                    final Integer roundNum = c.getRid() != null ? ridToRoundNum.getOrDefault(c.getRid(), -1) : -1;
+                    return c.asViewObject(ClientVO.class, vo -> vo.setRoundNum(roundNum));
+                })
+                .toList());
+        list.sort((a, b) -> {
+            int ra = a.getRoundNum() != null ? a.getRoundNum() : -1;
+            int rb = b.getRoundNum() != null ? b.getRoundNum() : -1;
+            return Integer.compare(ra, rb);
+        });
+        return list;
+    }
 }
