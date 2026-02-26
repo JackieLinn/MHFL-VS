@@ -18,10 +18,12 @@ import ynu.jackielinn.server.dto.request.TrainStartRO;
 import ynu.jackielinn.server.common.Status;
 import ynu.jackielinn.server.dto.request.CreateTaskRO;
 import ynu.jackielinn.server.dto.request.ListTaskRO;
+import ynu.jackielinn.server.dto.response.ClientVO;
 import ynu.jackielinn.server.dto.response.RoundVO;
 import ynu.jackielinn.server.dto.response.TaskVO;
 import ynu.jackielinn.server.entity.Account;
 import ynu.jackielinn.server.entity.Algorithm;
+import ynu.jackielinn.server.entity.Client;
 import ynu.jackielinn.server.entity.Dataset;
 import ynu.jackielinn.server.entity.Round;
 import ynu.jackielinn.server.entity.Task;
@@ -31,6 +33,7 @@ import ynu.jackielinn.server.service.AccountService;
 import ynu.jackielinn.server.service.AlgorithmService;
 import ynu.jackielinn.server.service.DatasetService;
 import ynu.jackielinn.server.service.RedisSubscriptionService;
+import ynu.jackielinn.server.service.ClientService;
 import ynu.jackielinn.server.service.RoundService;
 import ynu.jackielinn.server.service.TaskService;
 import ynu.jackielinn.server.websocket.WebSocketSessionManager;
@@ -38,6 +41,7 @@ import ynu.jackielinn.server.websocket.WebSocketSessionManager;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -70,6 +74,9 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
 
     @Resource
     private RoundService roundService;
+
+    @Resource
+    private ClientService clientService;
 
     @Override
     public Long createTask(CreateTaskRO ro, Long uid) {
@@ -357,5 +364,43 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
         return rounds.stream()
                 .map(r -> r.asViewObject(RoundVO.class))
                 .toList();
+    }
+
+    @Override
+    public List<ClientVO> getTaskClientsLatest(Long taskId, Long currentUserId, boolean isAdmin) {
+        Task task = getById(taskId);
+        if (task == null) {
+            return null;
+        }
+        if (!task.getUid().equals(currentUserId)
+                && task.getStatus() != Status.RECOMMENDED
+                && !isAdmin) {
+            return null;
+        }
+        int numNodes = task.getNumNodes() != null ? task.getNumNodes() : 0;
+        List<Round> rounds = roundService.listByTidOrderByRoundNum(taskId);
+        List<Long> rids = rounds.stream().map(Round::getId).toList();
+        Map<Long, Integer> ridToRoundNum = rounds.stream().collect(Collectors.toMap(Round::getId, Round::getRoundNum));
+        List<ClientVO> result = new ArrayList<>(numNodes);
+        for (int i = 0; i < numNodes; i++) {
+            Client c = clientService.getLatestByRidsAndClientIndex(rids, i);
+            if (c == null) {
+                result.add(ClientVO.builder()
+                        .id(null)
+                        .roundNum(-1)
+                        .clientIndex(i)
+                        .loss(-1.0)
+                        .accuracy(-1.0)
+                        .precision(-1.0)
+                        .recall(-1.0)
+                        .f1Score(-1.0)
+                        .timestamp(null)
+                        .build());
+            } else {
+                final Integer roundNum = c.getRid() != null ? ridToRoundNum.getOrDefault(c.getRid(), -1) : -1;
+                result.add(c.asViewObject(ClientVO.class, vo -> vo.setRoundNum(roundNum)));
+            }
+        }
+        return result;
     }
 }

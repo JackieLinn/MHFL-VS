@@ -11,6 +11,7 @@ import ynu.jackielinn.server.common.ApiResponse;
 import ynu.jackielinn.server.common.BaseController;
 import ynu.jackielinn.server.dto.request.CreateTaskRO;
 import ynu.jackielinn.server.dto.request.ListTaskRO;
+import ynu.jackielinn.server.dto.response.ClientVO;
 import ynu.jackielinn.server.dto.response.RoundVO;
 import ynu.jackielinn.server.dto.response.TaskVO;
 import ynu.jackielinn.server.service.TaskService;
@@ -179,6 +180,28 @@ public class TaskController extends BaseController {
             return ApiResponse.failure(401, "未登录或登录已过期");
         }
         List<RoundVO> list = taskService.getTaskRounds(id, uid, isAdmin());
+        if (list == null) {
+            return ApiResponse.failure(404, "任务不存在或无权限查看");
+        }
+        return ApiResponse.success(list);
+    }
+
+    /**
+     * 某任务「每个 client_index 最新一条」客户端列表，按 client_index 0～numNodes-1 排序。
+     * 用于 100 格子展示：有数据填 5 指标，未训练到的客户端占位（roundNum=-1，五指标=-1，timestamp=null）。
+     *
+     * @param id      任务 id
+     * @param request 用于获取当前用户 id
+     * @return List<ClientVO>，无权限或任务不存在时 404
+     */
+    @Operation(summary = "任务客户端最新状态接口", description = "按 client_index 返回每个客户端最新一条记录的 5 指标，按 client_index 升序，未参与训练的占位为 -1")
+    @GetMapping("/{id}/clients/latest")
+    public ApiResponse<List<ClientVO>> getTaskClientsLatest(@PathVariable Long id, HttpServletRequest request) {
+        Long uid = (Long) request.getAttribute("id");
+        if (uid == null) {
+            return ApiResponse.failure(401, "未登录或登录已过期");
+        }
+        List<ClientVO> list = taskService.getTaskClientsLatest(id, uid, isAdmin());
         if (list == null) {
             return ApiResponse.failure(404, "任务不存在或无权限查看");
         }

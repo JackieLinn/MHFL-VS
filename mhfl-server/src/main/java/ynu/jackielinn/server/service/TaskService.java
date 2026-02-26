@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import ynu.jackielinn.server.dto.request.CreateTaskRO;
 import ynu.jackielinn.server.dto.request.ListTaskRO;
+import ynu.jackielinn.server.dto.response.ClientVO;
 import ynu.jackielinn.server.dto.response.RoundVO;
 import ynu.jackielinn.server.dto.response.TaskVO;
 import ynu.jackielinn.server.entity.Task;
@@ -90,4 +91,15 @@ public interface TaskService extends IService<Task> {
      * @return 有权限返回 List&lt;RoundVO&gt;，无权限或任务不存在返回 null
      */
     List<RoundVO> getTaskRounds(Long taskId, Long currentUserId, boolean isAdmin);
+
+    /**
+     * 某任务「每个 client_index 最新一条」客户端列表，按 client_index 0～numNodes-1 排序。
+     * 用于 100 格子展示：有数据则填 ClientVO，未训练到的客户端占位（roundNum=-1，五指标=-1，timestamp=null）。
+     *
+     * @param taskId        任务 id
+     * @param currentUserId 当前用户 id
+     * @param isAdmin       是否为管理员
+     * @return 有权限返回 List&lt;ClientVO&gt;（长度 numNodes），无权限或任务不存在返回 null
+     */
+    List<ClientVO> getTaskClientsLatest(Long taskId, Long currentUserId, boolean isAdmin);
 }
