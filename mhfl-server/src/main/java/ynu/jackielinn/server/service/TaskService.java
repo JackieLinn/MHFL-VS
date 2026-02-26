@@ -20,6 +20,16 @@ public interface TaskService extends IService<Task> {
     Long createTask(CreateTaskRO ro, Long uid);
 
     /**
+     * 任务详情（校验权限：本人 / RECOMMENDED / admin）
+     *
+     * @param id            任务 id
+     * @param currentUserId 当前用户 id
+     * @param isAdmin       是否为管理员
+     * @return 有权限且任务存在返回 TaskVO，否则返回 null
+     */
+    TaskVO getTaskDetail(Long id, Long currentUserId, boolean isAdmin);
+
+    /**
      * 分页查询任务列表（非管理员仅返回当前用户任务，管理员返回全部）
      * 关键字叠加搜索：数据集名、算法名；管理员还可按用户名搜索
      *

@@ -65,6 +65,27 @@ public class TaskController extends BaseController {
     }
 
     /**
+     * 任务详情（本人 / RECOMMENDED / 管理员可查看）
+     *
+     * @param id      任务 id
+     * @param request 用于获取当前用户 id
+     * @return TaskVO，无权限或不存在时 404
+     */
+    @Operation(summary = "任务详情接口", description = "根据任务 id 查询详情；仅本人、推荐任务或管理员可查看")
+    @GetMapping("/{id}")
+    public ApiResponse<TaskVO> getTaskDetail(@PathVariable Long id, HttpServletRequest request) {
+        Long uid = (Long) request.getAttribute("id");
+        if (uid == null) {
+            return ApiResponse.failure(401, "未登录或登录已过期");
+        }
+        TaskVO vo = taskService.getTaskDetail(id, uid, isAdmin());
+        if (vo == null) {
+            return ApiResponse.failure(404, "任务不存在或无权限查看");
+        }
+        return ApiResponse.success(vo);
+    }
+
+    /**
      * 逻辑删除任务（本人只能删本人的，管理员可删任意）
      *
      * @param id      任务 id

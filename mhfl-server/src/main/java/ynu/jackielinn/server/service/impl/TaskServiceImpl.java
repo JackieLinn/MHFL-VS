@@ -194,6 +194,30 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
         return voPage;
     }
 
+    @Override
+    public TaskVO getTaskDetail(Long id, Long currentUserId, boolean isAdmin) {
+        Task task = getById(id);
+        if (task == null) {
+            return null;
+        }
+        if (!task.getUid().equals(currentUserId)
+                && task.getStatus() != Status.RECOMMENDED
+                && !isAdmin) {
+            return null;
+        }
+        Dataset ds = datasetService.getById(task.getDid());
+        Algorithm algo = algorithmService.getById(task.getAid());
+        Account account = accountService.getById(task.getUid());
+        final String dataName = ds != null ? ds.getDataName() : null;
+        final String algorithmName = algo != null ? algo.getAlgorithmName() : null;
+        final String username = account != null ? account.getUsername() : null;
+        return task.asViewObject(TaskVO.class, vo -> {
+            vo.setDataName(dataName);
+            vo.setAlgorithmName(algorithmName);
+            vo.setUsername(username);
+        });
+    }
+
     private List<TaskVO> toTaskVOList(List<Task> records) {
         if (records == null || records.isEmpty()) {
             return List.of();
