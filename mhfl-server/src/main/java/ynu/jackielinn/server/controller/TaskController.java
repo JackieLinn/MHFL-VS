@@ -11,8 +11,11 @@ import ynu.jackielinn.server.common.ApiResponse;
 import ynu.jackielinn.server.common.BaseController;
 import ynu.jackielinn.server.dto.request.CreateTaskRO;
 import ynu.jackielinn.server.dto.request.ListTaskRO;
+import ynu.jackielinn.server.dto.response.RoundVO;
 import ynu.jackielinn.server.dto.response.TaskVO;
 import ynu.jackielinn.server.service.TaskService;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/task")
@@ -159,5 +162,26 @@ public class TaskController extends BaseController {
             return ApiResponse.failure(400, err);
         }
         return ApiResponse.success(null);
+    }
+
+    /**
+     * 某任务 Round 列表（历史曲线），按 roundNum 升序。本人 / RECOMMENDED / 管理员可查看。
+     *
+     * @param id      任务 id
+     * @param request 用于获取当前用户 id
+     * @return List&lt;RoundVO&gt;，无权限或任务不存在时 404
+     */
+    @Operation(summary = "任务轮次列表接口", description = "查询某任务的轮次历史数据，按 roundNum 升序，用于前端画训练曲线")
+    @GetMapping("/{id}/rounds")
+    public ApiResponse<List<RoundVO>> getTaskRounds(@PathVariable Long id, HttpServletRequest request) {
+        Long uid = (Long) request.getAttribute("id");
+        if (uid == null) {
+            return ApiResponse.failure(401, "未登录或登录已过期");
+        }
+        List<RoundVO> list = taskService.getTaskRounds(id, uid, isAdmin());
+        if (list == null) {
+            return ApiResponse.failure(404, "任务不存在或无权限查看");
+        }
+        return ApiResponse.success(list);
     }
 }

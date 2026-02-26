@@ -4,8 +4,11 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import ynu.jackielinn.server.dto.request.CreateTaskRO;
 import ynu.jackielinn.server.dto.request.ListTaskRO;
+import ynu.jackielinn.server.dto.response.RoundVO;
 import ynu.jackielinn.server.dto.response.TaskVO;
 import ynu.jackielinn.server.entity.Task;
+
+import java.util.List;
 
 public interface TaskService extends IService<Task> {
 
@@ -77,4 +80,14 @@ public interface TaskService extends IService<Task> {
      * @return null 表示成功，否则为错误信息
      */
     String stopTask(Long taskId, Long currentUserId);
+
+    /**
+     * 某任务 Round 列表（历史曲线），按 roundNum 升序。校验权限：本人 / RECOMMENDED / admin。
+     *
+     * @param taskId        任务 id
+     * @param currentUserId 当前用户 id
+     * @param isAdmin       是否为管理员
+     * @return 有权限返回 List&lt;RoundVO&gt;，无权限或任务不存在返回 null
+     */
+    List<RoundVO> getTaskRounds(Long taskId, Long currentUserId, boolean isAdmin);
 }

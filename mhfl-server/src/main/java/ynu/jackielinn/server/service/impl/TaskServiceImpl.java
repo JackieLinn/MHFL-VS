@@ -18,10 +18,12 @@ import ynu.jackielinn.server.dto.request.TrainStartRO;
 import ynu.jackielinn.server.common.Status;
 import ynu.jackielinn.server.dto.request.CreateTaskRO;
 import ynu.jackielinn.server.dto.request.ListTaskRO;
+import ynu.jackielinn.server.dto.response.RoundVO;
 import ynu.jackielinn.server.dto.response.TaskVO;
 import ynu.jackielinn.server.entity.Account;
 import ynu.jackielinn.server.entity.Algorithm;
 import ynu.jackielinn.server.entity.Dataset;
+import ynu.jackielinn.server.entity.Round;
 import ynu.jackielinn.server.entity.Task;
 import ynu.jackielinn.server.mapper.TaskMapper;
 import ynu.jackielinn.server.dto.message.StatusMessage;
@@ -29,6 +31,7 @@ import ynu.jackielinn.server.service.AccountService;
 import ynu.jackielinn.server.service.AlgorithmService;
 import ynu.jackielinn.server.service.DatasetService;
 import ynu.jackielinn.server.service.RedisSubscriptionService;
+import ynu.jackielinn.server.service.RoundService;
 import ynu.jackielinn.server.service.TaskService;
 import ynu.jackielinn.server.websocket.WebSocketSessionManager;
 
@@ -64,6 +67,9 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
 
     @Resource
     private ApplicationContext applicationContext;
+
+    @Resource
+    private RoundService roundService;
 
     @Override
     public Long createTask(CreateTaskRO ro, Long uid) {
@@ -334,5 +340,22 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
         sessionManager.sendToTask(taskId, statusMessage);
         sessionManager.closeAllSessionsForTask(taskId);
         return null;
+    }
+
+    @Override
+    public List<RoundVO> getTaskRounds(Long taskId, Long currentUserId, boolean isAdmin) {
+        Task task = getById(taskId);
+        if (task == null) {
+            return null;
+        }
+        if (!task.getUid().equals(currentUserId)
+                && task.getStatus() != Status.RECOMMENDED
+                && !isAdmin) {
+            return null;
+        }
+        List<Round> rounds = roundService.listByTidOrderByRoundNum(taskId);
+        return rounds.stream()
+                .map(r -> r.asViewObject(RoundVO.class))
+                .toList();
     }
 }

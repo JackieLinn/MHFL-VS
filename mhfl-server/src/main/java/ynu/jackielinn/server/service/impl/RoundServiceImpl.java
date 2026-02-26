@@ -3,6 +3,9 @@ package ynu.jackielinn.server.service.impl;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
 import ynu.jackielinn.server.entity.Round;
+
+import java.util.List;
+
 import ynu.jackielinn.server.mapper.RoundMapper;
 import ynu.jackielinn.server.service.RoundService;
 
@@ -21,5 +24,13 @@ public class RoundServiceImpl extends ServiceImpl<RoundMapper, Round> implements
                 .eq(Round::getRoundNum, roundNum)
                 .last("limit 1")
                 .one();
+    }
+
+    @Override
+    public List<Round> listByTidOrderByRoundNum(Long tid) {
+        return lambdaQuery()
+                .eq(Round::getTid, tid)
+                .orderByAsc(Round::getRoundNum)
+                .list();
     }
 }
