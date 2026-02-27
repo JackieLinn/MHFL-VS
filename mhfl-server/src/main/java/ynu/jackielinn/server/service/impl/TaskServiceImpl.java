@@ -215,8 +215,18 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
             return "只有训练成功(SUCCESS)或已推荐(RECOMMENDED)的任务才能设置推荐";
         }
         Status newStatus = status == Status.SUCCESS ? Status.RECOMMENDED : Status.SUCCESS;
-        task.setStatus(newStatus);
-        return updateById(task) ? null : "设置失败，请联系管理员";
+        LambdaUpdateWrapper<Task> wrapper = new LambdaUpdateWrapper<>();
+        wrapper.eq(Task::getDid, task.getDid())
+                .eq(Task::getAid, task.getAid())
+                .eq(Task::getNumNodes, task.getNumNodes())
+                .eq(Task::getFraction, task.getFraction())
+                .eq(Task::getClassesPerNode, task.getClassesPerNode())
+                .eq(Task::getLowProb, task.getLowProb())
+                .eq(Task::getNumSteps, task.getNumSteps())
+                .eq(Task::getEpochs, task.getEpochs())
+                .in(Task::getStatus, Status.SUCCESS, Status.RECOMMENDED)
+                .set(Task::getStatus, newStatus);
+        return update(wrapper) ? null : "设置失败，请联系管理员";
     }
 
     @Override
