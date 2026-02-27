@@ -10,6 +10,9 @@ import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * SpringDoc / OpenAPI 配置类。定义 API 文档元信息、JWT 安全方案及接口分组（公开/需认证）。
+ */
 @Configuration
 @OpenAPIDefinition(
         info = @Info(
@@ -27,6 +30,12 @@ import org.springframework.context.annotation.Configuration;
         scheme = "bearer"
 )
 public class SpringDocConfiguration {
+
+    /**
+     * 定义可匿名调用的 API 分组，包含 /auth/**、/doc/** 等路径。
+     *
+     * @return 公开接口分组 GroupedOpenApi
+     */
     @Bean
     public GroupedOpenApi publicApi() {
         String[] publicPaths = {"/auth/**", "/doc/**"};
@@ -35,6 +44,11 @@ public class SpringDocConfiguration {
                 .build();
     }
 
+    /**
+     * 定义需认证后可调用的 API 分组，包含 /api/** 路径。
+     *
+     * @return 需认证接口分组 GroupedOpenApi
+     */
     @Bean
     public GroupedOpenApi protectedApi() {
         return GroupedOpenApi.builder().group("需认证后才可调用的API接口")

@@ -11,8 +11,7 @@ import org.springframework.data.redis.connection.lettuce.LettuceClientConfigurat
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 
 /**
- * Redis 配置类
- * 解决 Lettuce 与 Redis 7.x RESP3 协议兼容性问题
+ * Redis 配置类。使用 Lettuce 客户端，并采用 RESP2 协议以兼容 Redis 7.x，避免 RESP3 兼容性问题。
  */
 @Configuration
 public class RedisConfiguration {
@@ -29,6 +28,11 @@ public class RedisConfiguration {
     @Value("${spring.data.redis.database}")
     private int database;
 
+    /**
+     * 创建 Redis 连接工厂，使用 standalone 配置与 RESP2 协议。
+     *
+     * @return LettuceConnectionFactory 实例，供 RedisTemplate 与 Redis 订阅共用
+     */
     @Bean
     public LettuceConnectionFactory redisConnectionFactory() {
         // Redis 服务器配置

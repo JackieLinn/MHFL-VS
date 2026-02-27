@@ -6,12 +6,16 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
 /**
- * RestTemplate 配置类
- * 用于调用 Python FastAPI 服务
+ * RestTemplate 配置类。提供用于调用 Python FastAPI 的 RestTemplate，配置连接与读取超时。
  */
 @Configuration
 public class RestTemplateConfiguration {
 
+    /**
+     * 创建 RestTemplate，连接超时 5 秒、读取超时 10 秒，用于请求 Python 训练服务等。
+     *
+     * @return 配置好超时的 RestTemplate 实例
+     */
     @Bean
     public RestTemplate restTemplate() {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();

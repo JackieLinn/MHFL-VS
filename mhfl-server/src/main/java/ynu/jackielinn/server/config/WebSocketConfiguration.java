@@ -20,6 +20,12 @@ public class WebSocketConfiguration implements WebSocketConfigurer {
         this.taskWebSocketHandler = taskWebSocketHandler;
     }
 
+    /**
+     * 注册 WebSocket 处理器，将任务监控端点 /ws/task/{taskId} 与 TaskWebSocketHandler 绑定，
+     * 并允许所有来源的跨域连接。
+     *
+     * @param registry WebSocketHandlerRegistry，用于注册处理器与路径
+     */
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(taskWebSocketHandler, "/ws/task/{taskId}")

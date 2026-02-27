@@ -14,6 +14,12 @@ import java.util.concurrent.Executor;
 @Configuration
 public class AsyncConfiguration {
 
+    /**
+     * 提供训练消息处理专用线程池，用于异步处理 Redis 训练消息（先写 MySQL，再推 WebSocket），
+     * 避免阻塞 Redis 订阅线程。核心 5、最大 20、队列 100，线程名前缀 training-message-。
+     *
+     * @return 用于训练消息处理的 Executor
+     */
     @Bean(name = "trainingMessageExecutor")
     public Executor trainingMessageExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();

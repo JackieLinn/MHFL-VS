@@ -13,6 +13,13 @@ import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 @Configuration
 public class RedisSubscriptionConfiguration {
 
+    /**
+     * 创建 Redis 消息监听容器，用于订阅训练相关 channel（round/client/status），
+     * 与现有 Lettuce 连接工厂共用同一连接配置。
+     *
+     * @param redisConnectionFactory Lettuce 连接工厂，与 Redis 配置共用
+     * @return RedisMessageListenerContainer 监听容器实例
+     */
     @Bean
     public RedisMessageListenerContainer redisMessageListenerContainer(
             LettuceConnectionFactory redisConnectionFactory) {
