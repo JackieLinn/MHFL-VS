@@ -97,7 +97,7 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
                 .eq(Task::getLowProb, ro.getLowProb())
                 .eq(Task::getNumSteps, ro.getNumSteps())
                 .eq(Task::getEpochs, ro.getEpochs())
-                .in(Task::getStatus, Status.SUCCESS, Status.RECOMMENDED)
+                .eq(Task::getStatus, Status.SUCCESS)
                 .orderByDesc(Task::getId)
                 .last("limit 1")
                 .one();
@@ -154,7 +154,7 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
                         .build();
                 clientService.saveClient(newClient);
             }
-            return CreateTaskResultVO.builder().taskId(newTask.getId()).copied(true).build();
+            return CreateTaskResultVO.builder().taskId(newTask.getId()).copied(true).recommendedSameConfig(false).build();
         }
         Task task = Task.builder()
                 .uid(uid)
@@ -169,7 +169,19 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
                 .status(Status.NOT_STARTED)
                 .build();
         save(task);
-        return CreateTaskResultVO.builder().taskId(task.getId()).copied(false).build();
+        boolean recommendedSameConfig = lambdaQuery()
+                .eq(Task::getDid, ro.getDid())
+                .eq(Task::getAid, ro.getAid())
+                .eq(Task::getNumNodes, ro.getNumNodes())
+                .eq(Task::getFraction, ro.getFraction())
+                .eq(Task::getClassesPerNode, ro.getClassesPerNode())
+                .eq(Task::getLowProb, ro.getLowProb())
+                .eq(Task::getNumSteps, ro.getNumSteps())
+                .eq(Task::getEpochs, ro.getEpochs())
+                .eq(Task::getStatus, Status.RECOMMENDED)
+                .last("limit 1")
+                .one() != null;
+        return CreateTaskResultVO.builder().taskId(task.getId()).copied(false).recommendedSameConfig(recommendedSameConfig).build();
     }
 
     @Override
