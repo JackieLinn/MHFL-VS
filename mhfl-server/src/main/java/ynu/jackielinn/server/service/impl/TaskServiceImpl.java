@@ -88,6 +88,21 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
         if (algorithmService.getById(ro.getAid()) == null) {
             throw new IllegalArgumentException("算法不存在");
         }
+        Task recommendedSame = lambdaQuery()
+                .eq(Task::getDid, ro.getDid())
+                .eq(Task::getAid, ro.getAid())
+                .eq(Task::getNumNodes, ro.getNumNodes())
+                .eq(Task::getFraction, ro.getFraction())
+                .eq(Task::getClassesPerNode, ro.getClassesPerNode())
+                .eq(Task::getLowProb, ro.getLowProb())
+                .eq(Task::getNumSteps, ro.getNumSteps())
+                .eq(Task::getEpochs, ro.getEpochs())
+                .eq(Task::getStatus, Status.RECOMMENDED)
+                .last("limit 1")
+                .one();
+        if (recommendedSame != null) {
+            throw new IllegalArgumentException("该配置已有推荐示例，请到示例展示查看");
+        }
         Task source = lambdaQuery()
                 .eq(Task::getDid, ro.getDid())
                 .eq(Task::getAid, ro.getAid())
@@ -169,19 +184,7 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
                 .status(Status.NOT_STARTED)
                 .build();
         save(task);
-        boolean recommendedSameConfig = lambdaQuery()
-                .eq(Task::getDid, ro.getDid())
-                .eq(Task::getAid, ro.getAid())
-                .eq(Task::getNumNodes, ro.getNumNodes())
-                .eq(Task::getFraction, ro.getFraction())
-                .eq(Task::getClassesPerNode, ro.getClassesPerNode())
-                .eq(Task::getLowProb, ro.getLowProb())
-                .eq(Task::getNumSteps, ro.getNumSteps())
-                .eq(Task::getEpochs, ro.getEpochs())
-                .eq(Task::getStatus, Status.RECOMMENDED)
-                .last("limit 1")
-                .one() != null;
-        return CreateTaskResultVO.builder().taskId(task.getId()).copied(false).recommendedSameConfig(recommendedSameConfig).build();
+        return CreateTaskResultVO.builder().taskId(task.getId()).copied(false).recommendedSameConfig(false).build();
     }
 
     @Override
