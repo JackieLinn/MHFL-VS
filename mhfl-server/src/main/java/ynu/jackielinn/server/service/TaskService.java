@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import ynu.jackielinn.server.dto.request.CreateTaskRO;
 import ynu.jackielinn.server.dto.request.ListTaskRO;
 import ynu.jackielinn.server.dto.response.ClientVO;
+import ynu.jackielinn.server.dto.response.CreateTaskResultVO;
 import ynu.jackielinn.server.dto.response.RoundVO;
 import ynu.jackielinn.server.dto.response.TaskVO;
 import ynu.jackielinn.server.entity.Task;
@@ -14,14 +15,14 @@ import java.util.List;
 public interface TaskService extends IService<Task> {
 
     /**
-     * 创建任务（校验 did、aid 存在，status 设为 NOT_STARTED）
+     * 创建任务。若存在同配置且已成功/推荐的任务则复制其 Task/Round/Client 结果（不复制 createTime/updateTime）；否则新建 NOT_STARTED 任务。
      *
      * @param ro  创建任务请求参数
      * @param uid 当前用户 id（从 JWT 取）
-     * @return 新任务的 id
+     * @return CreateTaskResultVO（taskId + copied，copied 为 true 表示已复制无需训练）
      * @throws IllegalArgumentException 校验失败时（如 did/aid 不存在）
      */
-    Long createTask(CreateTaskRO ro, Long uid);
+    CreateTaskResultVO createTask(CreateTaskRO ro, Long uid);
 
     /**
      * 任务详情（校验权限：本人 / RECOMMENDED / admin）

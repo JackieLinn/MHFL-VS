@@ -40,4 +40,12 @@ public class ClientServiceImpl extends ServiceImpl<ClientMapper, Client> impleme
                 .orderByAsc(Client::getTimestamp)
                 .list();
     }
+
+    @Override
+    public List<Client> listByRidIn(List<Long> rids) {
+        if (rids == null || rids.isEmpty()) {
+            return List.of();
+        }
+        return lambdaQuery().in(Client::getRid, rids).list();
+    }
 }

@@ -19,6 +19,7 @@ import ynu.jackielinn.server.common.Status;
 import ynu.jackielinn.server.dto.request.CreateTaskRO;
 import ynu.jackielinn.server.dto.request.ListTaskRO;
 import ynu.jackielinn.server.dto.response.ClientVO;
+import ynu.jackielinn.server.dto.response.CreateTaskResultVO;
 import ynu.jackielinn.server.dto.response.RoundVO;
 import ynu.jackielinn.server.dto.response.TaskVO;
 import ynu.jackielinn.server.entity.Account;
@@ -43,6 +44,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -79,12 +81,80 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
     private ClientService clientService;
 
     @Override
-    public Long createTask(CreateTaskRO ro, Long uid) {
+    public CreateTaskResultVO createTask(CreateTaskRO ro, Long uid) {
         if (datasetService.getById(ro.getDid()) == null) {
             throw new IllegalArgumentException("数据集不存在");
         }
         if (algorithmService.getById(ro.getAid()) == null) {
             throw new IllegalArgumentException("算法不存在");
+        }
+        Task source = lambdaQuery()
+                .eq(Task::getDid, ro.getDid())
+                .eq(Task::getAid, ro.getAid())
+                .eq(Task::getNumNodes, ro.getNumNodes())
+                .eq(Task::getFraction, ro.getFraction())
+                .eq(Task::getClassesPerNode, ro.getClassesPerNode())
+                .eq(Task::getLowProb, ro.getLowProb())
+                .eq(Task::getNumSteps, ro.getNumSteps())
+                .eq(Task::getEpochs, ro.getEpochs())
+                .in(Task::getStatus, Status.SUCCESS, Status.RECOMMENDED)
+                .orderByDesc(Task::getId)
+                .last("limit 1")
+                .one();
+        if (source != null) {
+            Task newTask = Task.builder()
+                    .uid(uid)
+                    .did(source.getDid())
+                    .aid(source.getAid())
+                    .numNodes(source.getNumNodes())
+                    .fraction(source.getFraction())
+                    .classesPerNode(source.getClassesPerNode())
+                    .lowProb(source.getLowProb())
+                    .numSteps(source.getNumSteps())
+                    .epochs(source.getEpochs())
+                    .status(Status.SUCCESS)
+                    .loss(source.getLoss())
+                    .accuracy(source.getAccuracy())
+                    .precision(source.getPrecision())
+                    .recall(source.getRecall())
+                    .f1Score(source.getF1Score())
+                    .build();
+            save(newTask);
+            List<Round> sourceRounds = roundService.listByTidOrderByRoundNum(source.getId());
+            Map<Long, Long> oldRidToNewRid = new HashMap<>();
+            for (Round r : sourceRounds) {
+                Round newRound = Round.builder()
+                        .tid(newTask.getId())
+                        .roundNum(r.getRoundNum())
+                        .loss(r.getLoss())
+                        .accuracy(r.getAccuracy())
+                        .precision(r.getPrecision())
+                        .recall(r.getRecall())
+                        .f1Score(r.getF1Score())
+                        .build();
+                roundService.saveRound(newRound);
+                oldRidToNewRid.put(r.getId(), newRound.getId());
+            }
+            List<Long> sourceRids = sourceRounds.stream().map(Round::getId).toList();
+            List<Client> sourceClients = clientService.listByRidIn(sourceRids);
+            for (Client c : sourceClients) {
+                Long newRid = c.getRid() != null ? oldRidToNewRid.get(c.getRid()) : null;
+                if (newRid == null) {
+                    continue;
+                }
+                Client newClient = Client.builder()
+                        .rid(newRid)
+                        .clientIndex(c.getClientIndex())
+                        .loss(c.getLoss())
+                        .accuracy(c.getAccuracy())
+                        .precision(c.getPrecision())
+                        .recall(c.getRecall())
+                        .f1Score(c.getF1Score())
+                        .timestamp(c.getTimestamp())
+                        .build();
+                clientService.saveClient(newClient);
+            }
+            return CreateTaskResultVO.builder().taskId(newTask.getId()).copied(true).build();
         }
         Task task = Task.builder()
                 .uid(uid)
@@ -99,7 +169,7 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
                 .status(Status.NOT_STARTED)
                 .build();
         save(task);
-        return task.getId();
+        return CreateTaskResultVO.builder().taskId(task.getId()).copied(false).build();
     }
 
     @Override
