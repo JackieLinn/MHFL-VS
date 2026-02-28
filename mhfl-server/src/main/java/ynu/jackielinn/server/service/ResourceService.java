@@ -2,16 +2,12 @@ package ynu.jackielinn.server.service;
 
 import ynu.jackielinn.server.dto.response.SystemResourcesVO;
 
-/**
- * 资源管理服务接口
- */
 public interface ResourceService {
 
     /**
-     * 获取系统资源信息
-     * 调用Python FastAPI获取CPU、内存、GPU信息
+     * 获取系统资源实时信息（CPU、内存、GPU 使用率及用量）。
      *
-     * @return 系统资源信息
+     * @return 封装后的系统资源 VO
      */
     SystemResourcesVO getSystemResources();
 }

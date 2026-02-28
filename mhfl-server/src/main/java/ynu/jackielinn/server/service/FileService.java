@@ -2,9 +2,6 @@ package ynu.jackielinn.server.service;
 
 import org.springframework.web.multipart.MultipartFile;
 
-/**
- * 文件上传服务：保存头像等文件，返回可访问的完整 URL
- */
 public interface FileService {
 
     /**
