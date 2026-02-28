@@ -80,6 +80,14 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
     @Resource
     private ClientService clientService;
 
+    /**
+     * 创建任务。若存在同配置且已成功/推荐的任务则复制其 Task/Round/Client 结果；否则新建 NOT_STARTED 任务。
+     *
+     * @param ro  创建任务请求参数
+     * @param uid 当前用户 id
+     * @return CreateTaskResultVO（taskId + copied + recommendedSameConfig）
+     * @throws IllegalArgumentException 校验失败时（如 did/aid 不存在、该配置已有推荐示例）
+     */
     @Override
     public CreateTaskResultVO createTask(CreateTaskRO ro, Long uid) {
         if (datasetService.getById(ro.getDid()) == null) {
@@ -187,6 +195,14 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
         return CreateTaskResultVO.builder().taskId(task.getId()).copied(false).recommendedSameConfig(false).build();
     }
 
+    /**
+     * 逻辑删除任务（本人只能删本人的，管理员可删任意）。
+     *
+     * @param id            任务 id
+     * @param currentUserId 当前用户 id
+     * @param isAdmin       是否为管理员
+     * @return null 表示成功，否则为错误信息
+     */
     @Override
     public String deleteTask(Long id, Long currentUserId, boolean isAdmin) {
         Task task = getById(id);
@@ -204,6 +220,12 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
         return update(updateWrapper) ? null : "删除失败，请联系管理员";
     }
 
+    /**
+     * 设置/取消推荐（仅管理员）；SUCCESS 与 RECOMMENDED 互相切换，同配置批量更新。
+     *
+     * @param id 任务 id
+     * @return null 表示成功，否则为错误信息
+     */
     @Override
     public String setRecommend(Long id) {
         Task task = getById(id);
@@ -229,6 +251,14 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
         return update(wrapper) ? null : "设置失败，请联系管理员";
     }
 
+    /**
+     * 分页查询任务列表（非管理员仅当前用户任务，管理员全部）；支持关键字与时间范围。
+     *
+     * @param ro            查询条件
+     * @param currentUserId 当前用户 id
+     * @param isAdmin       是否为管理员
+     * @return 分页结果 TaskVO
+     */
     @Override
     public IPage<TaskVO> listTasks(ListTaskRO ro, Long currentUserId, boolean isAdmin) {
         long current = ro.getCurrent() != null ? ro.getCurrent() : 1L;
@@ -302,6 +332,14 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
         return voPage;
     }
 
+    /**
+     * 任务详情（校验权限：本人 / RECOMMENDED / admin）。
+     *
+     * @param id            任务 id
+     * @param currentUserId 当前用户 id
+     * @param isAdmin       是否为管理员
+     * @return 有权限且存在返回 TaskVO，否则 null
+     */
     @Override
     public TaskVO getTaskDetail(Long id, Long currentUserId, boolean isAdmin) {
         Task task = getById(id);
@@ -326,6 +364,12 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
         });
     }
 
+    /**
+     * 将 Task 列表转为 TaskVO 列表，并填充 dataName、algorithmName、username。
+     *
+     * @param records 任务实体列表
+     * @return TaskVO 列表
+     */
     private List<TaskVO> toTaskVOList(List<Task> records) {
         if (records == null || records.isEmpty()) {
             return List.of();
@@ -350,6 +394,13 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
                 .toList();
     }
 
+    /**
+     * 启动训练：仅任务创建者可启动；校验后调用 Python /api/train/start，成功后订阅 Redis。
+     *
+     * @param taskId        任务 id
+     * @param currentUserId 当前用户 id
+     * @return null 表示成功，否则为错误信息
+     */
     @Override
     public String startTask(Long taskId, Long currentUserId) {
         Task task = getById(taskId);
@@ -406,6 +457,13 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
         }
     }
 
+    /**
+     * 停止训练：仅任务创建者可操作；调用 Python 停止后更新状态、推送 CANCELLED 并关闭该任务 WebSocket。
+     *
+     * @param taskId        任务 id
+     * @param currentUserId 当前用户 id
+     * @return null 表示成功，否则为错误信息
+     */
     @Override
     public String stopTask(Long taskId, Long currentUserId) {
         Task task = getById(taskId);
@@ -444,6 +502,14 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
         return null;
     }
 
+    /**
+     * 某任务 Round 列表（历史曲线），按 roundNum 升序；校验权限后返回。
+     *
+     * @param taskId        任务 id
+     * @param currentUserId 当前用户 id
+     * @param isAdmin       是否为管理员
+     * @return 有权限返回 List&lt;RoundVO&gt;，否则 null
+     */
     @Override
     public List<RoundVO> getTaskRounds(Long taskId, Long currentUserId, boolean isAdmin) {
         Task task = getById(taskId);
@@ -461,6 +527,14 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
                 .toList();
     }
 
+    /**
+     * 某任务每个 client_index 最新一条客户端列表，按 client_index 0～numNodes-1 排序；无数据占位 -1。
+     *
+     * @param taskId        任务 id
+     * @param currentUserId 当前用户 id
+     * @param isAdmin       是否为管理员
+     * @return 有权限返回 List&lt;ClientVO&gt;，否则 null
+     */
     @Override
     public List<ClientVO> getTaskClientsLatest(Long taskId, Long currentUserId, boolean isAdmin) {
         Task task = getById(taskId);
@@ -499,6 +573,15 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
         return result;
     }
 
+    /**
+     * 某任务下指定 client_index 的全部 Client 记录，按 roundNum 升序；校验权限后返回。
+     *
+     * @param taskId        任务 id
+     * @param clientIndex   客户端索引
+     * @param currentUserId 当前用户 id
+     * @param isAdmin       是否为管理员
+     * @return 有权限返回 List&lt;ClientVO&gt;，否则 null
+     */
     @Override
     public List<ClientVO> getTaskClientDetail(Long taskId, Integer clientIndex, Long currentUserId, boolean isAdmin) {
         Task task = getById(taskId);

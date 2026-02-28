@@ -448,6 +448,13 @@ public class AccountServiceImpl extends ServiceImpl<AccountMapper, Account> impl
                 vo.getBirthday() == null ? null : Period.between(vo.getBirthday(), LocalDate.now()).getYears()));
     }
 
+    /**
+     * 更新用户头像 URL（仅更新 avatar 字段）。
+     *
+     * @param userId    用户 id
+     * @param avatarUrl 头像完整 URL
+     * @return null 表示成功，否则为错误信息
+     */
     @Override
     public String updateAvatar(Long userId, String avatarUrl) {
         Account account = this.getById(userId);

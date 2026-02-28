@@ -28,6 +28,12 @@ public class ResourceServiceImpl implements ResourceService {
     @Resource
     private RestTemplate restTemplate;
 
+    /**
+     * 调用 Python FastAPI /api/resource/system/check 获取 CPU、内存、GPU 信息并封装为 SystemResourcesVO。
+     *
+     * @return 系统资源 VO
+     * @throws RuntimeException 调用失败或解析失败时抛出
+     */
     @Override
     public SystemResourcesVO getSystemResources() {
         try {

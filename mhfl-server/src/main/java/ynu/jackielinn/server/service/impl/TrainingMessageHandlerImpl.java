@@ -53,10 +53,22 @@ public class TrainingMessageHandlerImpl implements TrainingMessageHandler {
      */
     private final ConcurrentHashMap<String, Object> roundLocks = new ConcurrentHashMap<>();
 
+    /**
+     * 按 (taskId, roundNum) 获取锁对象，用于 Client 与 Round 消息并发时串行化。
+     *
+     * @param taskId   任务 id
+     * @param roundNum 轮次编号
+     * @return 锁对象
+     */
     private Object lockFor(Long taskId, Integer roundNum) {
         return roundLocks.computeIfAbsent(taskId + ":" + roundNum, k -> new Object());
     }
 
+    /**
+     * 处理轮次消息：写入或更新 Round，更新 Task 状态与指标，写库后推送 WebSocket。
+     *
+     * @param message 轮次指标消息
+     */
     @Override
     public void handleRoundMessage(RoundMessage message) {
         try {
@@ -120,6 +132,11 @@ public class TrainingMessageHandlerImpl implements TrainingMessageHandler {
         }
     }
 
+    /**
+     * 处理客户端消息：按 (taskId, roundNum) 加锁，无 Round 则先建占位再写 Client，写库后推送 WebSocket。
+     *
+     * @param message 客户端指标消息
+     */
     @Override
     public void handleClientMessage(ClientMessage message) {
         try {
@@ -158,6 +175,11 @@ public class TrainingMessageHandlerImpl implements TrainingMessageHandler {
         }
     }
 
+    /**
+     * 处理状态消息：更新 Task 状态，终态时取消 Redis 订阅并推送 WebSocket。
+     *
+     * @param message 状态消息
+     */
     @Override
     public void handleStatusMessage(StatusMessage message) {
         try {
@@ -184,6 +206,12 @@ public class TrainingMessageHandlerImpl implements TrainingMessageHandler {
         }
     }
 
+    /**
+     * 将 Redis 消息中的状态字符串转为 Status 枚举。
+     *
+     * @param s 状态字符串（IN_PROGRESS/SUCCESS/FAILED/CANCELLED）
+     * @return 对应 Status，无法解析返回 null
+     */
     private static Status toStatus(String s) {
         if (s == null) {
             return null;
@@ -201,6 +229,9 @@ public class TrainingMessageHandlerImpl implements TrainingMessageHandler {
 
     /**
      * 将 Python 发来的 ISO 时间戳转为 LocalDateTime，与 Java 写入 MySQL 兼容。
+     *
+     * @param timestamp ISO 格式时间戳字符串
+     * @return LocalDateTime，解析失败返回当前时间
      */
     private static LocalDateTime parseTimestamp(String timestamp) {
         if (timestamp == null || timestamp.isBlank()) {

@@ -28,6 +28,11 @@ public class RedisSubscriptionServiceImpl implements RedisSubscriptionService {
 
     private final Set<Long> subscribedTasks = ConcurrentHashMap.newKeySet();
 
+    /**
+     * 订阅该任务对应的 Round/Client/Status 通道（已订阅则幂等返回）。
+     *
+     * @param taskId 任务 id
+     */
     @Override
     public void subscribeTask(Long taskId) {
         if (subscribedTasks.contains(taskId)) {
@@ -43,6 +48,11 @@ public class RedisSubscriptionServiceImpl implements RedisSubscriptionService {
         log.info("Subscribed to Redis channels for task {}", taskId);
     }
 
+    /**
+     * 取消订阅该任务对应的 Round/Client/Status 通道（未订阅则幂等返回）。
+     *
+     * @param taskId 任务 id
+     */
     @Override
     public void unsubscribeTask(Long taskId) {
         if (!subscribedTasks.contains(taskId)) {
