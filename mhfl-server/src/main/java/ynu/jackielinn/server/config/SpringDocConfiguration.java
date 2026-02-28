@@ -38,7 +38,7 @@ public class SpringDocConfiguration {
      */
     @Bean
     public GroupedOpenApi publicApi() {
-        String[] publicPaths = {"/auth/**", "/doc/**"};
+        String[] publicPaths = {"/doc/**", "/auth/**", "/captcha/**", "/error/**", "/uploads/**", "/ws/**"};
         return GroupedOpenApi.builder().group("可匿名调用的API接口")
                 .pathsToMatch(publicPaths)
                 .build();
