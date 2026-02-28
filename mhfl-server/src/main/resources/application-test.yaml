@@ -1,0 +1,52 @@
+server:
+  port: 8088
+
+web:
+  upload:
+    base-dir: mhfl-server/uploads
+
+app:
+  base-url: ${APP_BASE_URL:http://localhost:8088}
+
+spring:
+  datasource:
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:mhfl_server}
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:12345678}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  security:
+    jwt:
+      key: ${JWT_KEY:abcdefghijk}
+  mail:
+    host: ${MAIL_HOST:smtp.example.com}
+    username: ${MAIL_USERNAME:12345678@example.com}
+    password: ${MAIL_PASSWORD:12345678}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      database: 0
+      password: ${REDIS_PASSWORD:12345678}
+  rabbitmq:
+    addresses: ${RABBITMQ_ADDRESSES:localhost}
+    username: ${RABBITMQ_USERNAME:root}
+    password: ${RABBITMQ_PASSWORD:12345678}
+    virtual-host: /
+  docker:
+    compose:
+      file: mhfl-server/compose.yaml
+
+springdoc:
+  swagger-ui:
+    path: /doc/ui
+  api-docs:
+    path: /doc/json
+
+python:
+  fastapi:
+    url: ${PYTHON_FASTAPI_URL:http://localhost:8000}
+
+logging:
+  level:
+    root: info
+    ynu.jackielinn: info

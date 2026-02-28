@@ -1,54 +1,17 @@
-server:
-  port: 8088
-
-web:
-  upload:
-    base-dir: mhfl-server/uploads
-app:
-  base-url: http://localhost:8088
-
 spring:
+  profiles:
+    active: dev
+  config:
+    import: optional:classpath:application-secret.yaml
   servlet:
     multipart:
       max-file-size: 5MB
       enabled: true
-  config:
-    import: optional:classpath:application-secret.yaml
-  datasource:
-    url: jdbc:mysql://localhost:3306/mhfl_server
-    username: root
-    password: 12345678
-    driver-class-name: com.mysql.cj.jdbc.Driver
   security:
     filter:
       order: -100
     jwt:
-      key: ${JWT_KEY:abcdefghijk}
       expire: 7
-  mail:
-    host: ${MAIL_HOST:smtp.example.com}
-    username: ${MAIL_USERNAME:12345678@example.com}
-    password: ${MAIL_PASSWORD:12345678}
-  data:
-    redis:
-      host: localhost
-      port: 6379
-      database: 0
-      password: 12345678
-  rabbitmq:
-    addresses: localhost
-    username: root
-    password: 12345678
-    virtual-host: /
-  docker:
-    compose:
-      file: mhfl-server/compose.yaml
-
-springdoc:
-  swagger-ui:
-    path: /doc/ui
-  api-docs:
-    path: /doc/json
 
 mybatis-plus:
   configuration:
@@ -57,7 +20,3 @@ mybatis-plus:
     db-config:
       logic-delete-value: 1
       logic-not-delete-value: 0
-
-python:
-  fastapi:
-    url: http://localhost:8000
