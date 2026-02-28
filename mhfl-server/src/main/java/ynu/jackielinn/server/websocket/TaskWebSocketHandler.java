@@ -21,9 +21,8 @@ import java.util.Set;
 
 /**
  * 任务监控 WebSocket 处理器。
- * 连接路径：/ws/task/{taskId}。建立连接后不立即加入会话，等前端首包携带 token；
- * 校验 JWT 与权限（任务所有者或管理员）通过后再 addSession 并订阅 Redis，之后推送训练消息。
- * 断开时若已认证则移除会话，若无其他连接则取消订阅。
+ * 连接路径 /ws/task/{taskId}；建立连接后等首包携带 token，校验 JWT 与权限（任务所有者或管理员）通过后加入会话并订阅 Redis，
+ * 断开时移除会话，无剩余连接且任务终态时取消订阅。
  */
 @Slf4j
 @Component
@@ -48,6 +47,12 @@ public class TaskWebSocketHandler extends TextWebSocketHandler {
     @Resource
     ObjectMapper objectMapper;
 
+    /**
+     * 连接建立后从路径解析 taskId，写入 session 属性并标记未认证，等待前端首包携带 token。
+     *
+     * @param session 当前 WebSocket 会话
+     * @throws Exception 关闭会话等可能抛出的异常
+     */
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         Long taskId = extractTaskId(session);
@@ -60,6 +65,13 @@ public class TaskWebSocketHandler extends TextWebSocketHandler {
         log.debug("WebSocket connection opened for task {}, awaiting auth message", taskId);
     }
 
+    /**
+     * 连接关闭时若已认证则从会话管理移除；若该任务下无剩余连接且任务已终态则取消 Redis 订阅。
+     *
+     * @param session 当前 WebSocket 会话
+     * @param status  关闭状态
+     * @throws Exception 可能抛出的异常
+     */
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
         Long taskId = (Long) session.getAttributes().get(ATTR_TASK_ID);
@@ -83,6 +95,14 @@ public class TaskWebSocketHandler extends TextWebSocketHandler {
         log.info("WebSocket closed for task {}, authenticated: {}, status: {}", taskId, authenticated, status);
     }
 
+    /**
+     * 处理首包文本消息：解析 JSON 中的 token，校验 JWT 及任务权限（所有者或管理员），
+     * 通过后标记已认证、加入会话管理并订阅该 taskId 的 Redis 通道。
+     *
+     * @param session 当前 WebSocket 会话
+     * @param message 文本消息（约定 {"token": "eyJ..."}）
+     * @throws Exception 关闭会话或解析可能抛出的异常
+     */
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
         if (Boolean.TRUE.equals(session.getAttributes().get(ATTR_AUTHENTICATED))) {
@@ -130,7 +150,10 @@ public class TaskWebSocketHandler extends TextWebSocketHandler {
     }
 
     /**
-     * 从首包 JSON 中解析 token 字段，约定格式：{"token": "eyJ..."}
+     * 从首包 JSON 中解析 token 字段，约定格式：{"token": "eyJ..."}。
+     *
+     * @param payload 首包文本内容（JSON 字符串）
+     * @return token 字符串，解析失败或不存在返回 null
      */
     private String parseTokenFromPayload(String payload) {
         if (payload == null || payload.isBlank()) {
@@ -147,6 +170,12 @@ public class TaskWebSocketHandler extends TextWebSocketHandler {
         }
     }
 
+    /**
+     * 从 WebSocket 连接路径 /ws/task/{taskId} 中解析 taskId。
+     *
+     * @param session 当前 WebSocket 会话
+     * @return taskId，解析失败返回 null
+     */
     private Long extractTaskId(WebSocketSession session) {
         if (session.getUri() == null) {
             return null;
@@ -167,6 +196,12 @@ public class TaskWebSocketHandler extends TextWebSocketHandler {
         return null;
     }
 
+    /**
+     * 判断任务状态是否为终态（SUCCESS、RECOMMENDED、FAILED、CANCELLED），用于决定是否可取消 Redis 订阅。
+     *
+     * @param status 任务状态
+     * @return 是否为终态
+     */
     private static boolean isTerminalStatus(Status status) {
         return status == Status.SUCCESS || status == Status.RECOMMENDED
                 || status == Status.FAILED || status == Status.CANCELLED;

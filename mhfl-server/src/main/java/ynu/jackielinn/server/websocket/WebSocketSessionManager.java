@@ -13,8 +13,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * WebSocket 会话管理：按 taskId 维护订阅该任务的会话，并支持向该任务推送消息。
- * 训练消息处理器在写库成功后调用 sendToTask 推送给前端。
+ * WebSocket 会话管理器。
+ * 按 taskId 维护订阅该任务的会话集合，提供添加/移除/推送/关闭；训练消息处理器写库后调用 sendToTask 推送给前端。
  */
 @Slf4j
 @Component
@@ -23,11 +23,23 @@ public class WebSocketSessionManager {
     private final ConcurrentHashMap<Long, Set<WebSocketSession>> sessions = new ConcurrentHashMap<>();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    /**
+     * 将已认证的 WebSocket 会话加入指定任务下的会话集合。
+     *
+     * @param taskId  任务 id
+     * @param session WebSocket 会话
+     */
     public void addSession(Long taskId, WebSocketSession session) {
         sessions.computeIfAbsent(taskId, k -> ConcurrentHashMap.newKeySet()).add(session);
         log.debug("WebSocket session added for task {}, total: {}", taskId, sessions.get(taskId).size());
     }
 
+    /**
+     * 从指定任务下移除该 WebSocket 会话；若该任务无剩余会话则从 map 中移除 taskId。
+     *
+     * @param taskId  任务 id
+     * @param session 要移除的 WebSocket 会话
+     */
     public void removeSession(Long taskId, WebSocketSession session) {
         Set<WebSocketSession> taskSessions = sessions.get(taskId);
         if (taskSessions != null) {
@@ -40,7 +52,10 @@ public class WebSocketSessionManager {
     }
 
     /**
-     * 获取某任务当前所有会话（只读快照，用于判断是否可取消 Redis 订阅等）。
+     * 获取某任务当前所有会话的只读快照，用于判断是否可取消 Redis 订阅等。
+     *
+     * @param taskId 任务 id
+     * @return 该任务下的会话集合，无会话时返回空 Set
      */
     public Set<WebSocketSession> getSessions(Long taskId) {
         Set<WebSocketSession> taskSessions = sessions.get(taskId);
@@ -51,8 +66,10 @@ public class WebSocketSessionManager {
     }
 
     /**
-     * 向订阅了该 taskId 的所有会话推送消息（先写库后推送，由调用方保证顺序）。
-     * 发送失败或已关闭的会话会被移除，避免泄漏。
+     * 向订阅了该 taskId 的所有会话推送消息；先写库后推送由调用方保证顺序，发送失败或已关闭的会话会被移除。
+     *
+     * @param taskId  任务 id
+     * @param payload 要序列化为 JSON 并推送的对象
      */
     public void sendToTask(Long taskId, Object payload) {
         Set<WebSocketSession> taskSessions = sessions.get(taskId);
@@ -82,7 +99,9 @@ public class WebSocketSessionManager {
     }
 
     /**
-     * 关闭某任务下所有 WebSocket 会话（用于停止训练后主动断开监控连接）。
+     * 关闭某任务下所有 WebSocket 会话，用于停止训练后主动断开监控连接。
+     *
+     * @param taskId 任务 id
      */
     public void closeAllSessionsForTask(Long taskId) {
         Set<WebSocketSession> taskSessions = sessions.get(taskId);
