@@ -11,6 +11,10 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
+/**
+ * 用户列表查询请求对象
+ * 支持关键字（用户名、邮箱、电话）模糊查询、分页及创建时间范围。
+ */
 @Data
 @Builder
 @NoArgsConstructor

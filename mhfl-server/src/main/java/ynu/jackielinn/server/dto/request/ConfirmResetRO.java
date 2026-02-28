@@ -8,6 +8,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.validator.constraints.Length;
 
+/**
+ * 密码重置确认请求对象
+ * 包含邮箱与验证码，用于 /auth/reset-confirm 校验验证码。
+ */
 @Data
 @Builder
 @NoArgsConstructor

@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 /**
  * 系统资源信息响应对象
+ * 包含 CPU、内存、GPU 的用量与使用率，由 Python FastAPI 资源接口聚合返回。
  */
 @Data
 @Builder

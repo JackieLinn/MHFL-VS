@@ -7,6 +7,10 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Redis 训练状态消息体
+ * Python 发布至 task:experiment:status:{taskId}，包含 taskId、status、message、timestamp。
+ */
 @Data
 @Builder
 @NoArgsConstructor

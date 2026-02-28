@@ -7,6 +7,10 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Redis 轮次指标消息体
+ * Python 发布至 task:experiment:round:{taskId}，包含轮次编号及五指标、timestamp。
+ */
 @Data
 @Builder
 @NoArgsConstructor

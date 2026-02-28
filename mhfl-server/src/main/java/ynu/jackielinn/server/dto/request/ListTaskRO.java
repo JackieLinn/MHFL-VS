@@ -11,6 +11,10 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
+/**
+ * 任务列表查询请求对象
+ * 支持关键字（数据集名、算法名；管理员含用户名）、分页及创建时间范围。
+ */
 @Data
 @Builder
 @NoArgsConstructor

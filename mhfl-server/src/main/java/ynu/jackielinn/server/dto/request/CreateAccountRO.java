@@ -8,6 +8,10 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * 管理员导入用户请求对象
+ * 包含用户名、邮箱、电话号码；默认密码 123456、角色 user。
+ */
 @Data
 @Builder
 @NoArgsConstructor

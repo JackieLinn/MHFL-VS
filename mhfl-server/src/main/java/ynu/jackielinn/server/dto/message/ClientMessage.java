@@ -7,6 +7,10 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Redis 客户端指标消息体
+ * Python 发布至 task:experiment:client:{taskId}，包含轮次、客户端索引及五指标、timestamp。
+ */
 @Data
 @Builder
 @NoArgsConstructor

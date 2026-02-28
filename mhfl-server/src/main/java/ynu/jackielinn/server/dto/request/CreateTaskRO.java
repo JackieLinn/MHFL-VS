@@ -7,6 +7,10 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * 创建任务请求对象
+ * 包含数据集 id、算法 id 及训练参数（numNodes、fraction、classesPerNode、lowProb、numSteps、epochs）。
+ */
 @Data
 @Builder
 @NoArgsConstructor

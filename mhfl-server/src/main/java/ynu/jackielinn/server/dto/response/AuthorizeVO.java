@@ -8,6 +8,10 @@ import lombok.NoArgsConstructor;
 
 import java.util.Date;
 
+/**
+ * 登录/认证响应对象
+ * 包含用户 id、用户名、角色、token 及 token 过期时间，用于登录成功返回。
+ */
 @Data
 @Builder
 @NoArgsConstructor

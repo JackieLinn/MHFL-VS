@@ -10,6 +10,10 @@ import ynu.jackielinn.server.common.Gender;
 
 import java.time.LocalDate;
 
+/**
+ * 更新用户信息请求对象
+ * 仅包含可更新字段（username、gender、telephone、birthday），不传则不更新。
+ */
 @Data
 @Builder
 @NoArgsConstructor

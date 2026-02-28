@@ -8,6 +8,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.validator.constraints.Length;
 
+/**
+ * 邮箱重置密码请求对象
+ * 包含邮箱、验证码、新密码，用于 /auth/reset-password。
+ */
 @Data
 @Builder
 @NoArgsConstructor

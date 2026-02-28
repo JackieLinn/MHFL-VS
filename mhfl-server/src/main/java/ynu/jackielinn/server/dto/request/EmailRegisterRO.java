@@ -9,6 +9,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.validator.constraints.Length;
 
+/**
+ * 邮箱注册请求对象
+ * 包含电话、邮箱、验证码、用户名、密码，用于 /auth/register。
+ */
 @Data
 @Builder
 @NoArgsConstructor

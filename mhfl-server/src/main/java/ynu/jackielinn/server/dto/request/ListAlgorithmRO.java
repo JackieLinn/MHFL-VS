@@ -11,6 +11,10 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
+/**
+ * 算法列表查询请求对象
+ * 支持关键字（算法名）模糊查询、分页、全部返回及创建时间范围。
+ */
 @Data
 @Builder
 @NoArgsConstructor
