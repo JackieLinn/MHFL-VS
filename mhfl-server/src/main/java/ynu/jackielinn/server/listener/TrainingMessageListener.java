@@ -33,6 +33,13 @@ public class TrainingMessageListener implements MessageListener {
     @Resource
     ObjectMapper objectMapper;
 
+    /**
+     * 收到 Redis 订阅消息时根据 channel 前缀解析为 Round/Client/Status 消息，
+     * 提交到 trainingMessageExecutor 线程池，由 TrainingMessageHandler 写库并推 WebSocket。
+     *
+     * @param message Redis 消息体
+     * @param pattern 订阅的 channel 模式（未使用）
+     */
     @Override
     public void onMessage(Message message, byte[] pattern) {
         String channel = new String(message.getChannel(), StandardCharsets.UTF_8);

@@ -10,6 +10,9 @@ import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
+/**
+ * 邮件队列监听器。监听 RabbitMQ 队列 MHFLVSMail，根据 type（register/reset）发送注册或重置密码验证码邮件。
+ */
 @Component
 @RabbitListener(queues = "MHFLVSMail")
 public class MailQueueListener {
