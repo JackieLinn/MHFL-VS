@@ -23,6 +23,11 @@ public class ResourceController extends BaseController {
     @Resource
     private ResourceService resourceService;
 
+    /**
+     * 获取系统资源实时信息。通过调用 Python FastAPI 获取 CPU、内存、GPU 使用率及用量等。
+     *
+     * @return 封装后的 SystemResourcesVO（CPU/内存/GPU 信息）
+     */
     @Operation(summary = "获取系统资源信息", description = "获取CPU、内存、GPU的实时使用情况")
     @GetMapping("/resources")
     public ApiResponse<SystemResourcesVO> getSystemResources() {

@@ -22,6 +22,13 @@ public class FileController extends BaseController {
     @Resource
     private AccountService accountService;
 
+    /**
+     * 上传当前用户头像。支持 jpg/jpeg/png/gif/webp，最大 5MB；保存至配置目录后更新 account.avatar 并返回访问 URL。
+     *
+     * @param file    上传的图片文件（form-data file）
+     * @param request 用于获取当前用户 id
+     * @return 头像访问 URL，失败时返回 400
+     */
     @Operation(summary = "上传用户头像", description = "上传头像图片，仅支持 jpg/jpeg/png/gif/webp，最大 5MB；返回完整 URL 并更新当前用户头像")
     @PostMapping("/avatar/upload")
     public ApiResponse<String> uploadAvatar(
