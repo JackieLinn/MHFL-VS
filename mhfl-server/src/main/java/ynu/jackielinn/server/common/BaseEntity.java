@@ -10,6 +10,10 @@ import lombok.experimental.SuperBuilder;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
+/**
+ * 实体基类。提供 id、createTime、updateTime、deleteTime、deleted 等公共字段，
+ * 与 MyBatis-Plus 主键自增、自动填充、逻辑删除配合使用。
+ */
 @Data
 @SuperBuilder(toBuilder = true)
 @NoArgsConstructor

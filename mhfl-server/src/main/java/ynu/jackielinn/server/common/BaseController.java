@@ -9,7 +9,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * Controller 基类
+ * Controller 基类。提供统一的消息处理（messageHandle）、管理员校验（checkAdmin、isAdmin）等通用方法。
  */
 public abstract class BaseController {
 
