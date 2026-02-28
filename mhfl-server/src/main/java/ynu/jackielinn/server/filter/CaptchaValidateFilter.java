@@ -30,6 +30,16 @@ public class CaptchaValidateFilter extends OncePerRequestFilter {
 
     private static final int MAX_FAIL_COUNT = 5;
 
+    /**
+     * 仅对 POST /auth/login 校验验证码：校验 captchaId、captchaCode，从 Redis 取码比对；
+     * 失败累计达上限则删除验证码并提示刷新，成功则删除 Redis 中的验证码与失败计数并放行。
+     *
+     * @param request     当前请求
+     * @param response    当前响应
+     * @param filterChain 过滤链
+     * @throws ServletException Servlet 异常
+     * @throws IOException      IO 异常
+     */
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
