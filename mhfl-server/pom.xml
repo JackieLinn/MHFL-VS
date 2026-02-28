@@ -157,6 +157,14 @@
                         <goals>
                             <goal>report</goal>
                         </goals>
+                        <configuration>
+                            <excludes>
+                                <exclude>ynu/jackielinn/server/config/**</exclude>
+                                <exclude>ynu/jackielinn/server/dto/**</exclude>
+                                <exclude>ynu/jackielinn/server/entity/**</exclude>
+                                <exclude>ynu/jackielinn/server/handler/**</exclude>
+                            </excludes>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
