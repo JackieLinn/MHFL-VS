@@ -1,13 +1,16 @@
 package ynu.jackielinn.server.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import org.springframework.web.bind.annotation.*;
-import ynu.jackielinn.server.common.ApiResponse;
+import ynu.jackielinn.server.common.RestResponse;
 import ynu.jackielinn.server.common.BaseController;
 import ynu.jackielinn.server.dto.request.CreateAccountRO;
 import ynu.jackielinn.server.dto.request.ListAccountRO;
@@ -30,8 +33,14 @@ public class AccountController extends BaseController {
      * @return 是否操作成功
      */
     @Operation(summary = "管理员导入用户接口", description = "管理员导入用户接口")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "用户名/邮箱/电话已存在或参数错误"),
+            @ApiResponse(responseCode = "401", description = "未登录或 token 过期"),
+            @ApiResponse(responseCode = "403", description = "非管理员无权限")
+    })
     @PostMapping("/admin/create")
-    public ApiResponse<Void> createAccount(@RequestBody @Valid CreateAccountRO ro) {
+    public RestResponse<Void> createAccount(@RequestBody @Valid CreateAccountRO ro) {
         return this.messageHandle(ro, accountService::createAccount);
     }
 
@@ -43,14 +52,22 @@ public class AccountController extends BaseController {
      * @return 是否操作成功
      */
     @Operation(summary = "管理员删除用户接口", description = "管理员逻辑删除用户，将 is_deleted 置为 1")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "用户不存在或不能删除自己"),
+            @ApiResponse(responseCode = "401", description = "未登录或 token 过期"),
+            @ApiResponse(responseCode = "403", description = "非管理员无权限")
+    })
     @DeleteMapping("/admin/{id}")
-    public ApiResponse<Void> deleteAccount(@PathVariable Long id, HttpServletRequest request) {
+    public RestResponse<Void> deleteAccount(
+            @Parameter(description = "要删除的用户 id") @PathVariable Long id,
+            HttpServletRequest request) {
         Long currentAdminId = (Long) request.getAttribute("id");
         if (currentAdminId == null) {
-            return ApiResponse.failure(401, "未登录或登录已过期");
+            return RestResponse.failure(401, "未登录或登录已过期");
         }
         // 验证管理员权限
-        ApiResponse<Void> adminCheck = checkAdmin(request);
+        RestResponse<Void> adminCheck = checkAdmin(request);
         if (adminCheck != null) {
             return adminCheck;
         }
@@ -65,11 +82,16 @@ public class AccountController extends BaseController {
      * @return 是否操作成功
      */
     @Operation(summary = "更新用户信息接口", description = "更新当前登录用户的信息")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "用户名/电话已被占用或更新失败"),
+            @ApiResponse(responseCode = "401", description = "未登录或 token 过期")
+    })
     @PutMapping("/update")
-    public ApiResponse<Void> updateAccount(@RequestBody @Valid UpdateAccountRO ro, HttpServletRequest request) {
+    public RestResponse<Void> updateAccount(@RequestBody @Valid UpdateAccountRO ro, HttpServletRequest request) {
         Long currentUserId = (Long) request.getAttribute("id");
         if (currentUserId == null) {
-            return ApiResponse.failure(401, "未登录或登录已过期");
+            return RestResponse.failure(401, "未登录或登录已过期");
         }
         return this.messageHandle(() -> accountService.updateAccount(ro, currentUserId));
     }
@@ -81,10 +103,15 @@ public class AccountController extends BaseController {
      * @return 分页结果（AccountVO，排除敏感信息）
      */
     @Operation(summary = "管理员查询用户列表接口", description = "管理员查询用户列表，支持关键字模糊查询（用户名、邮箱、电话号码）和时间范围查询，分页查询")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "401", description = "未登录或 token 过期"),
+            @ApiResponse(responseCode = "403", description = "非管理员无权限")
+    })
     @GetMapping("/admin/list")
-    public ApiResponse<IPage<AccountVO>> listAccounts(@Valid @ModelAttribute ListAccountRO ro) {
+    public RestResponse<IPage<AccountVO>> listAccounts(@Valid @ModelAttribute ListAccountRO ro) {
         IPage<AccountVO> result = accountService.listAccounts(ro);
-        return ApiResponse.success(result);
+        return RestResponse.success(result);
     }
 
     /**
@@ -94,16 +121,21 @@ public class AccountController extends BaseController {
      * @return 用户信息（AccountVO，排除敏感信息）
      */
     @Operation(summary = "查询当前用户信息接口", description = "查询当前登录用户的信息，只能查询自己的信息")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "401", description = "未登录或 token 过期"),
+            @ApiResponse(responseCode = "404", description = "用户不存在")
+    })
     @GetMapping("/info")
-    public ApiResponse<AccountVO> getAccountInfo(HttpServletRequest request) {
+    public RestResponse<AccountVO> getAccountInfo(HttpServletRequest request) {
         Long currentUserId = (Long) request.getAttribute("id");
         if (currentUserId == null) {
-            return ApiResponse.failure(401, "未登录或登录已过期");
+            return RestResponse.failure(401, "未登录或登录已过期");
         }
         AccountVO accountVO = accountService.getAccountInfo(currentUserId);
         if (accountVO == null) {
-            return ApiResponse.failure(404, "用户不存在");
+            return RestResponse.failure(404, "用户不存在");
         }
-        return ApiResponse.success(accountVO);
+        return RestResponse.success(accountVO);
     }
 }

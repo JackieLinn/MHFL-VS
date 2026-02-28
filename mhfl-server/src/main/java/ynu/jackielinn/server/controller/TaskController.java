@@ -2,12 +2,15 @@ package ynu.jackielinn.server.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
-import ynu.jackielinn.server.common.ApiResponse;
+import ynu.jackielinn.server.common.RestResponse;
 import ynu.jackielinn.server.common.BaseController;
 import ynu.jackielinn.server.dto.request.CreateTaskRO;
 import ynu.jackielinn.server.dto.request.ListTaskRO;
@@ -35,17 +38,22 @@ public class TaskController extends BaseController {
      * @return CreateTaskResultVO（taskId + copied）
      */
     @Operation(summary = "创建任务接口", description = "创建训练任务；同配置已有成功任务则复制结果，无需再训练")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "参数错误或该配置已有推荐示例"),
+            @ApiResponse(responseCode = "401", description = "未登录或 token 过期")
+    })
     @PostMapping
-    public ApiResponse<CreateTaskResultVO> createTask(@RequestBody @Valid CreateTaskRO ro, HttpServletRequest request) {
+    public RestResponse<CreateTaskResultVO> createTask(@RequestBody @Valid CreateTaskRO ro, HttpServletRequest request) {
         Long uid = (Long) request.getAttribute("id");
         if (uid == null) {
-            return ApiResponse.failure(401, "未登录或登录已过期");
+            return RestResponse.failure(401, "未登录或登录已过期");
         }
         try {
             CreateTaskResultVO result = taskService.createTask(ro, uid);
-            return ApiResponse.success(result);
+            return RestResponse.success(result);
         } catch (IllegalArgumentException e) {
-            return ApiResponse.failure(400, e.getMessage());
+            return RestResponse.failure(400, e.getMessage());
         }
     }
 
@@ -58,15 +66,19 @@ public class TaskController extends BaseController {
      * @return 分页结果 TaskVO（含 dataName、algorithmName、username）
      */
     @Operation(summary = "任务列表接口", description = "分页查询任务列表，支持关键字与时间范围；管理员看全部，普通用户仅看自己的")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "401", description = "未登录或 token 过期")
+    })
     @GetMapping("/list")
-    public ApiResponse<IPage<TaskVO>> listTasks(@Valid @ModelAttribute ListTaskRO ro, HttpServletRequest request) {
+    public RestResponse<IPage<TaskVO>> listTasks(@Valid @ModelAttribute ListTaskRO ro, HttpServletRequest request) {
         Long uid = (Long) request.getAttribute("id");
         if (uid == null) {
-            return ApiResponse.failure(401, "未登录或登录已过期");
+            return RestResponse.failure(401, "未登录或登录已过期");
         }
         boolean isAdmin = isAdmin();
         IPage<TaskVO> result = taskService.listTasks(ro, uid, isAdmin);
-        return ApiResponse.success(result);
+        return RestResponse.success(result);
     }
 
     /**
@@ -77,17 +89,24 @@ public class TaskController extends BaseController {
      * @return TaskVO，无权限或不存在时 404
      */
     @Operation(summary = "任务详情接口", description = "根据任务 id 查询详情；仅本人、推荐任务或管理员可查看")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "401", description = "未登录或 token 过期"),
+            @ApiResponse(responseCode = "404", description = "任务不存在或无权限查看")
+    })
     @GetMapping("/{id}")
-    public ApiResponse<TaskVO> getTaskDetail(@PathVariable Long id, HttpServletRequest request) {
+    public RestResponse<TaskVO> getTaskDetail(
+            @Parameter(description = "任务 id") @PathVariable Long id,
+            HttpServletRequest request) {
         Long uid = (Long) request.getAttribute("id");
         if (uid == null) {
-            return ApiResponse.failure(401, "未登录或登录已过期");
+            return RestResponse.failure(401, "未登录或登录已过期");
         }
         TaskVO vo = taskService.getTaskDetail(id, uid, isAdmin());
         if (vo == null) {
-            return ApiResponse.failure(404, "任务不存在或无权限查看");
+            return RestResponse.failure(404, "任务不存在或无权限查看");
         }
-        return ApiResponse.success(vo);
+        return RestResponse.success(vo);
     }
 
     /**
@@ -98,11 +117,19 @@ public class TaskController extends BaseController {
      * @return 操作结果
      */
     @Operation(summary = "删除任务接口", description = "逻辑删除任务，将 is_deleted 置为 1；本人或管理员可删")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "任务不存在或无权限删除"),
+            @ApiResponse(responseCode = "401", description = "未登录或 token 过期"),
+            @ApiResponse(responseCode = "403", description = "无权限")
+    })
     @DeleteMapping("/{id}")
-    public ApiResponse<Void> deleteTask(@PathVariable Long id, HttpServletRequest request) {
+    public RestResponse<Void> deleteTask(
+            @Parameter(description = "任务 id") @PathVariable Long id,
+            HttpServletRequest request) {
         Long uid = (Long) request.getAttribute("id");
         if (uid == null) {
-            return ApiResponse.failure(401, "未登录或登录已过期");
+            return RestResponse.failure(401, "未登录或登录已过期");
         }
         return messageHandle(() -> taskService.deleteTask(id, uid, isAdmin()));
     }
@@ -115,9 +142,17 @@ public class TaskController extends BaseController {
      * @return 操作结果
      */
     @Operation(summary = "设置推荐接口", description = "仅管理员；仅 SUCCESS/RECOMMENDED 可操作，两者互相切换")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "任务不存在或状态不允许操作"),
+            @ApiResponse(responseCode = "401", description = "未登录或 token 过期"),
+            @ApiResponse(responseCode = "403", description = "非管理员无权限")
+    })
     @PutMapping("/{id}/recommend")
-    public ApiResponse<Void> setRecommend(@PathVariable Long id, HttpServletRequest request) {
-        ApiResponse<Void> adminCheck = checkAdmin(request);
+    public RestResponse<Void> setRecommend(
+            @Parameter(description = "任务 id") @PathVariable Long id,
+            HttpServletRequest request) {
+        RestResponse<Void> adminCheck = checkAdmin(request);
         if (adminCheck != null) {
             return adminCheck;
         }
@@ -132,17 +167,24 @@ public class TaskController extends BaseController {
      * @return 操作结果
      */
     @Operation(summary = "启动训练接口", description = "根据任务 id 调用 Python 启动训练；仅任务创建者可操作")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "任务不存在、无权限、状态不允许或调用训练服务失败"),
+            @ApiResponse(responseCode = "401", description = "未登录或 token 过期")
+    })
     @PostMapping("/{id}/start")
-    public ApiResponse<Void> startTask(@PathVariable Long id, HttpServletRequest request) {
+    public RestResponse<Void> startTask(
+            @Parameter(description = "任务 id") @PathVariable Long id,
+            HttpServletRequest request) {
         Long uid = (Long) request.getAttribute("id");
         if (uid == null) {
-            return ApiResponse.failure(401, "未登录或登录已过期");
+            return RestResponse.failure(401, "未登录或登录已过期");
         }
         String err = taskService.startTask(id, uid);
         if (err != null) {
-            return ApiResponse.failure(400, err);
+            return RestResponse.failure(400, err);
         }
-        return ApiResponse.success(null);
+        return RestResponse.success(null);
     }
 
     /**
@@ -153,17 +195,24 @@ public class TaskController extends BaseController {
      * @return 操作结果
      */
     @Operation(summary = "停止训练接口", description = "根据任务 id 调用 Python 停止训练；仅任务创建者可操作；成功后更新状态并断开监控连接")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "任务不存在、无权限或未在训练中"),
+            @ApiResponse(responseCode = "401", description = "未登录或 token 过期")
+    })
     @PostMapping("/{id}/stop")
-    public ApiResponse<Void> stopTask(@PathVariable Long id, HttpServletRequest request) {
+    public RestResponse<Void> stopTask(
+            @Parameter(description = "任务 id") @PathVariable Long id,
+            HttpServletRequest request) {
         Long uid = (Long) request.getAttribute("id");
         if (uid == null) {
-            return ApiResponse.failure(401, "未登录或登录已过期");
+            return RestResponse.failure(401, "未登录或登录已过期");
         }
         String err = taskService.stopTask(id, uid);
         if (err != null) {
-            return ApiResponse.failure(400, err);
+            return RestResponse.failure(400, err);
         }
-        return ApiResponse.success(null);
+        return RestResponse.success(null);
     }
 
     /**
@@ -174,17 +223,24 @@ public class TaskController extends BaseController {
      * @return List&lt;RoundVO&gt;，无权限或任务不存在时 404
      */
     @Operation(summary = "任务轮次列表接口", description = "查询某任务的轮次历史数据，按 roundNum 升序，用于前端画训练曲线")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "401", description = "未登录或 token 过期"),
+            @ApiResponse(responseCode = "404", description = "任务不存在或无权限查看")
+    })
     @GetMapping("/{id}/rounds")
-    public ApiResponse<List<RoundVO>> getTaskRounds(@PathVariable Long id, HttpServletRequest request) {
+    public RestResponse<List<RoundVO>> getTaskRounds(
+            @Parameter(description = "任务 id") @PathVariable Long id,
+            HttpServletRequest request) {
         Long uid = (Long) request.getAttribute("id");
         if (uid == null) {
-            return ApiResponse.failure(401, "未登录或登录已过期");
+            return RestResponse.failure(401, "未登录或登录已过期");
         }
         List<RoundVO> list = taskService.getTaskRounds(id, uid, isAdmin());
         if (list == null) {
-            return ApiResponse.failure(404, "任务不存在或无权限查看");
+            return RestResponse.failure(404, "任务不存在或无权限查看");
         }
-        return ApiResponse.success(list);
+        return RestResponse.success(list);
     }
 
     /**
@@ -196,17 +252,24 @@ public class TaskController extends BaseController {
      * @return List<ClientVO>，无权限或任务不存在时 404
      */
     @Operation(summary = "任务客户端最新状态接口", description = "按 client_index 返回每个客户端最新一条记录的 5 指标，按 client_index 升序，未参与训练的占位为 -1")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "401", description = "未登录或 token 过期"),
+            @ApiResponse(responseCode = "404", description = "任务不存在或无权限查看")
+    })
     @GetMapping("/{id}/clients/latest")
-    public ApiResponse<List<ClientVO>> getTaskClientsLatest(@PathVariable Long id, HttpServletRequest request) {
+    public RestResponse<List<ClientVO>> getTaskClientsLatest(
+            @Parameter(description = "任务 id") @PathVariable Long id,
+            HttpServletRequest request) {
         Long uid = (Long) request.getAttribute("id");
         if (uid == null) {
-            return ApiResponse.failure(401, "未登录或登录已过期");
+            return RestResponse.failure(401, "未登录或登录已过期");
         }
         List<ClientVO> list = taskService.getTaskClientsLatest(id, uid, isAdmin());
         if (list == null) {
-            return ApiResponse.failure(404, "任务不存在或无权限查看");
+            return RestResponse.failure(404, "任务不存在或无权限查看");
         }
-        return ApiResponse.success(list);
+        return RestResponse.success(list);
     }
 
     /**
@@ -218,19 +281,24 @@ public class TaskController extends BaseController {
      * @return List<ClientVO>，无权限或任务不存在时 404
      */
     @Operation(summary = "任务下某客户端详情接口", description = "返回该 task 下该 client_index 的全部 Client 记录，按 roundNum 升序")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "401", description = "未登录或 token 过期"),
+            @ApiResponse(responseCode = "404", description = "任务不存在或无权限查看")
+    })
     @GetMapping("/{id}/clients/{clientIndex}")
-    public ApiResponse<List<ClientVO>> getTaskClientDetail(
-            @PathVariable Long id,
-            @PathVariable Integer clientIndex,
+    public RestResponse<List<ClientVO>> getTaskClientDetail(
+            @Parameter(description = "任务 id") @PathVariable Long id,
+            @Parameter(description = "客户端索引，0～numNodes-1") @PathVariable Integer clientIndex,
             HttpServletRequest request) {
         Long uid = (Long) request.getAttribute("id");
         if (uid == null) {
-            return ApiResponse.failure(401, "未登录或登录已过期");
+            return RestResponse.failure(401, "未登录或登录已过期");
         }
         List<ClientVO> list = taskService.getTaskClientDetail(id, clientIndex, uid, isAdmin());
         if (list == null) {
-            return ApiResponse.failure(404, "任务不存在或无权限查看");
+            return RestResponse.failure(404, "任务不存在或无权限查看");
         }
-        return ApiResponse.success(list);
+        return RestResponse.success(list);
     }
 }

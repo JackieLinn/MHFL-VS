@@ -9,7 +9,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
-import ynu.jackielinn.server.common.ApiResponse;
+import ynu.jackielinn.server.common.RestResponse;
 import ynu.jackielinn.server.utils.Const;
 
 import java.io.IOException;
@@ -118,6 +118,6 @@ public class CaptchaValidateFilter extends OncePerRequestFilter {
     private void writeCaptchaError(HttpServletResponse response, String message) throws IOException {
         response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
         response.setContentType("application/json;charset=UTF-8");
-        response.getWriter().write(ApiResponse.failure(400, message).asJsonString());
+        response.getWriter().write(RestResponse.failure(400, message).asJsonString());
     }
 }

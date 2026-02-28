@@ -19,19 +19,19 @@ public abstract class BaseController {
      * @param action 具体操作
      * @return 响应结果
      */
-    protected ApiResponse<Void> messageHandle(Supplier<String> action) {
+    protected RestResponse<Void> messageHandle(Supplier<String> action) {
         String message = action.get();
-        return message == null ? ApiResponse.success() : ApiResponse.failure(400, message);
+        return message == null ? RestResponse.success() : RestResponse.failure(400, message);
     }
 
     /**
-     * 处理函数式接口 Function<T, String> 定义的操作，并返回 ApiResponse<Void> 类型的结果
+     * 处理函数式接口 Function<T, String> 定义的操作，并返回 RestResponse<Void> 类型的结果
      *
      * @param ro       请求对象
      * @param function 函数式接口，接受请求对象并返回一个字符串（null=成功，非null=错误信息）
      * @return 处理结果
      */
-    protected <T> ApiResponse<Void> messageHandle(T ro, Function<T, String> function) {
+    protected <T> RestResponse<Void> messageHandle(T ro, Function<T, String> function) {
         return messageHandle(() -> function.apply(ro));
     }
 
@@ -42,22 +42,22 @@ public abstract class BaseController {
      * @param request HttpServletRequest
      * @return 如果是管理员返回 null，否则返回错误响应
      */
-    protected ApiResponse<Void> checkAdmin(HttpServletRequest request) {
+    protected RestResponse<Void> checkAdmin(HttpServletRequest request) {
         Long currentUserId = (Long) request.getAttribute("id");
         if (currentUserId == null) {
-            return ApiResponse.failure(403, "无权限执行此操作");
+            return RestResponse.failure(403, "无权限执行此操作");
         }
         // 验证当前用户是管理员
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null) {
-            return ApiResponse.failure(403, "无权限执行此操作");
+            return RestResponse.failure(403, "无权限执行此操作");
         }
         // 检查是否有 ROLE_admin 权限
         boolean hasAdminRole = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .anyMatch(auth -> auth.equals("ROLE_admin"));
         if (!hasAdminRole) {
-            return ApiResponse.failure(403, "无权限执行此操作");
+            return RestResponse.failure(403, "无权限执行此操作");
         }
         return null;
     }

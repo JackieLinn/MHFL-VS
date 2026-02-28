@@ -2,13 +2,16 @@ package ynu.jackielinn.server.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.web.bind.annotation.*;
-import ynu.jackielinn.server.common.ApiResponse;
+import ynu.jackielinn.server.common.RestResponse;
 import ynu.jackielinn.server.common.BaseController;
 import ynu.jackielinn.server.dto.request.ListDatasetRO;
 import ynu.jackielinn.server.dto.response.DatasetVO;
@@ -30,12 +33,18 @@ public class DatasetController extends BaseController {
      * @return 是否操作成功
      */
     @Operation(summary = "管理员创建数据集接口", description = "管理员创建数据集，输入数据集名字即可")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "数据集名已存在或参数错误"),
+            @ApiResponse(responseCode = "401", description = "未登录或 token 过期"),
+            @ApiResponse(responseCode = "403", description = "非管理员无权限")
+    })
     @PostMapping("/admin/create")
-    public ApiResponse<Void> createDataset(
-            @RequestParam @NotBlank(message = "数据集名字不能为空") String dataName,
+    public RestResponse<Void> createDataset(
+            @Parameter(description = "数据集名称", required = true) @RequestParam @NotBlank(message = "数据集名字不能为空") String dataName,
             HttpServletRequest request) {
         // 验证管理员权限
-        ApiResponse<Void> adminCheck = checkAdmin(request);
+        RestResponse<Void> adminCheck = checkAdmin(request);
         if (adminCheck != null) {
             return adminCheck;
         }
@@ -50,10 +59,18 @@ public class DatasetController extends BaseController {
      * @return 是否操作成功
      */
     @Operation(summary = "管理员删除数据集接口", description = "管理员逻辑删除数据集，将 is_deleted 置为 1")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "数据集不存在或删除失败"),
+            @ApiResponse(responseCode = "401", description = "未登录或 token 过期"),
+            @ApiResponse(responseCode = "403", description = "非管理员无权限")
+    })
     @DeleteMapping("/admin/{id}")
-    public ApiResponse<Void> deleteDataset(@PathVariable Long id, HttpServletRequest request) {
+    public RestResponse<Void> deleteDataset(
+            @Parameter(description = "数据集 id") @PathVariable Long id,
+            HttpServletRequest request) {
         // 验证管理员权限
-        ApiResponse<Void> adminCheck = checkAdmin(request);
+        RestResponse<Void> adminCheck = checkAdmin(request);
         if (adminCheck != null) {
             return adminCheck;
         }
@@ -69,13 +86,19 @@ public class DatasetController extends BaseController {
      * @return 是否操作成功
      */
     @Operation(summary = "管理员更新数据集接口", description = "管理员更新数据集名字，输入数据集名字即可")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "数据集不存在、名字已被占用或更新失败"),
+            @ApiResponse(responseCode = "401", description = "未登录或 token 过期"),
+            @ApiResponse(responseCode = "403", description = "非管理员无权限")
+    })
     @PutMapping("/admin/{id}")
-    public ApiResponse<Void> updateDataset(
-            @PathVariable Long id,
-            @RequestParam @NotBlank(message = "数据集名字不能为空") String dataName,
+    public RestResponse<Void> updateDataset(
+            @Parameter(description = "数据集 id") @PathVariable Long id,
+            @Parameter(description = "新的数据集名称", required = true) @RequestParam @NotBlank(message = "数据集名字不能为空") String dataName,
             HttpServletRequest request) {
         // 验证管理员权限
-        ApiResponse<Void> adminCheck = checkAdmin(request);
+        RestResponse<Void> adminCheck = checkAdmin(request);
         if (adminCheck != null) {
             return adminCheck;
         }
@@ -89,9 +112,14 @@ public class DatasetController extends BaseController {
      * @return 分页结果（DatasetVO，排除敏感信息）
      */
     @Operation(summary = "管理员查询数据集列表接口", description = "管理员查询数据集列表，支持关键字模糊查询（数据集名字）和时间范围查询，分页查询")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "401", description = "未登录或 token 过期"),
+            @ApiResponse(responseCode = "403", description = "非管理员无权限")
+    })
     @GetMapping("/admin/list")
-    public ApiResponse<IPage<DatasetVO>> listDatasets(@Valid @ModelAttribute ListDatasetRO ro) {
+    public RestResponse<IPage<DatasetVO>> listDatasets(@Valid @ModelAttribute ListDatasetRO ro) {
         IPage<DatasetVO> result = datasetService.listDatasets(ro);
-        return ApiResponse.success(result);
+        return RestResponse.success(result);
     }
 }

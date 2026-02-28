@@ -17,7 +17,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import ynu.jackielinn.server.dto.response.AuthorizeVO;
 import ynu.jackielinn.server.entity.Account;
-import ynu.jackielinn.server.common.ApiResponse;
+import ynu.jackielinn.server.common.RestResponse;
 import ynu.jackielinn.server.filter.CaptchaValidateFilter;
 import ynu.jackielinn.server.filter.JwtAuthorizeFilter;
 import ynu.jackielinn.server.service.AccountService;
@@ -111,7 +111,7 @@ public class SecurityConfiguration {
             vo.setExpire(jwtUtils.expireTime());
             vo.setToken(token);
         });
-        response.getWriter().write(ApiResponse.success(authorizeVO).asJsonString());
+        response.getWriter().write(RestResponse.success(authorizeVO).asJsonString());
     }
 
     /**
@@ -131,9 +131,9 @@ public class SecurityConfiguration {
         PrintWriter writer = response.getWriter();
         String authorization = request.getHeader("Authorization");
         if (jwtUtils.invalidateJwt(authorization)) {
-            writer.write(ApiResponse.success().asJsonString());
+            writer.write(RestResponse.success().asJsonString());
         } else {
-            writer.write(ApiResponse.failure(400, "退出登录失败").asJsonString());
+            writer.write(RestResponse.failure(400, "退出登录失败").asJsonString());
         }
     }
 
@@ -151,7 +151,7 @@ public class SecurityConfiguration {
                                         AuthenticationException exception) throws IOException, ServletException {
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
-        response.getWriter().write(ApiResponse.unauthorized(exception.getMessage()).asJsonString());
+        response.getWriter().write(RestResponse.unauthorized(exception.getMessage()).asJsonString());
     }
 
     /**
@@ -168,7 +168,7 @@ public class SecurityConfiguration {
                              AccessDeniedException exception) throws IOException, ServletException {
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
-        response.getWriter().write(ApiResponse.forbidden(exception.getMessage()).asJsonString());
+        response.getWriter().write(RestResponse.forbidden(exception.getMessage()).asJsonString());
     }
 
     /**
@@ -184,6 +184,6 @@ public class SecurityConfiguration {
                                AuthenticationException exception) throws IOException {
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
-        response.getWriter().write(ApiResponse.unauthorized(exception.getMessage()).asJsonString());
+        response.getWriter().write(RestResponse.unauthorized(exception.getMessage()).asJsonString());
     }
 }

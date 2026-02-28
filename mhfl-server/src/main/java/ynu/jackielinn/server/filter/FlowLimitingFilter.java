@@ -9,7 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.core.annotation.Order;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
-import ynu.jackielinn.server.common.ApiResponse;
+import ynu.jackielinn.server.common.RestResponse;
 import ynu.jackielinn.server.utils.Const;
 
 import java.io.IOException;
@@ -73,7 +73,7 @@ public class FlowLimitingFilter extends HttpFilter {
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         response.setContentType("application/json;charset=utf-8");
         PrintWriter writer = response.getWriter();
-        writer.write(ApiResponse.forbidden("操作频繁，请稍后再试").asJsonString());
+        writer.write(RestResponse.forbidden("操作频繁，请稍后再试").asJsonString());
     }
 
     /**

@@ -5,7 +5,7 @@ import jakarta.validation.ValidationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import ynu.jackielinn.server.common.ApiResponse;
+import ynu.jackielinn.server.common.RestResponse;
 
 @Slf4j
 @RestControllerAdvice
@@ -19,8 +19,8 @@ public class ValidationController {
      * @return 校验结果
      */
     @ExceptionHandler(ValidationException.class)
-    public ApiResponse<Void> validateError(ValidationException exception) {
+    public RestResponse<Void> validateError(ValidationException exception) {
         log.warn("Resolved [{}: {}]", exception.getClass().getName(), exception.getMessage());
-        return ApiResponse.failure(400, "请求参数有误");
+        return RestResponse.failure(400, "请求参数有误");
     }
 }

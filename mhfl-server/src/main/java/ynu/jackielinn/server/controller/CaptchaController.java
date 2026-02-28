@@ -4,6 +4,8 @@ import cn.hutool.captcha.CaptchaUtil;
 import cn.hutool.captcha.LineCaptcha;
 import cn.hutool.core.util.IdUtil;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
@@ -12,7 +14,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import ynu.jackielinn.server.common.ApiResponse;
+import ynu.jackielinn.server.common.RestResponse;
 import ynu.jackielinn.server.common.BaseController;
 import ynu.jackielinn.server.utils.Const;
 
@@ -44,12 +46,16 @@ public class CaptchaController extends BaseController {
      */
     @GetMapping("/generate")
     @Operation(summary = "生成图形验证码", description = "生成图形验证码，返回验证码ID和Base64编码的图片")
-    public ApiResponse<Map<String, String>> generateCaptcha(HttpServletRequest request) {
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功，返回 captchaId 与 captchaImage"),
+            @ApiResponse(responseCode = "400", description = "请求频繁，请稍后再试")
+    })
+    public RestResponse<Map<String, String>> generateCaptcha(HttpServletRequest request) {
         String ip = request.getRemoteAddr();
 
         // 限流检查：10 秒内最多请求 3 次
         if (this.isLimited(ip)) {
-            return ApiResponse.failure(400, "请求频繁，请稍后再试");
+            return RestResponse.failure(400, "请求频繁，请稍后再试");
         }
 
         // 生成验证码，宽度 130，高度 48，验证码长度 4，干扰线数量 20
@@ -75,7 +81,7 @@ public class CaptchaController extends BaseController {
                 "captchaImage", captcha.getImageBase64Data()
         );
 
-        return ApiResponse.success(result);
+        return RestResponse.success(result);
     }
 
     /**
@@ -86,7 +92,11 @@ public class CaptchaController extends BaseController {
      * @throws IOException IO异常
      */
     @GetMapping("/image")
-    @Operation(summary = "直接输出验证码图片", description = "直接输出验证码图片流，需要通过响应头获取captchaId")
+    @Operation(summary = "直接输出验证码图片", description = "直接输出验证码图片流，需要通过响应头 Captcha-Id 获取 captchaId")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功，响应体为图片流，响应头 Captcha-Id 为验证码 id"),
+            @ApiResponse(responseCode = "400", description = "请求频繁，请稍后再试")
+    })
     public void getCaptchaImage(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String ip = request.getRemoteAddr();
 
@@ -94,7 +104,7 @@ public class CaptchaController extends BaseController {
         if (this.isLimited(ip)) {
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             response.setContentType("application/json;charset=UTF-8");
-            response.getWriter().write(ApiResponse.failure(400, "请求频繁，请稍后再试").asJsonString());
+            response.getWriter().write(RestResponse.failure(400, "请求频繁，请稍后再试").asJsonString());
             return;
         }
 
