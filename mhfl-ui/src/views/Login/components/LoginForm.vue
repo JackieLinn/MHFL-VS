@@ -110,7 +110,8 @@ onMounted(() => refreshCaptcha())
           <el-icon class="input-icon">
             <Lock/>
           </el-icon>
-          <el-input v-model="form.password" type="password" :placeholder="placeholders.password" show-password class="custom-input"/>
+          <el-input v-model="form.password" type="password" :placeholder="placeholders.password" show-password
+                    class="custom-input"/>
         </div>
       </el-form-item>
 
@@ -244,8 +245,9 @@ onMounted(() => refreshCaptcha())
 
 /* 复选框 */
 .custom-checkbox :deep(.el-checkbox__label) {
-  color: var(--login-checkbox-label);
+  color: var(--login-link-color);
   font-size: 14px;
+  font-weight: 400;
 }
 
 .custom-checkbox :deep(.el-checkbox__inner) {

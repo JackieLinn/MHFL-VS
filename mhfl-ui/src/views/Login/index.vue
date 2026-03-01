@@ -340,11 +340,10 @@ const openGitHub = () => {
 .milkyway {
   position: absolute;
   inset: -30% -20%;
-  background:
-    radial-gradient(ellipse 60% 40% at 30% 40%, var(--milkyway-via) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 35% at 70% 50%, var(--milkyway-to) 0%, transparent 55%),
-    radial-gradient(ellipse 45% 30% at 50% 45%, var(--milkyway-via) 0%, transparent 50%),
-    linear-gradient(
+  background: radial-gradient(ellipse 60% 40% at 30% 40%, var(--milkyway-via) 0%, transparent 60%),
+  radial-gradient(ellipse 50% 35% at 70% 50%, var(--milkyway-to) 0%, transparent 55%),
+  radial-gradient(ellipse 45% 30% at 50% 45%, var(--milkyway-via) 0%, transparent 50%),
+  linear-gradient(
       155deg,
       transparent 10%,
       var(--milkyway-from) 22%,
@@ -353,7 +352,7 @@ const openGitHub = () => {
       var(--milkyway-via) 55%,
       var(--milkyway-from) 68%,
       transparent 82%
-    );
+  );
   filter: blur(30px);
   animation: milkywayDrift 60s ease-in-out infinite alternate;
 }
@@ -364,10 +363,10 @@ const openGitHub = () => {
   position: absolute;
   inset: -20%;
   background: radial-gradient(
-    ellipse 70% 28% at 50% 50%,
-    var(--milkyway-via) 0%,
-    var(--milkyway-from) 35%,
-    transparent 68%
+      ellipse 70% 28% at 50% 50%,
+      var(--milkyway-via) 0%,
+      var(--milkyway-from) 35%,
+      transparent 68%
   );
   filter: blur(28px);
   transform: rotate(-45deg);
@@ -474,7 +473,7 @@ const openGitHub = () => {
   position: absolute;
   width: 120px;
   height: 1.5px;
-  background: linear-gradient(to right, transparent 0%, var(--meteor-tail) 60%, var(--meteor-head) 100%);
+  background: linear-gradient(to right, var(--meteor-head) 0%, var(--meteor-tail) 40%, transparent 100%);
   border-radius: 2px;
   opacity: 0;
 }
@@ -482,7 +481,7 @@ const openGitHub = () => {
 .meteor::before {
   content: '';
   position: absolute;
-  right: -1px;
+  left: -1px;
   top: 50%;
   width: 5px;
   height: 5px;
@@ -495,22 +494,22 @@ const openGitHub = () => {
 .meteor-1 {
   top: 8%;
   right: 5%;
-  animation: meteorShoot1 11s linear infinite;
+  animation: meteorShoot1 6s linear infinite;
   animation-delay: 1s;
 }
 
 .meteor-2 {
   top: 18%;
   right: 25%;
-  animation: meteorShoot2 15s linear infinite;
-  animation-delay: 5s;
+  animation: meteorShoot2 8s linear infinite;
+  animation-delay: 3s;
 }
 
 .meteor-3 {
   top: 12%;
   right: 45%;
-  animation: meteorShoot3 19s linear infinite;
-  animation-delay: 9s;
+  animation: meteorShoot3 10s linear infinite;
+  animation-delay: 5s;
 }
 
 @keyframes meteorShoot1 {
