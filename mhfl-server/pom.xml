@@ -163,6 +163,7 @@
                                 <exclude>ynu/jackielinn/server/dto/**</exclude>
                                 <exclude>ynu/jackielinn/server/entity/**</exclude>
                                 <exclude>ynu/jackielinn/server/handler/**</exclude>
+                                <exclude>ynu/jackielinn/server/MhflServerApplication.class</exclude>
                             </excludes>
                         </configuration>
                     </execution>
