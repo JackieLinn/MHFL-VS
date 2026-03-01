@@ -40,6 +40,21 @@ const openGitHub = () => {
       <!-- 光晕 -->
       <div class="glow glow-1"></div>
       <div class="glow glow-2"></div>
+
+      <!-- 银河带 -->
+      <div class="milkyway"></div>
+
+      <!-- 星空 -->
+      <div class="starfield">
+        <div class="stars stars-sm"></div>
+        <div class="stars stars-md"></div>
+        <div class="stars stars-lg"></div>
+      </div>
+
+      <!-- 流星 -->
+      <div class="meteor meteor-1"></div>
+      <div class="meteor meteor-2"></div>
+      <div class="meteor meteor-3"></div>
     </div>
 
     <!-- GitHub链接、语言切换和主题切换 -->
@@ -321,6 +336,228 @@ const openGitHub = () => {
   }
 }
 
+/* ============ 银河带 ============ */
+.milkyway {
+  position: absolute;
+  inset: -30% -20%;
+  background: radial-gradient(ellipse at 25% 35%, var(--milkyway-via) 0%, transparent 50%),
+  radial-gradient(ellipse at 75% 55%, var(--milkyway-from) 0%, transparent 45%),
+  linear-gradient(
+      155deg,
+      transparent 15%,
+      var(--milkyway-from) 30%,
+      var(--milkyway-via) 42%,
+      var(--milkyway-to) 54%,
+      var(--milkyway-from) 66%,
+      transparent 80%
+  );
+  filter: blur(40px);
+  animation: milkywayDrift 60s ease-in-out infinite alternate;
+}
+
+@keyframes milkywayDrift {
+  from {
+    transform: rotate(-2deg) scale(1);
+  }
+  to {
+    transform: rotate(2deg) scale(1.04);
+  }
+}
+
+/* ============ 星空 ============ */
+.starfield {
+  position: absolute;
+  inset: 0;
+}
+
+.stars {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 50%;
+}
+
+.stars-sm {
+  width: 1px;
+  height: 1px;
+  color: var(--star-color-sm);
+  background: currentColor;
+  animation: twinkle1 4s ease-in-out infinite;
+  box-shadow: 25px 18px, 102px 192px, 253px 97px, 410px 248px, 547px 73px,
+  688px 312px, 841px 148px, 993px 43px, 1147px 276px, 1304px 118px,
+  1451px 342px, 1598px 197px, 1743px 92px, 1891px 308px, 48px 402px,
+  197px 497px, 348px 443px, 502px 548px, 643px 472px, 797px 517px,
+  941px 397px, 1093px 502px, 1247px 417px, 1397px 543px, 1548px 477px,
+  1693px 402px, 1842px 523px, 73px 647px, 223px 697px, 372px 673px,
+  518px 752px, 667px 643px, 822px 718px, 973px 677px, 1118px 747px,
+  1272px 643px, 1422px 697px, 1573px 677px, 1718px 747px, 1872px 647px,
+  148px 847px, 447px 897px, 747px 867px, 1047px 917px, 1347px 847px,
+  1647px 897px, 323px 43px, 723px 173px, 1123px 67px, 1523px 143px;
+}
+
+.stars-md {
+  width: 1.5px;
+  height: 1.5px;
+  color: var(--star-color-md);
+  background: currentColor;
+  animation: twinkle2 5s ease-in-out infinite;
+  box-shadow: 178px 117px, 477px 178px, 778px 77px, 1077px 218px, 1378px 157px,
+  1677px 277px, 118px 378px, 418px 477px, 718px 418px, 1018px 517px,
+  1318px 378px, 1618px 477px, 278px 618px, 578px 718px, 878px 677px,
+  1178px 618px, 1478px 718px, 1778px 618px, 348px 878px, 1248px 878px,
+  58px 157px, 858px 257px, 1558px 437px, 758px 837px, 1858px 157px;
+}
+
+.stars-lg {
+  width: 2px;
+  height: 2px;
+  color: var(--star-color-lg);
+  background: currentColor;
+  animation: twinkle3 6s ease-in-out infinite;
+  box-shadow: 298px 148px, 898px 118px, 1498px 198px, 598px 448px, 1198px 398px,
+  1798px 348px, 148px 698px, 748px 748px, 1348px 698px, 1048px 848px;
+}
+
+@keyframes twinkle1 {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+@keyframes twinkle2 {
+  0%, 100% {
+    opacity: 0.35;
+  }
+  30% {
+    opacity: 0.95;
+  }
+  70% {
+    opacity: 0.2;
+  }
+}
+
+@keyframes twinkle3 {
+  0%, 100% {
+    opacity: 0.45;
+  }
+  40% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 0.25;
+  }
+}
+
+/* ============ 流星 ============ */
+.meteor {
+  position: absolute;
+  width: 120px;
+  height: 1.5px;
+  background: linear-gradient(to right, transparent 0%, var(--meteor-tail) 60%, var(--meteor-head) 100%);
+  border-radius: 2px;
+  opacity: 0;
+}
+
+.meteor::before {
+  content: '';
+  position: absolute;
+  right: -1px;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  margin-top: -2.5px;
+  border-radius: 50%;
+  background: var(--meteor-head);
+  box-shadow: 0 0 8px 3px var(--meteor-head);
+}
+
+.meteor-1 {
+  top: 8%;
+  right: 5%;
+  animation: meteorShoot1 11s linear infinite;
+  animation-delay: 1s;
+}
+
+.meteor-2 {
+  top: 18%;
+  right: 25%;
+  animation: meteorShoot2 15s linear infinite;
+  animation-delay: 5s;
+}
+
+.meteor-3 {
+  top: 12%;
+  right: 45%;
+  animation: meteorShoot3 19s linear infinite;
+  animation-delay: 9s;
+}
+
+@keyframes meteorShoot1 {
+  0% {
+    opacity: 0;
+    transform: rotate(-32deg) translateX(0);
+  }
+  1% {
+    opacity: 1;
+  }
+  7% {
+    opacity: 0.5;
+    transform: rotate(-32deg) translateX(-600px);
+  }
+  8% {
+    opacity: 0;
+    transform: rotate(-32deg) translateX(-650px);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes meteorShoot2 {
+  0% {
+    opacity: 0;
+    transform: rotate(-38deg) translateX(0);
+  }
+  0.8% {
+    opacity: 1;
+  }
+  5.5% {
+    opacity: 0.5;
+    transform: rotate(-38deg) translateX(-550px);
+  }
+  6.3% {
+    opacity: 0;
+    transform: rotate(-38deg) translateX(-600px);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes meteorShoot3 {
+  0% {
+    opacity: 0;
+    transform: rotate(-28deg) translateX(0);
+  }
+  0.6% {
+    opacity: 1;
+  }
+  4% {
+    opacity: 0.5;
+    transform: rotate(-28deg) translateX(-520px);
+  }
+  4.6% {
+    opacity: 0;
+    transform: rotate(-28deg) translateX(-560px);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
 /* ============ 主题切换按钮 ============ */
 .theme-switch-btn {
   position: fixed;
@@ -359,14 +596,37 @@ const openGitHub = () => {
   animation: fadeSlideUp 0.6s ease both;
 }
 
-.brand-content > :nth-child(1) { animation-delay: 0.1s; }
-.brand-content > :nth-child(2) { animation-delay: 0.2s; }
-.brand-content > :nth-child(3) { animation-delay: 0.25s; }
-.brand-content > :nth-child(4) { animation-delay: 0.3s; }
-.brand-content > :nth-child(5) { animation-delay: 0.35s; }
-.brand-content > :nth-child(6) { animation-delay: 0.4s; }
-.brand-content > :nth-child(7) { animation-delay: 0.45s; }
-.brand-content > :nth-child(8) { animation-delay: 0.55s; }
+.brand-content > :nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+.brand-content > :nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.brand-content > :nth-child(3) {
+  animation-delay: 0.25s;
+}
+
+.brand-content > :nth-child(4) {
+  animation-delay: 0.3s;
+}
+
+.brand-content > :nth-child(5) {
+  animation-delay: 0.35s;
+}
+
+.brand-content > :nth-child(6) {
+  animation-delay: 0.4s;
+}
+
+.brand-content > :nth-child(7) {
+  animation-delay: 0.45s;
+}
+
+.brand-content > :nth-child(8) {
+  animation-delay: 0.55s;
+}
 
 .logo-wrapper {
   position: relative;

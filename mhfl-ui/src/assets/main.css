@@ -116,6 +116,16 @@ html, body {
     --login-step-num-bg: rgba(99, 102, 241, 0.05);
     --login-step-num-border: rgba(99, 102, 241, 0.2);
     --login-step-line-bg: rgba(99, 102, 241, 0.15);
+
+    /* 星空变量 */
+    --star-color-sm: rgba(67, 56, 202, 0.35);
+    --star-color-md: rgba(99, 102, 241, 0.55);
+    --star-color-lg: rgba(129, 140, 248, 0.75);
+    --meteor-head: rgba(129, 140, 248, 0.9);
+    --meteor-tail: rgba(99, 102, 241, 0.5);
+    --milkyway-from: rgba(99, 102, 241, 0.04);
+    --milkyway-via: rgba(139, 92, 246, 0.05);
+    --milkyway-to: rgba(168, 85, 247, 0.03);
 }
 
 /* 深色模式 */
@@ -163,6 +173,16 @@ html.dark {
     --login-step-num-bg: rgba(255, 255, 255, 0.05);
     --login-step-num-border: rgba(255, 255, 255, 0.1);
     --login-step-line-bg: rgba(255, 255, 255, 0.1);
+
+    /* 星空变量 */
+    --star-color-sm: rgba(180, 195, 255, 0.45);
+    --star-color-md: rgba(210, 220, 255, 0.65);
+    --star-color-lg: rgba(240, 243, 255, 0.9);
+    --meteor-head: rgba(255, 255, 255, 0.95);
+    --meteor-tail: rgba(165, 180, 252, 0.7);
+    --milkyway-from: rgba(99, 102, 241, 0.06);
+    --milkyway-via: rgba(139, 92, 246, 0.08);
+    --milkyway-to: rgba(168, 85, 247, 0.05);
 }
 
 /* ============ Home页主题变量 ============ */
