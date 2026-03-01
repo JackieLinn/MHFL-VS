@@ -340,18 +340,21 @@ const openGitHub = () => {
 .milkyway {
   position: absolute;
   inset: -30% -20%;
-  background: radial-gradient(ellipse at 25% 35%, var(--milkyway-via) 0%, transparent 50%),
-  radial-gradient(ellipse at 75% 55%, var(--milkyway-from) 0%, transparent 45%),
-  linear-gradient(
+  background:
+    radial-gradient(ellipse 60% 40% at 30% 40%, var(--milkyway-via) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 35% at 70% 50%, var(--milkyway-to) 0%, transparent 55%),
+    radial-gradient(ellipse 45% 30% at 50% 45%, var(--milkyway-via) 0%, transparent 50%),
+    linear-gradient(
       155deg,
-      transparent 15%,
-      var(--milkyway-from) 30%,
-      var(--milkyway-via) 42%,
-      var(--milkyway-to) 54%,
-      var(--milkyway-from) 66%,
-      transparent 80%
-  );
-  filter: blur(40px);
+      transparent 10%,
+      var(--milkyway-from) 22%,
+      var(--milkyway-via) 35%,
+      var(--milkyway-to) 45%,
+      var(--milkyway-via) 55%,
+      var(--milkyway-from) 68%,
+      transparent 82%
+    );
+  filter: blur(30px);
   animation: milkywayDrift 60s ease-in-out infinite alternate;
 }
 
