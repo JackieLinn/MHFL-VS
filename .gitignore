@@ -2,6 +2,10 @@
 .idea
 
 ### mhfl-algo ###
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
 mhfl-algo/mhfl-algo.iml
 mhfl-algo/data/*
 !mhfl-algo/data/README.md
