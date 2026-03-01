@@ -358,6 +358,21 @@ const openGitHub = () => {
   animation: milkywayDrift 60s ease-in-out infinite alternate;
 }
 
+/* 右上→左下对角线椭圆（旋转层） */
+.milkyway::before {
+  content: '';
+  position: absolute;
+  inset: -20%;
+  background: radial-gradient(
+    ellipse 70% 28% at 50% 50%,
+    var(--milkyway-via) 0%,
+    var(--milkyway-from) 35%,
+    transparent 68%
+  );
+  filter: blur(28px);
+  transform: rotate(-45deg);
+}
+
 @keyframes milkywayDrift {
   from {
     transform: rotate(-2deg) scale(1);
