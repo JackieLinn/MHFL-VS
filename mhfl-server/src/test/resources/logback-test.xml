@@ -6,6 +6,8 @@
         </encoder>
     </appender>
     <logger name="ynu.jackielinn.server.listener.TrainingMessageListener" level="OFF"/>
+    <logger name="ynu.jackielinn.server.websocket.WebSocketSessionManager" level="ERROR"/>
+    <logger name="ynu.jackielinn.server.websocket.TaskWebSocketHandler" level="OFF"/>
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
     </root>
