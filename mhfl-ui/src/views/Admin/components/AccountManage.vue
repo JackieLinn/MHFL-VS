@@ -334,7 +334,7 @@ const onPageSizeChange = () => {
   padding: 12px 16px;
   border-radius: 12px;
   border: 1px solid var(--home-border);
-  transition: background 0.2s, border-color 0.2s;
+  transition: all 0.25s ease;
 }
 
 .account-row.role-admin {
@@ -349,6 +349,8 @@ const onPageSizeChange = () => {
 
 .account-row:hover {
   filter: brightness(0.97);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .row-avatar {

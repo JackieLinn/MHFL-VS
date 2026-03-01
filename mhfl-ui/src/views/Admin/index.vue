@@ -40,12 +40,14 @@ const {t} = useI18n()
   font-weight: 700;
   color: var(--home-text-primary);
   margin-bottom: 8px;
+  animation: fadeSlideUp 0.4s ease both;
 }
 
 .page-desc {
   font-size: 14px;
   color: var(--home-text-muted);
   margin-bottom: 24px;
+  animation: fadeSlideUp 0.4s ease 0.1s both;
 }
 
 .admin-tabs {
@@ -55,6 +57,9 @@ const {t} = useI18n()
   min-height: 0;
   background: var(--home-card-bg);
   border-color: var(--home-border);
+  animation: fadeSlideUp 0.5s ease 0.15s both;
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 .admin-tabs :deep(.el-tabs__header) {

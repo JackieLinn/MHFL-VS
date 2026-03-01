@@ -98,17 +98,33 @@ const handleMenuClick = (path: string) => {
 
 .menu-item {
   color: var(--home-text-secondary);
+  position: relative;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .menu-item:hover {
   background: var(--home-hover-bg);
   color: var(--home-text-primary);
+  transform: translateX(2px);
 }
 
 .menu-item.active {
   background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
   color: #6366f1;
   font-weight: 500;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.12);
+}
+
+.menu-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 55%;
+  background: linear-gradient(to bottom, #6366f1, #8b5cf6);
+  border-radius: 0 3px 3px 0;
 }
 
 .sidebar.collapsed .menu-label {
@@ -119,11 +135,16 @@ const handleMenuClick = (path: string) => {
 .collapse-btn {
   border-color: var(--home-border);
   color: var(--home-text-secondary);
+  transition: all 0.25s ease;
 }
 
 .collapse-btn:hover {
   background: var(--home-hover-bg);
   color: var(--home-text-primary);
+}
+
+.collapse-btn:active {
+  transform: scale(0.95);
 }
 
 @media (max-width: 768px) {

@@ -483,13 +483,25 @@ onUnmounted(() => {
 .home-header {
   height: 64px;
   background: var(--home-header-bg);
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(16px) saturate(1.5);
   border-bottom: 1px solid var(--home-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
   flex-shrink: 0;
+  position: relative;
+}
+
+.home-header::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 5%;
+  right: 5%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.2), transparent);
+  pointer-events: none;
 }
 
 .header-left {
@@ -507,6 +519,12 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.header-logo:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.35);
 }
 
 .header-title h1 {
@@ -526,13 +544,15 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
   padding: 6px 12px;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
-  transition: background 0.3s;
+  transition: all 0.25s ease;
+  border: 1px solid transparent;
 }
 
 .user-dropdown:hover {
   background: var(--home-hover-bg);
+  border-color: var(--home-border);
 }
 
 .user-avatar {

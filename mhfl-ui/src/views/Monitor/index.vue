@@ -25,12 +25,14 @@ const {t} = useI18n()
   font-weight: 700;
   color: var(--home-text-primary);
   margin-bottom: 8px;
+  animation: fadeSlideUp 0.4s ease both;
 }
 
 .page-desc {
   font-size: 14px;
   color: var(--home-text-muted);
   margin-bottom: 32px;
+  animation: fadeSlideUp 0.4s ease 0.1s both;
 }
 
 .page-placeholder {
@@ -40,10 +42,23 @@ const {t} = useI18n()
   justify-content: center;
   min-height: 400px;
   color: var(--home-text-muted);
+  animation: fadeSlideUp 0.5s ease 0.2s both;
+}
+
+.page-placeholder::before {
+  content: '';
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.08));
+  border: 1px solid rgba(99, 102, 241, 0.1);
+  margin-bottom: 20px;
+  animation: subtlePulse 3s ease-in-out infinite;
 }
 
 .page-placeholder p {
-  font-size: 14px;
+  font-size: 15px;
   color: var(--home-text-muted);
+  letter-spacing: 0.3px;
 }
 </style>

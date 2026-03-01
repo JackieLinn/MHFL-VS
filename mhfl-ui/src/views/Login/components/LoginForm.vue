@@ -299,13 +299,30 @@ onMounted(() => refreshCaptcha())
   opacity: 1;
 }
 
+.submit-btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transform: translateX(-100%);
+  border-radius: inherit;
+}
+
+.submit-btn:hover::after {
+  animation: shimmer 0.8s ease;
+}
+
 .submit-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 12px 24px rgba(99, 102, 241, 0.35);
 }
 
 .submit-btn:active {
   transform: translateY(0);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
 }
 
 .submit-btn:disabled {

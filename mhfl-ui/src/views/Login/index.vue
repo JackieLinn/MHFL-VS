@@ -327,6 +327,7 @@ const openGitHub = () => {
   top: 20px;
   right: 20px;
   z-index: 100;
+  animation: fadeSlideUp 0.5s ease 0.1s both;
 }
 
 /* ============ 主容器 ============ */
@@ -353,6 +354,19 @@ const openGitHub = () => {
 .brand-content {
   max-width: 500px;
 }
+
+.brand-content > * {
+  animation: fadeSlideUp 0.6s ease both;
+}
+
+.brand-content > :nth-child(1) { animation-delay: 0.1s; }
+.brand-content > :nth-child(2) { animation-delay: 0.2s; }
+.brand-content > :nth-child(3) { animation-delay: 0.25s; }
+.brand-content > :nth-child(4) { animation-delay: 0.3s; }
+.brand-content > :nth-child(5) { animation-delay: 0.35s; }
+.brand-content > :nth-child(6) { animation-delay: 0.4s; }
+.brand-content > :nth-child(7) { animation-delay: 0.45s; }
+.brand-content > :nth-child(8) { animation-delay: 0.55s; }
 
 .logo-wrapper {
   position: relative;
@@ -457,6 +471,7 @@ const openGitHub = () => {
   background: var(--login-capability-hover-bg);
   border-color: var(--login-capability-hover-border);
   transform: translateX(8px);
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.1);
 }
 
 .capability-icon {
@@ -503,11 +518,13 @@ const openGitHub = () => {
   width: 100%;
   max-width: 440px;
   background: var(--login-card-bg);
-  backdrop-filter: blur(20px);
+  backdrop-filter: blur(24px) saturate(1.8);
   border: 1px solid var(--login-card-border);
   border-radius: 24px;
   padding: 40px;
-  box-shadow: 0 25px 50px var(--login-card-shadow);
+  box-shadow: 0 25px 50px var(--login-card-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  animation: fadeSlideUp 0.7s ease 0.3s both;
+  transition: box-shadow 0.4s ease;
 }
 
 .card-decoration {
@@ -553,22 +570,27 @@ const openGitHub = () => {
   margin-top: 24px;
   font-size: 12px;
   color: var(--login-text-muted);
+  animation: fadeSlideUp 0.5s ease 0.55s both;
+  letter-spacing: 0.3px;
 }
 
 /* ============ 过渡动画 ============ */
-.slide-enter-active,
+.slide-enter-active {
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 .slide-leave-active {
-  transition: all 0.3s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .slide-enter-from {
   opacity: 0;
-  transform: translateX(20px);
+  transform: translateX(24px) scale(0.98);
 }
 
 .slide-leave-to {
   opacity: 0;
-  transform: translateX(-20px);
+  transform: translateX(-16px) scale(0.98);
 }
 
 /* ============ 响应式 ============ */

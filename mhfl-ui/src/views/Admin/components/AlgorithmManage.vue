@@ -345,12 +345,13 @@ const onPageSizeChange = () => {
   border-radius: 12px;
   border: 1px solid var(--home-border);
   background: var(--home-card-bg);
-  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+  transition: all 0.25s ease;
 }
 
 .algorithm-row:hover {
   background: var(--home-hover-bg);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
 }
 
 .row-cell {
