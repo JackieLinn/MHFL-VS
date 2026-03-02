@@ -115,17 +115,18 @@ function initCharts() {
       tooltip: {trigger: 'item'},
       legend: {
         show: true,
-        bottom: 4,
+        bottom: 0,
         left: 'center',
-        textStyle: {color: textColor, fontSize: 11},
+        textStyle: {color: textColor, fontSize: 12},
         itemWidth: 10,
         itemHeight: 10,
-        itemGap: 8
+        itemGap: 8,
+        padding: [20, 0, 0, 0]
       },
       series: [{
         type: 'pie',
-        radius: ['50%', '78%'],
-        center: ['50%', '44%'],
+        radius: ['48%', '78%'],
+        center: ['50%', '42%'],
         label: {show: false},
         labelLine: {show: false},
         data: taskStatusPieData,
@@ -534,8 +535,8 @@ onBeforeUnmount(() => {
 }
 
 .chart-pie {
-  height: 180px;
-  margin-top: 4px;
+  height: 220px;
+  margin-top: 12px;
 }
 
 .chart-line {
