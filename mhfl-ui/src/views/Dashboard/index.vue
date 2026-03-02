@@ -208,19 +208,19 @@ function initCharts() {
     chartAlgorithm = echarts.init(chartAlgorithmRef.value)
     chartAlgorithm.setOption({
       backgroundColor: 'transparent',
-      tooltip: {trigger: 'axis'},
-      grid: {left: 52, right: 12, top: 16, bottom: 24},
+      tooltip: {trigger: 'axis', textStyle: {fontSize: 13}},
+      grid: {left: 56, right: 12, top: 16, bottom: 20},
       xAxis: {
         type: 'category',
         data: algorithmBarData.map(d => d.name),
         axisLine: {lineStyle: {color: mutedColor}},
-        axisLabel: {color: textColor, fontSize: 10, rotate: 20}
+        axisLabel: {color: textColor, fontSize: 14, rotate: 0, margin: 10}
       },
       yAxis: {
         type: 'value',
         axisLine: {show: false},
         splitLine: {lineStyle: {color: mutedColor, type: 'dashed', opacity: 0.4}},
-        axisLabel: {color: textColor, fontSize: 10}
+        axisLabel: {color: textColor, fontSize: 13}
       },
       series: [{
         type: 'bar',
@@ -492,7 +492,7 @@ onBeforeUnmount(() => {
 
 .platform-layout {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: 220px 1fr;
   gap: 20px;
   align-items: stretch;
 }
@@ -501,7 +501,8 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  min-width: 200px;
+  width: 220px;
+  min-width: 0;
   height: 100%;
 }
 
@@ -565,7 +566,8 @@ onBeforeUnmount(() => {
 }
 
 .chart-algo {
-  height: 200px;
+  height: 280px;
+  margin-top: 8px;
 }
 
 .chart-card-admin {
@@ -832,6 +834,7 @@ onBeforeUnmount(() => {
   }
 
   .platform-stats {
+    width: auto;
     min-width: 0;
   }
 
