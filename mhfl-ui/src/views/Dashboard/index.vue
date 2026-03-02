@@ -494,14 +494,21 @@ onBeforeUnmount(() => {
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 20px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .platform-stats {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: 10px;
   min-width: 200px;
+  height: 100%;
+}
+
+.platform-stats .platform-card {
+  flex: 1;
+  min-height: 0;
+  max-width: none;
 }
 
 .charts-row {
@@ -636,9 +643,6 @@ onBeforeUnmount(() => {
   color: var(--home-text-muted);
 }
 
-.platform-card {
-  max-width: 200px;
-}
 
 .platform-icon {
   background: rgba(139, 92, 246, 0.12);
