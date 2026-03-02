@@ -191,9 +191,9 @@ html.dark {
     --home-bg: #f8fafc;
     --home-header-bg: rgba(255, 255, 255, 0.85);
     --home-border: rgba(99, 102, 241, 0.1);
-    --home-text-primary: #1e1b4b;
-    --home-text-secondary: #4338ca;
-    --home-text-muted: #6366f1;
+    --home-text-primary: #0f172a;
+    --home-text-secondary: #334155;
+    --home-text-muted: #64748b;
     --home-hover-bg: rgba(99, 102, 241, 0.08);
     --home-card-bg: rgba(255, 255, 255, 0.8);
     --home-card-border: rgba(99, 102, 241, 0.12);
