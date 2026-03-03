@@ -76,7 +76,7 @@ const recentTasks = [
   },
   {id: 109, algorithmName: 'FedSSA', dataName: 'Tiny-ImageNet', status: 'SUCCESS', createTime: '2026-02-26 16:00'},
   {id: 110, algorithmName: 'FedAvg', dataName: 'CIFAR-100', status: 'RECOMMENDED', createTime: '2026-02-26 09:00'}
-]
+].slice(0, 8)
 
 const platformStats = {
   totalUsers: 28,
@@ -713,7 +713,8 @@ onBeforeUnmount(() => {
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: auto auto;
-  gap: 20px;
+  gap: 16px;
+  align-items: stretch;
 }
 
 .dashboard-card {
@@ -732,8 +733,8 @@ onBeforeUnmount(() => {
   min-height: 0;
 }
 
-.card-header {
-  margin-bottom: 12px;
+.recent-card .card-header {
+  margin-bottom: 10px;
 }
 
 .card-title {
@@ -762,7 +763,7 @@ onBeforeUnmount(() => {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .recent-item {
@@ -839,21 +840,24 @@ onBeforeUnmount(() => {
 .resource-card {
   grid-column: 2;
   grid-row: 1;
-  padding: 16px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .resource-card .card-title {
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .system-health-card .card-title {
-  margin-bottom: 14px;
+  margin-bottom: 10px;
 }
 
 .health-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px 16px;
+  gap: 10px 14px;
   flex: 1;
   min-height: 0;
 }
@@ -960,20 +964,28 @@ onBeforeUnmount(() => {
 .actions-card {
   grid-column: 2;
   grid-row: 2;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.actions-card .card-title {
+  margin-bottom: 8px;
 }
 
 .actions-list {
-  margin-top: 10px;
+  margin-top: 8px;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 8px;
 }
 
 .action-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
+  gap: 10px;
+  padding: 10px 12px;
   background: var(--home-hover-bg);
   border: 1px solid var(--home-border);
   border-radius: 10px;
