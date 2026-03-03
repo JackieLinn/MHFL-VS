@@ -51,6 +51,15 @@ function getChartColorVar(name: string): string {
 
 const chartTextColor = () => getChartColorVar('--home-text-primary')
 const chartMutedColor = () => getChartColorVar('--home-text-muted')
+const chartTooltipBg = () => document.documentElement.classList.contains('dark')
+    ? 'rgba(15, 23, 42, 0.92)'
+    : 'rgba(255, 255, 255, 0.96)'
+const chartTooltipBorder = () => getChartColorVar('--home-card-border')
+const realtimeChartColor = {
+  cpu: '#4f46e5',
+  memory: '#0ea5a4',
+  gpu: '#f59e0b',
+}
 
 const stats = {
   total: 12,
@@ -144,7 +153,13 @@ function getStatusPieOption() {
   const textColor = chartTextColor()
   return {
     backgroundColor: 'transparent',
-    tooltip: {trigger: 'item', textStyle: {color: textColor}},
+    tooltip: {
+      trigger: 'item',
+      textStyle: {color: textColor},
+      backgroundColor: chartTooltipBg(),
+      borderColor: chartTooltipBorder(),
+      borderWidth: 1
+    },
     legend: {
       show: true,
       bottom: 0,
@@ -162,7 +177,14 @@ function getStatusPieOption() {
       label: {show: false},
       labelLine: {show: false},
       data: taskStatusPieData,
-      emphasis: {itemStyle: {shadowBlur: 10, shadowOffsetY: 2}}
+      emphasis: {
+        scale: true,
+        itemStyle: {shadowBlur: 12, shadowOffsetY: 2}
+      },
+      animationDuration: 700,
+      animationEasing: 'cubicOut',
+      animationDurationUpdate: 380,
+      animationEasingUpdate: 'cubicInOut'
     }]
   }
 }
@@ -172,7 +194,17 @@ function getTrendLineOption() {
   const mutedColor = chartMutedColor()
   return {
     backgroundColor: 'transparent',
-    tooltip: {trigger: 'axis', textStyle: {fontSize: 13, color: textColor}},
+    tooltip: {
+      trigger: 'axis',
+      textStyle: {fontSize: 13, color: textColor},
+      axisPointer: {
+        type: 'line',
+        lineStyle: {color: mutedColor, type: 'dashed'}
+      },
+      backgroundColor: chartTooltipBg(),
+      borderColor: chartTooltipBorder(),
+      borderWidth: 1
+    },
     grid: {left: 48, right: 16, top: 8, bottom: 32},
     xAxis: {
       type: 'category',
@@ -198,7 +230,11 @@ function getTrendLineOption() {
           {offset: 0, color: 'rgba(99,102,241,0.35)'},
           {offset: 1, color: 'rgba(99,102,241,0.02)'}
         ])
-      }
+      },
+      animationDuration: 850,
+      animationEasing: 'cubicOut',
+      animationDurationUpdate: 380,
+      animationEasingUpdate: 'cubicInOut'
     }]
   }
 }
@@ -208,7 +244,17 @@ function getAlgorithmBarOption() {
   const mutedColor = chartMutedColor()
   return {
     backgroundColor: 'transparent',
-    tooltip: {trigger: 'axis', textStyle: {fontSize: 13, color: textColor}},
+    tooltip: {
+      trigger: 'axis',
+      textStyle: {fontSize: 13, color: textColor},
+      axisPointer: {
+        type: 'shadow',
+        shadowStyle: {color: 'rgba(99,102,241,0.1)'}
+      },
+      backgroundColor: chartTooltipBg(),
+      borderColor: chartTooltipBorder(),
+      borderWidth: 1
+    },
     grid: {left: 56, right: 12, top: 16, bottom: 28},
     xAxis: {
       type: 'category',
@@ -232,7 +278,11 @@ function getAlgorithmBarOption() {
           {offset: 1, color: '#6366f1'}
         ]),
         borderRadius: [4, 4, 0, 0]
-      }
+      },
+      animationDuration: 760,
+      animationEasing: 'cubicOut',
+      animationDurationUpdate: 380,
+      animationEasingUpdate: 'cubicInOut'
     }]
   }
 }
@@ -294,6 +344,10 @@ function makeRealtimeLineOption(data: number[], color: string) {
           {offset: 1, color: color + '08'},
         ]),
       },
+      animationDuration: 420,
+      animationEasing: 'cubicOut',
+      animationDurationUpdate: 280,
+      animationEasingUpdate: 'linear'
     }],
   }
 }
@@ -301,22 +355,22 @@ function makeRealtimeLineOption(data: number[], color: string) {
 function initRealtimeCharts() {
   if (chartRealtimeCpuRef.value && !chartRealtimeCpu) {
     chartRealtimeCpu = echarts.init(chartRealtimeCpuRef.value)
-    chartRealtimeCpu.setOption(makeRealtimeLineOption([...cpuUsageHistory.value], '#6366f1'))
+    chartRealtimeCpu.setOption(makeRealtimeLineOption([...cpuUsageHistory.value], realtimeChartColor.cpu))
   }
   if (chartRealtimeMemRef.value && !chartRealtimeMem) {
     chartRealtimeMem = echarts.init(chartRealtimeMemRef.value)
-    chartRealtimeMem.setOption(makeRealtimeLineOption([...memoryUsageHistory.value], '#8b5cf6'))
+    chartRealtimeMem.setOption(makeRealtimeLineOption([...memoryUsageHistory.value], realtimeChartColor.memory))
   }
   if (chartRealtimeGpuRef.value && !chartRealtimeGpu) {
     chartRealtimeGpu = echarts.init(chartRealtimeGpuRef.value)
-    chartRealtimeGpu.setOption(makeRealtimeLineOption([...gpuUsageHistory.value], '#a855f7'))
+    chartRealtimeGpu.setOption(makeRealtimeLineOption([...gpuUsageHistory.value], realtimeChartColor.gpu))
   }
 }
 
 function updateRealtimeCharts() {
-  chartRealtimeCpu?.setOption(makeRealtimeLineOption([...cpuUsageHistory.value], '#6366f1'))
-  chartRealtimeMem?.setOption(makeRealtimeLineOption([...memoryUsageHistory.value], '#8b5cf6'))
-  chartRealtimeGpu?.setOption(makeRealtimeLineOption([...gpuUsageHistory.value], '#a855f7'))
+  chartRealtimeCpu?.setOption(makeRealtimeLineOption([...cpuUsageHistory.value], realtimeChartColor.cpu))
+  chartRealtimeMem?.setOption(makeRealtimeLineOption([...memoryUsageHistory.value], realtimeChartColor.memory))
+  chartRealtimeGpu?.setOption(makeRealtimeLineOption([...gpuUsageHistory.value], realtimeChartColor.gpu))
 }
 
 function resizeCharts() {
@@ -356,15 +410,15 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="dashboard-page p-8 h-full overflow-y-auto">
-    <h2 class="page-title text-2xl font-bold mb-2 text-[var(--home-text-primary)]">
+  <div class="dashboard-page dashboard-shell p-8 h-full overflow-y-auto">
+    <h2 class="page-title enter-rise text-2xl font-bold mb-2 text-[var(--home-text-primary)]">
       {{ $t('pages.dashboard.title') }}
     </h2>
-    <p class="page-desc text-sm mb-6 text-[var(--home-text-muted)]">
+    <p class="page-desc enter-rise text-sm mb-6 text-[var(--home-text-muted)]" style="--enter-delay: 0.04s">
       {{ $t('pages.dashboard.desc') }}
     </p>
 
-    <section class="mb-6">
+    <section class="mb-6 enter-rise" style="--enter-delay: 0.08s">
       <h3 class="section-title text-[15px] font-semibold mb-3 text-[var(--home-text-secondary)]">
         {{ $t('pages.dashboard.realtimeResourceTrend') }}
       </h3>
@@ -390,7 +444,7 @@ onBeforeUnmount(() => {
       </div>
     </section>
 
-    <section v-if="isAdmin" class="mb-5">
+    <section v-if="isAdmin" class="mb-5 enter-rise" style="--enter-delay: 0.12s">
       <h3 class="section-title text-[15px] font-semibold mb-3 text-[var(--home-text-secondary)]">
         {{ $t('pages.dashboard.platformOverview') }}
       </h3>
@@ -474,7 +528,7 @@ onBeforeUnmount(() => {
       </div>
     </section>
 
-    <section class="mb-6">
+    <section class="mb-6 enter-rise" style="--enter-delay: 0.16s">
       <div class="flex gap-4 flex-wrap">
         <div class="stat-card flex items-center gap-3 p-4 min-w-[140px] flex-1 rounded-xl stat-card-theme">
           <div
@@ -539,7 +593,7 @@ onBeforeUnmount(() => {
       </div>
     </section>
 
-    <section class="flex gap-4 flex-wrap items-stretch mb-6">
+    <section class="flex gap-4 flex-wrap items-stretch mb-6 enter-rise" style="--enter-delay: 0.2s">
       <div
           class="dashboard-card w-[260px] flex-shrink-0 min-h-0 p-5 rounded-xl border bg-[var(--home-card-bg)] border-[var(--home-card-border)]">
         <h3 class="card-title text-[15px] font-semibold m-0 text-[var(--home-text-primary)]">
@@ -554,7 +608,7 @@ onBeforeUnmount(() => {
       </div>
     </section>
 
-    <div class="dashboard-grid grid gap-4 items-stretch">
+    <div class="dashboard-grid grid gap-4 items-stretch enter-rise" style="--enter-delay: 0.24s">
       <div
           class="recent-card dashboard-card flex flex-col min-h-0 p-5 rounded-xl border bg-[var(--home-card-bg)] border-[var(--home-card-border)]">
         <div class="flex items-center justify-between mb-2.5">
@@ -568,7 +622,7 @@ onBeforeUnmount(() => {
           <li
               v-for="task in recentTasks"
               :key="task.id"
-              class="recent-item flex items-center justify-between gap-3 py-2.5 px-3 rounded-lg cursor-pointer transition-colors recent-item-theme"
+              class="recent-item flex items-center justify-between gap-3 py-2.5 px-3 rounded-lg cursor-pointer transition-all duration-200 recent-item-theme"
               @click="goTo(`/home/monitor?taskId=${task.id}`)"
           >
             <div
@@ -593,7 +647,7 @@ onBeforeUnmount(() => {
           <div
               v-for="item in systemHealthItems"
               :key="item.key"
-              class="health-item flex items-center justify-between py-3.5 px-4 rounded-xl border transition-colors health-item-theme"
+              class="health-item flex items-center justify-between py-3.5 px-4 rounded-xl border transition-all duration-200 health-item-theme"
           >
             <div class="flex items-center gap-3">
               <div
@@ -610,7 +664,7 @@ onBeforeUnmount(() => {
                   $t('pages.dashboard.healthStatusLabel')
                 }}：</span>
               <span
-                  class="inline-flex items-center justify-center w-[22px] h-[22px] rounded-full bg-[rgba(22,163,74,0.15)] border border-[rgba(22,163,74,0.4)] flex-shrink-0">
+                  class="health-status-badge inline-flex items-center justify-center w-[22px] h-[22px] rounded-full bg-[rgba(22,163,74,0.15)] border border-[rgba(22,163,74,0.4)] flex-shrink-0">
                 <el-icon class="text-sm text-[#16a34a]"><CircleCheck/></el-icon>
               </span>
               <span class="text-[13px] font-semibold text-[#16a34a]">{{ $t('pages.dashboard.healthHealthy') }}</span>
@@ -627,7 +681,7 @@ onBeforeUnmount(() => {
           <div
               v-for="(item, index) in quickActionItems"
               :key="item.key"
-              class="action-item flex items-center gap-2.5 py-2.5 px-3 rounded-[10px] border transition-colors action-item-theme"
+              class="action-item flex items-center gap-2.5 py-2.5 px-3 rounded-[10px] border transition-all duration-200 action-item-theme"
               :class="index === 0 ? 'action-item-first' : ''"
           >
             <div
@@ -649,39 +703,95 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+.dashboard-shell {
+  position: relative;
+  isolation: auto;
+}
+
+.dashboard-shell::before,
+.dashboard-shell::after {
+  display: none;
+}
+
+.enter-rise {
+  opacity: 0;
+  animation: dashboardRise 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: var(--enter-delay, 0s);
+}
+
+@keyframes dashboardRise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* 主题相关：卡片阴影（所有 dashboard-card 统一） */
 .dashboard-card {
   box-shadow: 0 1px 3px var(--home-card-shadow);
+  transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease, background-color 0.22s ease;
+  backdrop-filter: blur(8px);
+}
+
+.dashboard-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(99, 102, 241, 0.22);
+  box-shadow: 0 10px 22px var(--home-card-shadow);
+}
+
+.card-title {
+  letter-spacing: 0.2px;
 }
 
 .stat-card-theme {
   background: var(--home-card-bg);
   border: 1px solid var(--home-card-border);
   box-shadow: 0 1px 3px var(--home-card-shadow);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 
 .stat-card-theme:hover {
+  transform: translateY(-1px);
   border-color: rgba(99, 102, 241, 0.25);
-  box-shadow: 0 2px 8px var(--home-card-shadow);
+  box-shadow: 0 8px 18px var(--home-card-shadow);
 }
 
 .recent-item-theme {
   background: var(--home-hover-bg);
   border: 1px solid transparent;
+  transition: transform 0.2s, border-color 0.2s, background-color 0.2s;
 }
 
 .recent-item-theme:hover {
+  transform: translateX(2px);
   border-color: var(--home-card-border);
   background: var(--home-card-bg);
+}
+
+.recent-list {
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.recent-list::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
 }
 
 .health-item-theme {
   background: var(--home-hover-bg);
   border: 1px solid var(--home-border);
+  transition: transform 0.2s, border-color 0.2s, background-color 0.2s;
 }
 
 .health-item-theme:hover {
+  transform: translateY(-1px);
   border-color: rgba(99, 102, 241, 0.25);
   background: var(--home-card-bg);
 }
@@ -689,37 +799,95 @@ onBeforeUnmount(() => {
 .action-item-theme {
   background: var(--home-hover-bg);
   border: 1px solid var(--home-border);
+  transition: transform 0.2s, border-color 0.2s, background-color 0.2s;
 }
 
 .action-item-theme:hover {
+  transform: translateY(-1px);
   border-color: rgba(99, 102, 241, 0.2);
   background: var(--home-card-bg);
 }
 
+.action-item-first {
+  border-color: rgba(99, 102, 241, 0.28);
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.12), var(--home-hover-bg));
+}
+
+.health-status-badge {
+  animation: statusBadgePulse 2.1s ease-in-out infinite;
+}
+
+@keyframes statusBadgePulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.25);
+  }
+  50% {
+    transform: scale(1.03);
+    box-shadow: 0 0 0 4px rgba(22, 163, 74, 0);
+  }
+}
+
 /* 任务状态标签（主题/语义色） */
+.recent-status {
+  border: 1px solid transparent;
+  font-weight: 600;
+}
+
 .recent-status.status-in_progress {
   background: rgba(34, 197, 94, 0.15);
   color: #22c55e;
+  border-color: rgba(34, 197, 94, 0.3);
+  position: relative;
+  padding-left: 16px;
+}
+
+.recent-status.status-in_progress::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #22c55e;
+  transform: translateY(-50%);
+  animation: runningDotPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes runningDotPulse {
+  0%, 100% {
+    opacity: 0.55;
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5);
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0);
+  }
 }
 
 .recent-status.status-success {
   background: rgba(99, 102, 241, 0.15);
   color: var(--home-text-secondary);
+  border-color: rgba(99, 102, 241, 0.25);
 }
 
 .recent-status.status-not_started {
   background: rgba(148, 163, 184, 0.2);
   color: var(--home-text-muted);
+  border-color: rgba(148, 163, 184, 0.3);
 }
 
 .recent-status.status-failed {
   background: rgba(248, 113, 113, 0.2);
   color: #f87171;
+  border-color: rgba(248, 113, 113, 0.35);
 }
 
 .recent-status.status-recommended {
   background: rgba(139, 92, 246, 0.2);
   color: #a78bfa;
+  border-color: rgba(139, 92, 246, 0.35);
 }
 
 /* 实时资源趋势图：增高容器，纵坐标刻度更疏 */
@@ -755,6 +923,26 @@ onBeforeUnmount(() => {
 .actions-card {
   grid-column: 2;
   grid-row: 2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .enter-rise {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .dashboard-card,
+  .stat-card-theme,
+  .recent-item-theme,
+  .health-item-theme,
+  .action-item-theme,
+  .health-status-badge,
+  .recent-status.status-in_progress::before {
+    animation: none;
+    transition: none;
+    transform: none;
+  }
 }
 
 @media (max-width: 900px) {
