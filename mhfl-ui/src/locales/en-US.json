@@ -148,7 +148,13 @@
       "chartTaskTrend": "Tasks (Last 7 Days)",
       "chartResourceUsage": "Resource Usage",
       "chartTasksByAlgorithm": "Tasks by Algorithm",
-      "realtimeResourceTrend": "Realtime Resource Trend"
+      "realtimeResourceTrend": "Realtime Resource Trend",
+      "systemHealth": "System Health",
+      "healthMysql": "MySQL",
+      "healthRedis": "Redis",
+      "healthRabbitMQ": "RabbitMQ",
+      "healthFastAPI": "FastAPI",
+      "healthHealthy": "Healthy"
     },
     "monitor": {
       "title": "Real-time Monitor",

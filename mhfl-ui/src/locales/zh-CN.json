@@ -148,7 +148,13 @@
       "chartTaskTrend": "近7天任务趋势",
       "chartResourceUsage": "资源使用率",
       "chartTasksByAlgorithm": "各算法任务数",
-      "realtimeResourceTrend": "实时资源趋势"
+      "realtimeResourceTrend": "实时资源趋势",
+      "systemHealth": "系统健康",
+      "healthMysql": "MySQL",
+      "healthRedis": "Redis",
+      "healthRabbitMQ": "RabbitMQ",
+      "healthFastAPI": "FastAPI",
+      "healthHealthy": "健康"
     },
     "monitor": {
       "title": "实时监控",

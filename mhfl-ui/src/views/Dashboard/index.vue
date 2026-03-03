@@ -2,7 +2,7 @@
 import {computed, ref, onMounted, onBeforeUnmount, nextTick, watch} from 'vue'
 import {useRouter} from 'vue-router'
 import {useI18n} from 'vue-i18n'
-import {Document, VideoPlay, List, User, FolderOpened} from '@element-plus/icons-vue'
+import {Document, VideoPlay, List, User, FolderOpened, CircleCheck, Connection, Monitor, Box} from '@element-plus/icons-vue'
 import {getUserInfo} from '@/api/user'
 import {useSystemResourceStore} from '@/stores/systemResource'
 import * as echarts from 'echarts'
@@ -15,18 +15,12 @@ const {cpuUsageHistory, memoryUsageHistory, gpuUsageHistory} = useSystemResource
 
 const chartStatusRef = ref<HTMLElement | null>(null)
 const chartTrendRef = ref<HTMLElement | null>(null)
-const chartResourceCpuRef = ref<HTMLElement | null>(null)
-const chartResourceMemRef = ref<HTMLElement | null>(null)
-const chartResourceGpuRef = ref<HTMLElement | null>(null)
 const chartAlgorithmRef = ref<HTMLElement | null>(null)
 const chartRealtimeCpuRef = ref<HTMLElement | null>(null)
 const chartRealtimeMemRef = ref<HTMLElement | null>(null)
 const chartRealtimeGpuRef = ref<HTMLElement | null>(null)
 let chartStatus: echarts.ECharts | null = null
 let chartTrend: echarts.ECharts | null = null
-let chartResourceCpu: echarts.ECharts | null = null
-let chartResourceMem: echarts.ECharts | null = null
-let chartResourceGpu: echarts.ECharts | null = null
 let chartAlgorithm: echarts.ECharts | null = null
 let chartRealtimeCpu: echarts.ECharts | null = null
 let chartRealtimeMem: echarts.ECharts | null = null
@@ -52,9 +46,6 @@ const taskStatusPieData = [
 
 const taskTrendDays = ['02-25', '02-26', '02-27', '02-28', '03-01', '03-02', '03-03']
 const taskTrendValues = [2, 1, 3, 0, 2, 1, 2]
-
-const resourceRingPercent = [24, 51, 26]
-const resourceRingColors = ['#6366f1', '#8b5cf6', '#a855f7']
 
 const algorithmBarData = [
   {name: 'FedAvg', value: 45},
@@ -83,18 +74,19 @@ const recentTasks = [
   {id: 110, algorithmName: 'FedAvg', dataName: 'CIFAR-100', status: 'RECOMMENDED', createTime: '2026-02-26 09:00'}
 ]
 
-const resource = {
-  cpu: {usagePercent: 24, cores: 8},
-  memory: {used: 8.2, total: 16, usagePercent: 51},
-  gpu: {used: 2.1, total: 8, usagePercent: 26}
-}
-
 const platformStats = {
   totalUsers: 28,
   totalTasks: 156,
   totalDatasets: 6,
   totalAlgorithms: 5
 }
+
+const systemHealthItems = [
+  { key: 'mysql', labelKey: 'pages.dashboard.healthMysql', icon: Document, color: '#6366f1' },
+  { key: 'redis', labelKey: 'pages.dashboard.healthRedis', icon: Box, color: '#dc2626' },
+  { key: 'rabbitmq', labelKey: 'pages.dashboard.healthRabbitMQ', icon: Connection, color: '#f59e0b' },
+  { key: 'fastapi', labelKey: 'pages.dashboard.healthFastAPI', icon: Monitor, color: '#059669' },
+]
 
 const statusKey = (s: string) => {
   const map: Record<string, string> = {
@@ -176,41 +168,6 @@ function initCharts() {
         }
       }]
     })
-  }
-
-  const ringBg = isDark() ? 'rgba(255,255,255,0.06)' : 'rgba(99,102,241,0.08)'
-  const makeRingOption = (percent: number, color: string) => ({
-    backgroundColor: 'transparent',
-    series: [{
-      type: 'pie',
-      radius: ['68%', '88%'],
-      center: ['50%', '50%'],
-      startAngle: 90,
-      data: [
-        {value: percent, itemStyle: {color}, label: {show: false}},
-        {value: 100 - percent, itemStyle: {color: ringBg}, label: {show: false}}
-      ],
-      label: {
-        show: true,
-        position: 'center',
-        formatter: () => percent + '%',
-        color: textColor,
-        fontSize: 16,
-        fontWeight: 700
-      }
-    }]
-  })
-  if (chartResourceCpuRef.value) {
-    chartResourceCpu = echarts.init(chartResourceCpuRef.value)
-    chartResourceCpu.setOption(makeRingOption(resourceRingPercent[0] ?? 0, resourceRingColors[0] ?? '#6366f1'))
-  }
-  if (chartResourceMemRef.value) {
-    chartResourceMem = echarts.init(chartResourceMemRef.value)
-    chartResourceMem.setOption(makeRingOption(resourceRingPercent[1] ?? 0, resourceRingColors[1] ?? '#8b5cf6'))
-  }
-  if (chartResourceGpuRef.value) {
-    chartResourceGpu = echarts.init(chartResourceGpuRef.value)
-    chartResourceGpu.setOption(makeRingOption(resourceRingPercent[2] ?? 0, resourceRingColors[2] ?? '#a855f7'))
   }
 
   if (isAdmin.value && chartAlgorithmRef.value) {
@@ -307,9 +264,6 @@ function updateRealtimeCharts() {
 function resizeCharts() {
   chartStatus?.resize()
   chartTrend?.resize()
-  chartResourceCpu?.resize()
-  chartResourceMem?.resize()
-  chartResourceGpu?.resize()
   chartAlgorithm?.resize()
   chartRealtimeCpu?.resize()
   chartRealtimeMem?.resize()
@@ -335,9 +289,6 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', resizeCharts)
   chartStatus?.dispose()
   chartTrend?.dispose()
-  chartResourceCpu?.dispose()
-  chartResourceMem?.dispose()
-  chartResourceGpu?.dispose()
   chartAlgorithm?.dispose()
   chartRealtimeCpu?.dispose()
   chartRealtimeMem?.dispose()
@@ -510,20 +461,24 @@ onBeforeUnmount(() => {
         <p v-if="!recentTasks.length" class="recent-empty">{{ $t('pages.dashboard.noRecentTasks') }}</p>
       </div>
 
-      <div class="dashboard-card resource-card">
-        <h3 class="card-title">{{ $t('pages.dashboard.resourceTitle') }}</h3>
-        <div class="resource-rings flex items-center justify-around gap-2">
-          <div class="resource-ring-item flex flex-col items-center">
-            <div ref="chartResourceCpuRef" class="chart-wrap chart-ring"></div>
-            <span class="resource-ring-label">{{ $t('pages.dashboard.cpu') }}</span>
-          </div>
-          <div class="resource-ring-item flex flex-col items-center">
-            <div ref="chartResourceMemRef" class="chart-wrap chart-ring"></div>
-            <span class="resource-ring-label">{{ $t('pages.dashboard.memory') }}</span>
-          </div>
-          <div class="resource-ring-item flex flex-col items-center">
-            <div ref="chartResourceGpuRef" class="chart-wrap chart-ring"></div>
-            <span class="resource-ring-label">{{ $t('pages.dashboard.gpu') }}</span>
+      <div class="dashboard-card resource-card system-health-card">
+        <h3 class="card-title">{{ $t('pages.dashboard.systemHealth') }}</h3>
+        <div class="health-grid">
+          <div
+            v-for="item in systemHealthItems"
+            :key="item.key"
+            class="health-item"
+          >
+            <div class="health-left">
+              <div class="health-icon-wrap" :style="{ backgroundColor: item.color + '20', color: item.color }">
+                <el-icon :size="22"><component :is="item.icon" /></el-icon>
+              </div>
+              <span class="health-name">{{ $t(item.labelKey) }}</span>
+            </div>
+            <span class="health-status health-status-ok">
+              <el-icon class="health-dot"><CircleCheck /></el-icon>
+              {{ $t('pages.dashboard.healthHealthy') }}
+            </span>
           </div>
         </div>
       </div>
@@ -652,29 +607,6 @@ onBeforeUnmount(() => {
 
 .chart-line {
   height: 240px;
-}
-
-.chart-ring {
-  width: 128px;
-  height: 128px;
-  margin-top: 0;
-}
-
-.resource-rings {
-  margin-top: 4px;
-  padding: 4px 0 0;
-}
-
-.resource-ring-item {
-  flex: 1;
-  min-width: 0;
-}
-
-.resource-ring-label {
-  font-size: 12px;
-  color: var(--home-text-primary);
-  margin-top: 4px;
-  font-weight: 500;
 }
 
 .chart-algo {
@@ -897,7 +829,85 @@ onBeforeUnmount(() => {
 }
 
 .resource-card .card-title {
-  margin-bottom: 0;
+  margin-bottom: 12px;
+}
+
+.system-health-card .card-title {
+  margin-bottom: 14px;
+}
+
+.health-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 16px;
+  flex: 1;
+  min-height: 0;
+}
+
+.system-health-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.health-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: var(--home-hover-bg);
+  border-radius: 12px;
+  border: 1px solid var(--home-border);
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.health-item:hover {
+  border-color: rgba(99, 102, 241, 0.25);
+  background: var(--home-card-bg);
+}
+
+.health-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.health-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.health-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--home-text-primary);
+}
+
+.health-item .health-status {
+  flex-shrink: 0;
+}
+
+.health-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--home-text-muted);
+}
+
+.health-status-ok {
+  color: #22c55e;
+}
+
+.health-dot {
+  font-size: 14px;
+  color: #22c55e;
 }
 
 .actions-card {
