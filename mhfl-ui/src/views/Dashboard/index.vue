@@ -239,7 +239,7 @@ function makeRealtimeLineOption(data: number[], color: string) {
   const xData = data.map((_, i) => i)
   return {
     backgroundColor: 'transparent',
-    grid: { left: 44, right: 12, top: 12, bottom: 24 },
+    grid: {left: 44, right: 12, top: 12, bottom: 24},
     xAxis: {
       type: 'category',
       boundaryGap: false,
@@ -251,8 +251,8 @@ function makeRealtimeLineOption(data: number[], color: string) {
       min: 0,
       max: 100,
       splitNumber: 5,
-      splitLine: { lineStyle: { color: mutedColor, type: 'dashed', opacity: 0.3 } },
-      axisLabel: { color: textColor, fontSize: 12, formatter: '{value}%', margin: 8 },
+      splitLine: {lineStyle: {color: mutedColor, type: 'dashed', opacity: 0.3}},
+      axisLabel: {color: textColor, fontSize: 12, formatter: '{value}%', margin: 8},
     },
     series: [{
       type: 'line',
