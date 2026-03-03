@@ -2,7 +2,7 @@
 import {computed, ref, onMounted, onBeforeUnmount, nextTick, watch} from 'vue'
 import {useRouter} from 'vue-router'
 import {useI18n} from 'vue-i18n'
-import {Document, VideoPlay, List, User, FolderOpened, CircleCheck} from '@element-plus/icons-vue'
+import {Document, VideoPlay, List, User, FolderOpened, CircleCheck, DataBoard, Setting, MagicStick, Star} from '@element-plus/icons-vue'
 import {getUserInfo} from '@/api/user'
 import mysqlIcon from '@/assets/middleware/mysql.svg'
 import redisIcon from '@/assets/middleware/redis.svg'
@@ -91,6 +91,20 @@ const systemHealthItems = [
   { key: 'rabbitmq', labelKey: 'pages.dashboard.healthRabbitMQ', icon: rabbitmqIcon },
   { key: 'fastapi', labelKey: 'pages.dashboard.healthFastAPI', icon: fastapiIcon },
 ]
+
+const quickActionItemsAdmin = [
+  { key: 'dashboard', labelKey: 'pages.dashboard.actionDashboard', icon: DataBoard },
+  { key: 'taskManage', labelKey: 'pages.dashboard.actionTaskManage', icon: List },
+  { key: 'systemAdmin', labelKey: 'pages.dashboard.actionSystemAdmin', icon: Setting },
+  { key: 'smartAssistant', labelKey: 'pages.dashboard.actionSmartAssistant', icon: MagicStick },
+]
+const quickActionItemsUser = [
+  { key: 'dashboard', labelKey: 'pages.dashboard.actionDashboard', icon: DataBoard },
+  { key: 'myTasks', labelKey: 'pages.dashboard.actionMyTasks', icon: List },
+  { key: 'recommendedShow', labelKey: 'pages.dashboard.actionRecommendedShow', icon: Star },
+  { key: 'smartAssistant', labelKey: 'pages.dashboard.actionSmartAssistant', icon: MagicStick },
+]
+const quickActionItems = computed(() => isAdmin.value ? quickActionItemsAdmin : quickActionItemsUser)
 
 const statusKey = (s: string) => {
   const map: Record<string, string> = {
@@ -492,25 +506,18 @@ onBeforeUnmount(() => {
 
       <div class="dashboard-card actions-card">
         <h3 class="card-title">{{ $t('pages.dashboard.quickActions') }}</h3>
-        <div class="actions-list flex flex-col gap-2">
-          <button type="button" class="action-btn primary" @click="goTo('/home/monitor')">
-            <el-icon>
-              <VideoPlay/>
-            </el-icon>
-            <span>{{ $t('pages.dashboard.createTask') }}</span>
-          </button>
-          <button type="button" class="action-btn" @click="goTo('/home/monitor')">
-            <el-icon>
-              <List/>
-            </el-icon>
-            <span>{{ $t('pages.dashboard.taskList') }}</span>
-          </button>
-          <button type="button" class="action-btn" @click="goTo('/home/monitor')">
-            <el-icon>
-              <VideoPlay/>
-            </el-icon>
-            <span>{{ $t('pages.dashboard.monitor') }}</span>
-          </button>
+        <div class="actions-list">
+          <div
+            v-for="(item, index) in quickActionItems"
+            :key="item.key"
+            class="action-item"
+            :class="{ 'action-item-first': index === 0 }"
+          >
+            <div class="action-icon-wrap">
+              <el-icon class="action-icon"><component :is="item.icon" /></el-icon>
+            </div>
+            <span class="action-label">{{ $t(item.labelKey) }}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -956,38 +963,51 @@ onBeforeUnmount(() => {
 }
 
 .actions-list {
-  margin-top: 8px;
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 }
 
-.action-btn {
+.action-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 10px 14px;
-  font-size: 14px;
-  color: var(--home-text-primary);
+  gap: 12px;
+  padding: 12px 14px;
   background: var(--home-hover-bg);
   border: 1px solid var(--home-border);
-  border-radius: 8px;
-  cursor: pointer;
+  border-radius: 10px;
   transition: border-color 0.2s, background 0.2s;
 }
 
-.action-btn:hover {
-  border-color: rgba(99, 102, 241, 0.3);
-  background: var(--home-card-bg);
+.action-item-first .action-icon-wrap {
+  background: rgba(99, 102, 241, 0.15);
+  color: #6366f1;
 }
 
-.action-btn.primary {
-  background: rgba(99, 102, 241, 0.12);
-  border-color: rgba(99, 102, 241, 0.25);
+.action-item:not(.action-item-first) .action-icon-wrap {
+  background: rgba(99, 102, 241, 0.08);
   color: var(--home-text-secondary);
 }
 
-.action-btn.primary:hover {
-  background: rgba(99, 102, 241, 0.18);
-  border-color: rgba(99, 102, 241, 0.4);
+.action-icon-wrap {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.action-icon {
+  font-size: 20px;
+}
+
+.action-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--home-text-primary);
 }
 
 @media (max-width: 900px) {
