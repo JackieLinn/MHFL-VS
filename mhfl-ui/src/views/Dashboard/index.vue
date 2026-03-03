@@ -173,12 +173,12 @@ function getTrendLineOption() {
   return {
     backgroundColor: 'transparent',
     tooltip: {trigger: 'axis', textStyle: {fontSize: 13, color: textColor}},
-    grid: {left: 48, right: 16, top: 8, bottom: 24},
+    grid: {left: 48, right: 16, top: 8, bottom: 32},
     xAxis: {
       type: 'category',
       data: taskTrendDays,
       axisLine: {lineStyle: {color: mutedColor}},
-      axisLabel: {color: textColor, fontSize: 14, margin: 10}
+      axisLabel: {color: textColor, fontSize: 14, margin: 14}
     },
     yAxis: {
       type: 'value',
@@ -209,12 +209,12 @@ function getAlgorithmBarOption() {
   return {
     backgroundColor: 'transparent',
     tooltip: {trigger: 'axis', textStyle: {fontSize: 13, color: textColor}},
-    grid: {left: 56, right: 12, top: 16, bottom: 20},
+    grid: {left: 56, right: 12, top: 16, bottom: 28},
     xAxis: {
       type: 'category',
       data: algorithmBarData.map(d => d.name),
       axisLine: {lineStyle: {color: mutedColor}},
-      axisLabel: {color: textColor, fontSize: 14, rotate: 0, margin: 10}
+      axisLabel: {color: textColor, fontSize: 14, rotate: 0, margin: 14}
     },
     yAxis: {
       type: 'value',
