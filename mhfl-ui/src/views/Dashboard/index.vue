@@ -139,18 +139,18 @@ function initCharts() {
     chartTrend = echarts.init(chartTrendRef.value)
     chartTrend.setOption({
       backgroundColor: 'transparent',
-      tooltip: {trigger: 'axis'},
-      grid: {left: 36, right: 12, top: 16, bottom: 28},
+      tooltip: {trigger: 'axis', textStyle: {fontSize: 13}},
+      grid: {left: 48, right: 16, top: 8, bottom: 24},
       xAxis: {
         type: 'category',
         data: taskTrendDays,
         axisLine: {lineStyle: {color: mutedColor}},
-        axisLabel: {color: textColor, fontSize: 10}
+        axisLabel: {color: textColor, fontSize: 14, margin: 10}
       },
       yAxis: {
         type: 'value',
         splitLine: {lineStyle: {color: mutedColor, type: 'dashed', opacity: 0.4}},
-        axisLabel: {color: textColor, fontSize: 10}
+        axisLabel: {color: textColor, fontSize: 13}
       },
       series: [{
         type: 'line',
@@ -540,7 +540,7 @@ onBeforeUnmount(() => {
 }
 
 .chart-line {
-  height: 200px;
+  height: 240px;
 }
 
 .chart-ring {
