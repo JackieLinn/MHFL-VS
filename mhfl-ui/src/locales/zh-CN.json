@@ -147,7 +147,8 @@
       "chartTaskStatus": "任务状态分布",
       "chartTaskTrend": "近7天任务趋势",
       "chartResourceUsage": "资源使用率",
-      "chartTasksByAlgorithm": "各算法任务数"
+      "chartTasksByAlgorithm": "各算法任务数",
+      "realtimeResourceTrend": "实时资源趋势"
     },
     "monitor": {
       "title": "实时监控",

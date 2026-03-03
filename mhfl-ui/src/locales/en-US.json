@@ -147,7 +147,8 @@
       "chartTaskStatus": "Task Status",
       "chartTaskTrend": "Tasks (Last 7 Days)",
       "chartResourceUsage": "Resource Usage",
-      "chartTasksByAlgorithm": "Tasks by Algorithm"
+      "chartTasksByAlgorithm": "Tasks by Algorithm",
+      "realtimeResourceTrend": "Realtime Resource Trend"
     },
     "monitor": {
       "title": "Real-time Monitor",

@@ -16,6 +16,7 @@ import {
 import {ElMessage} from 'element-plus'
 import {logout} from '@/api/auth'
 import {getSystemResources, type SystemResources} from '@/api/home'
+import {useSystemResourceStore} from '@/stores/systemResource'
 import {getUserInfo} from '@/api/user'
 import {
   getAccountInfo,
@@ -201,6 +202,7 @@ const openGitHub = () => {
 const systemResources = ref<SystemResources | null>(null)
 const loadingResources = ref(false)
 let resourceTimer: number | null = null
+const {pushFromResponse} = useSystemResourceStore()
 
 const fetchSystemResources = () => {
   if (loadingResources.value) return
@@ -208,6 +210,7 @@ const fetchSystemResources = () => {
   getSystemResources(
       (data) => {
         systemResources.value = data
+        pushFromResponse(data)
         loadingResources.value = false
       },
       () => {

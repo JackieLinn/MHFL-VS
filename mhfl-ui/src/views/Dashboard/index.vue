@@ -1,15 +1,17 @@
 <script setup lang="ts">
-import {computed, ref, onMounted, onBeforeUnmount, nextTick} from 'vue'
+import {computed, ref, onMounted, onBeforeUnmount, nextTick, watch} from 'vue'
 import {useRouter} from 'vue-router'
 import {useI18n} from 'vue-i18n'
 import {Document, VideoPlay, List, User, FolderOpened} from '@element-plus/icons-vue'
 import {getUserInfo} from '@/api/user'
+import {useSystemResourceStore} from '@/stores/systemResource'
 import * as echarts from 'echarts'
 
 const {t} = useI18n()
 const router = useRouter()
 
 const isAdmin = computed(() => getUserInfo()?.role === 'admin')
+const {cpuUsageHistory, memoryUsageHistory, gpuUsageHistory} = useSystemResourceStore()
 
 const chartStatusRef = ref<HTMLElement | null>(null)
 const chartTrendRef = ref<HTMLElement | null>(null)
@@ -17,12 +19,18 @@ const chartResourceCpuRef = ref<HTMLElement | null>(null)
 const chartResourceMemRef = ref<HTMLElement | null>(null)
 const chartResourceGpuRef = ref<HTMLElement | null>(null)
 const chartAlgorithmRef = ref<HTMLElement | null>(null)
+const chartRealtimeCpuRef = ref<HTMLElement | null>(null)
+const chartRealtimeMemRef = ref<HTMLElement | null>(null)
+const chartRealtimeGpuRef = ref<HTMLElement | null>(null)
 let chartStatus: echarts.ECharts | null = null
 let chartTrend: echarts.ECharts | null = null
 let chartResourceCpu: echarts.ECharts | null = null
 let chartResourceMem: echarts.ECharts | null = null
 let chartResourceGpu: echarts.ECharts | null = null
 let chartAlgorithm: echarts.ECharts | null = null
+let chartRealtimeCpu: echarts.ECharts | null = null
+let chartRealtimeMem: echarts.ECharts | null = null
+let chartRealtimeGpu: echarts.ECharts | null = null
 
 const isDark = () => document.documentElement.classList.contains('dark')
 const chartTextColor = () => isDark() ? '#e2e8f0' : '#1e293b'
@@ -236,6 +244,64 @@ function initCharts() {
       }]
     })
   }
+  initRealtimeCharts()
+}
+
+function makeRealtimeLineOption(data: number[], color: string) {
+  const textColor = chartTextColor()
+  const mutedColor = chartMutedColor()
+  const xData = data.map((_, i) => i)
+  return {
+    backgroundColor: 'transparent',
+    grid: {left: 36, right: 12, top: 8, bottom: 20},
+    xAxis: {
+      type: 'category',
+      boundaryGap: false,
+      data: xData,
+      show: false,
+    },
+    yAxis: {
+      type: 'value',
+      min: 0,
+      max: 100,
+      splitLine: {lineStyle: {color: mutedColor, type: 'dashed', opacity: 0.3}},
+      axisLabel: {color: textColor, fontSize: 11, formatter: '{value}%'},
+    },
+    series: [{
+      type: 'line',
+      data,
+      smooth: true,
+      symbol: 'none',
+      lineStyle: {width: 2, color},
+      areaStyle: {
+        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+          {offset: 0, color: color + '40'},
+          {offset: 1, color: color + '08'},
+        ]),
+      },
+    }],
+  }
+}
+
+function initRealtimeCharts() {
+  if (chartRealtimeCpuRef.value && !chartRealtimeCpu) {
+    chartRealtimeCpu = echarts.init(chartRealtimeCpuRef.value)
+    chartRealtimeCpu.setOption(makeRealtimeLineOption([...cpuUsageHistory.value], '#6366f1'))
+  }
+  if (chartRealtimeMemRef.value && !chartRealtimeMem) {
+    chartRealtimeMem = echarts.init(chartRealtimeMemRef.value)
+    chartRealtimeMem.setOption(makeRealtimeLineOption([...memoryUsageHistory.value], '#8b5cf6'))
+  }
+  if (chartRealtimeGpuRef.value && !chartRealtimeGpu) {
+    chartRealtimeGpu = echarts.init(chartRealtimeGpuRef.value)
+    chartRealtimeGpu.setOption(makeRealtimeLineOption([...gpuUsageHistory.value], '#a855f7'))
+  }
+}
+
+function updateRealtimeCharts() {
+  chartRealtimeCpu?.setOption(makeRealtimeLineOption([...cpuUsageHistory.value], '#6366f1'))
+  chartRealtimeMem?.setOption(makeRealtimeLineOption([...memoryUsageHistory.value], '#8b5cf6'))
+  chartRealtimeGpu?.setOption(makeRealtimeLineOption([...gpuUsageHistory.value], '#a855f7'))
 }
 
 function resizeCharts() {
@@ -245,7 +311,12 @@ function resizeCharts() {
   chartResourceMem?.resize()
   chartResourceGpu?.resize()
   chartAlgorithm?.resize()
+  chartRealtimeCpu?.resize()
+  chartRealtimeMem?.resize()
+  chartRealtimeGpu?.resize()
 }
+
+watch([cpuUsageHistory, memoryUsageHistory, gpuUsageHistory], updateRealtimeCharts, {deep: true})
 
 let resizeObserver: ResizeObserver | null = null
 
@@ -268,6 +339,9 @@ onBeforeUnmount(() => {
   chartResourceMem?.dispose()
   chartResourceGpu?.dispose()
   chartAlgorithm?.dispose()
+  chartRealtimeCpu?.dispose()
+  chartRealtimeMem?.dispose()
+  chartRealtimeGpu?.dispose()
 })
 </script>
 
@@ -275,6 +349,24 @@ onBeforeUnmount(() => {
   <div class="dashboard-page">
     <h2 class="page-title">{{ $t('pages.dashboard.title') }}</h2>
     <p class="page-desc">{{ $t('pages.dashboard.desc') }}</p>
+
+    <section class="dashboard-section realtime-resource-section">
+      <h3 class="section-title">{{ $t('pages.dashboard.realtimeResourceTrend') }}</h3>
+      <div class="realtime-resource-charts">
+        <div class="dashboard-card chart-card realtime-chart-card">
+          <h3 class="card-title">{{ $t('pages.dashboard.cpu') }}</h3>
+          <div ref="chartRealtimeCpuRef" class="chart-wrap chart-realtime"></div>
+        </div>
+        <div class="dashboard-card chart-card realtime-chart-card">
+          <h3 class="card-title">{{ $t('pages.dashboard.memory') }}</h3>
+          <div ref="chartRealtimeMemRef" class="chart-wrap chart-realtime"></div>
+        </div>
+        <div class="dashboard-card chart-card realtime-chart-card">
+          <h3 class="card-title">{{ $t('pages.dashboard.gpu') }}</h3>
+          <div ref="chartRealtimeGpuRef" class="chart-wrap chart-realtime"></div>
+        </div>
+      </div>
+    </section>
 
     <section v-if="isAdmin" class="dashboard-section platform-section">
       <h3 class="section-title">{{ $t('pages.dashboard.platformOverview') }}</h3>
@@ -485,6 +577,25 @@ onBeforeUnmount(() => {
 
 .dashboard-section {
   margin-bottom: 24px;
+}
+
+.realtime-resource-section {
+  margin-bottom: 24px;
+}
+
+.realtime-resource-charts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.realtime-chart-card {
+  min-width: 0;
+}
+
+.chart-realtime {
+  height: 140px;
+  margin-top: 8px;
 }
 
 .dashboard-section.platform-section {
@@ -830,6 +941,10 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 900px) {
+  .realtime-resource-charts {
+    grid-template-columns: 1fr;
+  }
+
   .platform-layout {
     grid-template-columns: 1fr;
   }
