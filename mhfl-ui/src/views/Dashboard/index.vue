@@ -2,8 +2,12 @@
 import {computed, ref, onMounted, onBeforeUnmount, nextTick, watch} from 'vue'
 import {useRouter} from 'vue-router'
 import {useI18n} from 'vue-i18n'
-import {Document, VideoPlay, List, User, FolderOpened, CircleCheck, Connection, Monitor, Box} from '@element-plus/icons-vue'
+import {Document, VideoPlay, List, User, FolderOpened, CircleCheck} from '@element-plus/icons-vue'
 import {getUserInfo} from '@/api/user'
+import mysqlIcon from '@/assets/middleware/mysql.svg'
+import redisIcon from '@/assets/middleware/redis.svg'
+import rabbitmqIcon from '@/assets/middleware/rabbitmq.svg'
+import fastapiIcon from '@/assets/middleware/fastapi.svg'
 import {useSystemResourceStore} from '@/stores/systemResource'
 import * as echarts from 'echarts'
 
@@ -82,10 +86,10 @@ const platformStats = {
 }
 
 const systemHealthItems = [
-  { key: 'mysql', labelKey: 'pages.dashboard.healthMysql', icon: Document, color: '#6366f1' },
-  { key: 'redis', labelKey: 'pages.dashboard.healthRedis', icon: Box, color: '#dc2626' },
-  { key: 'rabbitmq', labelKey: 'pages.dashboard.healthRabbitMQ', icon: Connection, color: '#f59e0b' },
-  { key: 'fastapi', labelKey: 'pages.dashboard.healthFastAPI', icon: Monitor, color: '#059669' },
+  { key: 'mysql', labelKey: 'pages.dashboard.healthMysql', icon: mysqlIcon },
+  { key: 'redis', labelKey: 'pages.dashboard.healthRedis', icon: redisIcon },
+  { key: 'rabbitmq', labelKey: 'pages.dashboard.healthRabbitMQ', icon: rabbitmqIcon },
+  { key: 'fastapi', labelKey: 'pages.dashboard.healthFastAPI', icon: fastapiIcon },
 ]
 
 const statusKey = (s: string) => {
@@ -470,14 +474,17 @@ onBeforeUnmount(() => {
             class="health-item"
           >
             <div class="health-left">
-              <div class="health-icon-wrap" :style="{ backgroundColor: item.color + '20', color: item.color }">
-                <el-icon :size="22"><component :is="item.icon" /></el-icon>
+              <div class="health-icon-wrap">
+                <img :src="item.icon" class="health-svg" :alt="$t(item.labelKey)" />
               </div>
               <span class="health-name">{{ $t(item.labelKey) }}</span>
             </div>
             <span class="health-status health-status-ok">
-              <el-icon class="health-dot"><CircleCheck /></el-icon>
-              {{ $t('pages.dashboard.healthHealthy') }}
+              <span class="health-status-label">{{ $t('pages.dashboard.healthStatusLabel') }}：</span>
+              <span class="health-status-badge">
+                <el-icon class="health-status-icon"><CircleCheck /></el-icon>
+              </span>
+              <span class="health-status-text">{{ $t('pages.dashboard.healthHealthy') }}</span>
             </span>
           </div>
         </div>
@@ -873,13 +880,22 @@ onBeforeUnmount(() => {
 }
 
 .health-icon-wrap {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  background: var(--home-hover-bg);
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.health-svg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .health-name {
@@ -902,12 +918,36 @@ onBeforeUnmount(() => {
 }
 
 .health-status-ok {
-  color: #22c55e;
+  color: #16a34a;
 }
 
-.health-dot {
+.health-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(22, 163, 74, 0.15);
+  border: 1.5px solid rgba(22, 163, 74, 0.4);
+  flex-shrink: 0;
+}
+
+.health-status-icon {
   font-size: 14px;
-  color: #22c55e;
+  color: #16a34a;
+}
+
+.health-status-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--home-text-muted);
+}
+
+.health-status-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: #16a34a;
 }
 
 .actions-card {

@@ -154,6 +154,7 @@
       "healthRedis": "Redis",
       "healthRabbitMQ": "RabbitMQ",
       "healthFastAPI": "FastAPI",
+      "healthStatusLabel": "Status",
       "healthHealthy": "Healthy"
     },
     "monitor": {
