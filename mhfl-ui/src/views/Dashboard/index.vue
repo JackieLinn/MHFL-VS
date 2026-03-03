@@ -20,10 +20,12 @@ import redisIcon from '@/assets/middleware/redis.svg'
 import rabbitmqIcon from '@/assets/middleware/rabbitmq.svg'
 import fastapiIcon from '@/assets/middleware/fastapi.svg'
 import {useSystemResourceStore} from '@/stores/systemResource'
+import {useTheme} from '@/stores/theme'
 import * as echarts from 'echarts'
 
 const {t} = useI18n()
 const router = useRouter()
+const {actualTheme} = useTheme()
 
 const isAdmin = computed(() => getUserInfo()?.role === 'admin')
 const {cpuUsageHistory, memoryUsageHistory, gpuUsageHistory} = useSystemResourceStore()
@@ -41,9 +43,14 @@ let chartRealtimeCpu: echarts.ECharts | null = null
 let chartRealtimeMem: echarts.ECharts | null = null
 let chartRealtimeGpu: echarts.ECharts | null = null
 
-const isDark = () => document.documentElement.classList.contains('dark')
-const chartTextColor = () => isDark() ? '#e2e8f0' : '#1e293b'
-const chartMutedColor = () => isDark() ? 'rgba(165,180,252,0.6)' : '#64748b'
+/** 从 CSS 变量读取颜色，与「CPU/内存/GPU 标题」等区域一致，随深浅色主题切换 */
+function getChartColorVar(name: string): string {
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+  return v || (document.documentElement.classList.contains('dark') ? '#e2e8f0' : '#1e293b')
+}
+
+const chartTextColor = () => getChartColorVar('--home-text-primary')
+const chartMutedColor = () => getChartColorVar('--home-text-muted')
 
 const stats = {
   total: 12,
@@ -133,104 +140,125 @@ const statusLabel = (s: string) => t(`pages.dashboard.${statusKey(s)}`)
 
 const goTo = (path: string) => router.push(path)
 
-function initCharts() {
+function getStatusPieOption() {
+  const textColor = chartTextColor()
+  return {
+    backgroundColor: 'transparent',
+    tooltip: {trigger: 'item', textStyle: {color: textColor}},
+    legend: {
+      show: true,
+      bottom: 0,
+      left: 'center',
+      textStyle: {color: textColor, fontSize: 12},
+      itemWidth: 10,
+      itemHeight: 10,
+      itemGap: 8,
+      padding: [20, 0, 0, 0]
+    },
+    series: [{
+      type: 'pie',
+      radius: ['48%', '78%'],
+      center: ['50%', '42%'],
+      label: {show: false},
+      labelLine: {show: false},
+      data: taskStatusPieData,
+      emphasis: {itemStyle: {shadowBlur: 10, shadowOffsetY: 2}}
+    }]
+  }
+}
+
+function getTrendLineOption() {
   const textColor = chartTextColor()
   const mutedColor = chartMutedColor()
+  return {
+    backgroundColor: 'transparent',
+    tooltip: {trigger: 'axis', textStyle: {fontSize: 13, color: textColor}},
+    grid: {left: 48, right: 16, top: 8, bottom: 24},
+    xAxis: {
+      type: 'category',
+      data: taskTrendDays,
+      axisLine: {lineStyle: {color: mutedColor}},
+      axisLabel: {color: textColor, fontSize: 14, margin: 10}
+    },
+    yAxis: {
+      type: 'value',
+      splitLine: {lineStyle: {color: mutedColor, type: 'dashed', opacity: 0.4}},
+      axisLabel: {color: textColor, fontSize: 13}
+    },
+    series: [{
+      type: 'line',
+      data: taskTrendValues,
+      smooth: true,
+      symbol: 'circle',
+      symbolSize: 6,
+      lineStyle: {width: 2, color: '#6366f1'},
+      itemStyle: {color: '#6366f1'},
+      areaStyle: {
+        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+          {offset: 0, color: 'rgba(99,102,241,0.35)'},
+          {offset: 1, color: 'rgba(99,102,241,0.02)'}
+        ])
+      }
+    }]
+  }
+}
 
+function getAlgorithmBarOption() {
+  const textColor = chartTextColor()
+  const mutedColor = chartMutedColor()
+  return {
+    backgroundColor: 'transparent',
+    tooltip: {trigger: 'axis', textStyle: {fontSize: 13, color: textColor}},
+    grid: {left: 56, right: 12, top: 16, bottom: 20},
+    xAxis: {
+      type: 'category',
+      data: algorithmBarData.map(d => d.name),
+      axisLine: {lineStyle: {color: mutedColor}},
+      axisLabel: {color: textColor, fontSize: 14, rotate: 0, margin: 10}
+    },
+    yAxis: {
+      type: 'value',
+      axisLine: {show: false},
+      splitLine: {lineStyle: {color: mutedColor, type: 'dashed', opacity: 0.4}},
+      axisLabel: {color: textColor, fontSize: 13}
+    },
+    series: [{
+      type: 'bar',
+      data: algorithmBarData.map(d => d.value),
+      barWidth: '56%',
+      itemStyle: {
+        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+          {offset: 0, color: '#818cf8'},
+          {offset: 1, color: '#6366f1'}
+        ]),
+        borderRadius: [4, 4, 0, 0]
+      }
+    }]
+  }
+}
+
+function initCharts() {
   if (chartStatusRef.value) {
     chartStatus = echarts.init(chartStatusRef.value)
-    chartStatus.setOption({
-      backgroundColor: 'transparent',
-      tooltip: {trigger: 'item'},
-      legend: {
-        show: true,
-        bottom: 0,
-        left: 'center',
-        textStyle: {color: textColor, fontSize: 12},
-        itemWidth: 10,
-        itemHeight: 10,
-        itemGap: 8,
-        padding: [20, 0, 0, 0]
-      },
-      series: [{
-        type: 'pie',
-        radius: ['48%', '78%'],
-        center: ['50%', '42%'],
-        label: {show: false},
-        labelLine: {show: false},
-        data: taskStatusPieData,
-        emphasis: {itemStyle: {shadowBlur: 10, shadowOffsetY: 2}}
-      }]
-    })
+    chartStatus.setOption(getStatusPieOption())
   }
-
   if (chartTrendRef.value) {
     chartTrend = echarts.init(chartTrendRef.value)
-    chartTrend.setOption({
-      backgroundColor: 'transparent',
-      tooltip: {trigger: 'axis', textStyle: {fontSize: 13}},
-      grid: {left: 48, right: 16, top: 8, bottom: 24},
-      xAxis: {
-        type: 'category',
-        data: taskTrendDays,
-        axisLine: {lineStyle: {color: mutedColor}},
-        axisLabel: {color: textColor, fontSize: 14, margin: 10}
-      },
-      yAxis: {
-        type: 'value',
-        splitLine: {lineStyle: {color: mutedColor, type: 'dashed', opacity: 0.4}},
-        axisLabel: {color: textColor, fontSize: 13}
-      },
-      series: [{
-        type: 'line',
-        data: taskTrendValues,
-        smooth: true,
-        symbol: 'circle',
-        symbolSize: 6,
-        lineStyle: {width: 2, color: '#6366f1'},
-        itemStyle: {color: '#6366f1'},
-        areaStyle: {
-          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{
-            offset: 0,
-            color: 'rgba(99,102,241,0.35)'
-          }, {offset: 1, color: 'rgba(99,102,241,0.02)'}])
-        }
-      }]
-    })
+    chartTrend.setOption(getTrendLineOption())
   }
-
   if (isAdmin.value && chartAlgorithmRef.value) {
     chartAlgorithm = echarts.init(chartAlgorithmRef.value)
-    chartAlgorithm.setOption({
-      backgroundColor: 'transparent',
-      tooltip: {trigger: 'axis', textStyle: {fontSize: 13}},
-      grid: {left: 56, right: 12, top: 16, bottom: 20},
-      xAxis: {
-        type: 'category',
-        data: algorithmBarData.map(d => d.name),
-        axisLine: {lineStyle: {color: mutedColor}},
-        axisLabel: {color: textColor, fontSize: 14, rotate: 0, margin: 10}
-      },
-      yAxis: {
-        type: 'value',
-        axisLine: {show: false},
-        splitLine: {lineStyle: {color: mutedColor, type: 'dashed', opacity: 0.4}},
-        axisLabel: {color: textColor, fontSize: 13}
-      },
-      series: [{
-        type: 'bar',
-        data: algorithmBarData.map(d => d.value),
-        barWidth: '56%',
-        itemStyle: {
-          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{offset: 0, color: '#818cf8'}, {
-            offset: 1,
-            color: '#6366f1'
-          }]), borderRadius: [4, 4, 0, 0]
-        }
-      }]
-    })
+    chartAlgorithm.setOption(getAlgorithmBarOption())
   }
   initRealtimeCharts()
+}
+
+/** 主题切换时重新应用所有图表颜色（与 CPU/内存/GPU 标题区域一致） */
+function applyChartTheme() {
+  chartStatus?.setOption(getStatusPieOption(), {notMerge: true})
+  chartTrend?.setOption(getTrendLineOption(), {notMerge: true})
+  chartAlgorithm?.setOption(getAlgorithmBarOption(), {notMerge: true})
+  updateRealtimeCharts()
 }
 
 function makeRealtimeLineOption(data: number[], color: string) {
@@ -301,6 +329,7 @@ function resizeCharts() {
 }
 
 watch([cpuUsageHistory, memoryUsageHistory, gpuUsageHistory], updateRealtimeCharts, {deep: true})
+watch(actualTheme, () => applyChartTheme())
 
 let resizeObserver: ResizeObserver | null = null
 
