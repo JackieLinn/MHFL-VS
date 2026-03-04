@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {computed, ref, onMounted, onBeforeUnmount, nextTick, watch} from 'vue'
+import {computed, ref, onMounted, onBeforeUnmount, nextTick, watch, type Ref} from 'vue'
 import {useRouter} from 'vue-router'
 import {useI18n} from 'vue-i18n'
 import {
@@ -133,6 +133,121 @@ const quickActionItemsUser = [
 ]
 const quickActionItems = computed(() => isAdmin.value ? quickActionItemsAdmin : quickActionItemsUser)
 
+const quickActionRouteMap: Record<string, string> = {
+  dashboard: '/home/dashboard',
+  taskManage: '/home/monitor',
+  myTasks: '/home/monitor',
+  recommendedShow: '/home/monitor?recommended=1',
+  systemAdmin: '/home/admin',
+  smartAssistant: '/home/monitor',
+}
+
+function handleQuickAction(key: string) {
+  const targetRoute = quickActionRouteMap[key]
+  if (targetRoute) {
+    goTo(targetRoute)
+  }
+}
+
+function getLatestUsage(history: number[]) {
+  return Math.round(history[history.length - 1] ?? 0)
+}
+
+function getUsageDelta(history: number[]) {
+  if (history.length < 2) {
+    return 0
+  }
+  const latest = history[history.length - 1] ?? 0
+  const previous = history[history.length - 2] ?? latest
+  return Number((latest - previous).toFixed(1))
+}
+
+function formatDelta(delta: number) {
+  if (delta > 0) {
+    return `+${delta.toFixed(1)}%`
+  }
+  return `${delta.toFixed(1)}%`
+}
+
+function getDeltaLevel(delta: number) {
+  if (delta > 0.4) {
+    return 'up'
+  }
+  if (delta < -0.4) {
+    return 'down'
+  }
+  return 'flat'
+}
+
+const latestCpuUsage = computed(() => getLatestUsage(cpuUsageHistory.value))
+const latestMemoryUsage = computed(() => getLatestUsage(memoryUsageHistory.value))
+const latestGpuUsage = computed(() => getLatestUsage(gpuUsageHistory.value))
+
+const cpuDelta = computed(() => getUsageDelta(cpuUsageHistory.value))
+const memoryDelta = computed(() => getUsageDelta(memoryUsageHistory.value))
+const gpuDelta = computed(() => getUsageDelta(gpuUsageHistory.value))
+
+const animatedCpuUsage = ref(0)
+const animatedMemoryUsage = ref(0)
+const animatedGpuUsage = ref(0)
+const animatedTotal = ref(0)
+const animatedRunning = ref(0)
+const animatedSuccess = ref(0)
+const animatedToday = ref(0)
+
+const liveClock = ref('')
+const liveDate = ref('')
+let liveClockTimer: ReturnType<typeof window.setInterval> | null = null
+const numberAnimationFrameMap = new Map<string, number>()
+
+function animateNumber(key: string, targetRef: Ref<number>, to: number, duration = 560) {
+  const from = Number(targetRef.value) || 0
+  const target = Number(to) || 0
+
+  if (Math.abs(from - target) < 0.05) {
+    targetRef.value = target
+    return
+  }
+
+  const previousFrame = numberAnimationFrameMap.get(key)
+  if (previousFrame) {
+    window.cancelAnimationFrame(previousFrame)
+  }
+
+  const start = performance.now()
+  const step = (now: number) => {
+    const progress = Math.min((now - start) / duration, 1)
+    const eased = 1 - Math.pow(1 - progress, 3)
+    targetRef.value = from + (target - from) * eased
+    if (progress < 1) {
+      const frame = window.requestAnimationFrame(step)
+      numberAnimationFrameMap.set(key, frame)
+    } else {
+      targetRef.value = target
+      numberAnimationFrameMap.delete(key)
+    }
+  }
+
+  const frame = window.requestAnimationFrame(step)
+  numberAnimationFrameMap.set(key, frame)
+}
+
+function clampPercent(value: number) {
+  return Math.min(100, Math.max(0, value))
+}
+
+function updateLiveClock() {
+  const now = new Date()
+  const hh = String(now.getHours()).padStart(2, '0')
+  const mm = String(now.getMinutes()).padStart(2, '0')
+  const ss = String(now.getSeconds()).padStart(2, '0')
+  const yyyy = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const dd = String(now.getDate()).padStart(2, '0')
+  liveClock.value = `${hh}:${mm}:${ss}`
+  liveDate.value = `${yyyy}-${month}-${dd}`
+}
+
 const statusKey = (s: string) => {
   const map: Record<string, string> = {
     NOT_STARTED: 'statusNotStarted',
@@ -225,6 +340,11 @@ function getTrendLineOption() {
       symbolSize: 6,
       lineStyle: {width: 2, color: '#6366f1'},
       itemStyle: {color: '#6366f1'},
+      emphasis: {
+        focus: 'series',
+        lineStyle: {width: 3, color: '#4f46e5'},
+        itemStyle: {borderWidth: 2, borderColor: '#ffffff'}
+      },
       areaStyle: {
         color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
           {offset: 0, color: 'rgba(99,102,241,0.35)'},
@@ -278,6 +398,14 @@ function getAlgorithmBarOption() {
           {offset: 1, color: '#6366f1'}
         ]),
         borderRadius: [4, 4, 0, 0]
+      },
+      emphasis: {
+        focus: 'series',
+        itemStyle: {
+          shadowBlur: 16,
+          shadowColor: 'rgba(99,102,241,0.35)',
+          borderRadius: [4, 4, 0, 0]
+        }
       },
       animationDuration: 760,
       animationEasing: 'cubicOut',
@@ -384,10 +512,19 @@ function resizeCharts() {
 
 watch([cpuUsageHistory, memoryUsageHistory, gpuUsageHistory], updateRealtimeCharts, {deep: true})
 watch(actualTheme, () => applyChartTheme())
+watch(latestCpuUsage, (value) => animateNumber('cpu', animatedCpuUsage, value), {immediate: true})
+watch(latestMemoryUsage, (value) => animateNumber('memory', animatedMemoryUsage, value), {immediate: true})
+watch(latestGpuUsage, (value) => animateNumber('gpu', animatedGpuUsage, value), {immediate: true})
 
 let resizeObserver: ResizeObserver | null = null
 
 onMounted(() => {
+  updateLiveClock()
+  liveClockTimer = window.setInterval(updateLiveClock, 1000)
+  animateNumber('total', animatedTotal, stats.total, 800)
+  animateNumber('running', animatedRunning, stats.running, 880)
+  animateNumber('success', animatedSuccess, stats.success, 940)
+  animateNumber('today', animatedToday, stats.today, 980)
   nextTick(() => {
     initCharts()
     resizeObserver = new ResizeObserver(() => resizeCharts())
@@ -398,6 +535,12 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  if (liveClockTimer) {
+    window.clearInterval(liveClockTimer)
+    liveClockTimer = null
+  }
+  numberAnimationFrameMap.forEach((frame) => window.cancelAnimationFrame(frame))
+  numberAnimationFrameMap.clear()
   resizeObserver?.disconnect()
   window.removeEventListener('resize', resizeCharts)
   chartStatus?.dispose()
@@ -411,12 +554,25 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="dashboard-page dashboard-shell p-8 h-full overflow-y-auto">
-    <h2 class="page-title enter-rise text-2xl font-bold mb-2 text-[var(--home-text-primary)]">
-      {{ $t('pages.dashboard.title') }}
-    </h2>
-    <p class="page-desc enter-rise text-sm mb-6 text-[var(--home-text-muted)]" style="--enter-delay: 0.04s">
-      {{ $t('pages.dashboard.desc') }}
-    </p>
+    <section class="hero-panel enter-rise mb-6" style="--enter-delay: 0.02s">
+      <div class="hero-main">
+        <span class="hero-brand">MHFL-VS</span>
+        <h2 class="page-title text-2xl font-bold mb-2 text-[var(--home-text-primary)]">
+          {{ $t('pages.dashboard.title') }}
+        </h2>
+        <p class="page-desc text-sm mb-0 text-[var(--home-text-muted)]">
+          {{ $t('pages.dashboard.desc') }}
+        </p>
+      </div>
+      <div class="hero-side">
+        <div class="hero-clock">{{ liveClock }}</div>
+        <div class="hero-date">{{ liveDate }}</div>
+        <div class="hero-health-chip">
+          <span class="hero-health-dot"></span>
+          <span>{{ $t('pages.dashboard.healthHealthy') }}</span>
+        </div>
+      </div>
+    </section>
 
     <section class="mb-6 enter-rise" style="--enter-delay: 0.08s">
       <h3 class="section-title text-[15px] font-semibold mb-3 text-[var(--home-text-secondary)]">
@@ -424,22 +580,49 @@ onBeforeUnmount(() => {
       </h3>
       <div class="realtime-resource-grid grid gap-4">
         <div
-            class="dashboard-card min-w-0 p-5 rounded-xl border bg-[var(--home-card-bg)] border-[var(--home-card-border)]">
-          <h3 class="card-title text-[15px] font-semibold m-0 text-[var(--home-text-primary)]">
-            {{ $t('pages.dashboard.cpu') }}</h3>
+            class="dashboard-card resource-card-visual resource-cpu min-w-0 p-5 rounded-xl border bg-[var(--home-card-bg)] border-[var(--home-card-border)]">
+          <div class="resource-head">
+            <h3 class="card-title text-[15px] font-semibold m-0 text-[var(--home-text-primary)]">
+              {{ $t('pages.dashboard.cpu') }}</h3>
+            <span class="resource-pill">{{ Math.round(animatedCpuUsage) }}%</span>
+          </div>
+          <div class="resource-delta" :class="'trend-' + getDeltaLevel(cpuDelta)">
+            {{ formatDelta(cpuDelta) }}
+          </div>
           <div ref="chartRealtimeCpuRef" class="chart-wrap chart-realtime-h w-full mt-2"></div>
+          <div class="resource-progress mt-1.5">
+            <span :style="{ width: `${clampPercent(animatedCpuUsage).toFixed(1)}%` }"></span>
+          </div>
         </div>
         <div
-            class="dashboard-card min-w-0 p-5 rounded-xl border bg-[var(--home-card-bg)] border-[var(--home-card-border)]">
-          <h3 class="card-title text-[15px] font-semibold m-0 text-[var(--home-text-primary)]">
-            {{ $t('pages.dashboard.memory') }}</h3>
+            class="dashboard-card resource-card-visual resource-memory min-w-0 p-5 rounded-xl border bg-[var(--home-card-bg)] border-[var(--home-card-border)]">
+          <div class="resource-head">
+            <h3 class="card-title text-[15px] font-semibold m-0 text-[var(--home-text-primary)]">
+              {{ $t('pages.dashboard.memory') }}</h3>
+            <span class="resource-pill">{{ Math.round(animatedMemoryUsage) }}%</span>
+          </div>
+          <div class="resource-delta" :class="'trend-' + getDeltaLevel(memoryDelta)">
+            {{ formatDelta(memoryDelta) }}
+          </div>
           <div ref="chartRealtimeMemRef" class="chart-wrap chart-realtime-h w-full mt-2"></div>
+          <div class="resource-progress mt-1.5">
+            <span :style="{ width: `${clampPercent(animatedMemoryUsage).toFixed(1)}%` }"></span>
+          </div>
         </div>
         <div
-            class="dashboard-card min-w-0 p-5 rounded-xl border bg-[var(--home-card-bg)] border-[var(--home-card-border)]">
-          <h3 class="card-title text-[15px] font-semibold m-0 text-[var(--home-text-primary)]">
-            {{ $t('pages.dashboard.gpu') }}</h3>
+            class="dashboard-card resource-card-visual resource-gpu min-w-0 p-5 rounded-xl border bg-[var(--home-card-bg)] border-[var(--home-card-border)]">
+          <div class="resource-head">
+            <h3 class="card-title text-[15px] font-semibold m-0 text-[var(--home-text-primary)]">
+              {{ $t('pages.dashboard.gpu') }}</h3>
+            <span class="resource-pill">{{ Math.round(animatedGpuUsage) }}%</span>
+          </div>
+          <div class="resource-delta" :class="'trend-' + getDeltaLevel(gpuDelta)">
+            {{ formatDelta(gpuDelta) }}
+          </div>
           <div ref="chartRealtimeGpuRef" class="chart-wrap chart-realtime-h w-full mt-2"></div>
+          <div class="resource-progress mt-1.5">
+            <span :style="{ width: `${clampPercent(animatedGpuUsage).toFixed(1)}%` }"></span>
+          </div>
         </div>
       </div>
     </section>
@@ -539,7 +722,7 @@ onBeforeUnmount(() => {
           </div>
           <div class="flex flex-col gap-0.5">
             <span class="stat-value text-[22px] font-bold leading-tight text-[var(--home-text-primary)]">{{
-                stats.total
+                Math.round(animatedTotal)
               }}</span>
             <span class="stat-label text-xs text-[var(--home-text-muted)]">{{ $t('pages.dashboard.statTotal') }}</span>
           </div>
@@ -553,7 +736,7 @@ onBeforeUnmount(() => {
           </div>
           <div class="flex flex-col gap-0.5">
             <span class="stat-value text-[22px] font-bold leading-tight text-[var(--home-text-primary)]">{{
-                stats.running
+                Math.round(animatedRunning)
               }}</span>
             <span class="stat-label text-xs text-[var(--home-text-muted)]">{{
                 $t('pages.dashboard.statRunning')
@@ -569,7 +752,7 @@ onBeforeUnmount(() => {
           </div>
           <div class="flex flex-col gap-0.5">
             <span class="stat-value text-[22px] font-bold leading-tight text-[var(--home-text-primary)]">{{
-                stats.success
+                Math.round(animatedSuccess)
               }}</span>
             <span class="stat-label text-xs text-[var(--home-text-muted)]">{{
                 $t('pages.dashboard.statSuccess')
@@ -585,7 +768,7 @@ onBeforeUnmount(() => {
           </div>
           <div class="flex flex-col gap-0.5">
             <span class="stat-value text-[22px] font-bold leading-tight text-[var(--home-text-primary)]">{{
-                stats.today
+                Math.round(animatedToday)
               }}</span>
             <span class="stat-label text-xs text-[var(--home-text-muted)]">{{ $t('pages.dashboard.statToday') }}</span>
           </div>
@@ -618,11 +801,13 @@ onBeforeUnmount(() => {
               class="card-link text-[13px] text-[var(--home-text-muted)] cursor-pointer transition-colors hover:text-[var(--home-text-secondary)]"
               @click="goTo('/home/monitor')">{{ $t('pages.dashboard.viewAll') }}</span>
         </div>
-        <ul class="recent-list flex flex-col gap-1.5 flex-1 overflow-y-auto list-none p-0 m-0">
+        <transition-group name="recent-list-fade" tag="ul"
+                          class="recent-list flex flex-col gap-1.5 flex-1 overflow-y-auto list-none p-0 m-0" appear>
           <li
-              v-for="task in recentTasks"
+              v-for="(task, index) in recentTasks"
               :key="task.id"
               class="recent-item flex items-center justify-between gap-3 py-2.5 px-3 rounded-lg cursor-pointer transition-all duration-200 recent-item-theme"
+              :style="{ '--item-delay': `${index * 0.03}s` }"
               @click="goTo(`/home/monitor?taskId=${task.id}`)"
           >
             <div
@@ -634,22 +819,25 @@ onBeforeUnmount(() => {
                   :class="'status-' + task.status.toLowerCase()">{{ statusLabel(task.status) }}</span>
             <span class="text-[11px] text-[var(--home-text-muted)] flex-shrink-0">{{ task.createTime }}</span>
           </li>
-        </ul>
+        </transition-group>
         <p v-if="!recentTasks.length" class="text-[13px] text-[var(--home-text-muted)] mt-4 mb-0 p-0">
           {{ $t('pages.dashboard.noRecentTasks') }}</p>
       </div>
 
       <div
           class="resource-card dashboard-card flex flex-col min-h-0 py-3.5 px-4 rounded-xl border bg-[var(--home-card-bg)] border-[var(--home-card-border)]">
-        <h3 class="card-title text-[15px] font-semibold mb-2.5 m-0 text-[var(--home-text-primary)]">
-          {{ $t('pages.dashboard.systemHealth') }}</h3>
+        <div class="flex items-center justify-between mb-2.5">
+          <h3 class="card-title text-[15px] font-semibold m-0 text-[var(--home-text-primary)]">
+            {{ $t('pages.dashboard.systemHealth') }}</h3>
+          <span class="health-summary-badge">{{ systemHealthItems.length }}/{{ systemHealthItems.length }}</span>
+        </div>
         <div class="grid grid-cols-2 gap-x-3.5 gap-y-2.5 flex-1 min-h-0 health-grid-inner">
           <div
               v-for="item in systemHealthItems"
               :key="item.key"
               class="health-item flex items-center justify-between py-3.5 px-4 rounded-xl border transition-all duration-200 health-item-theme"
           >
-            <div class="flex items-center gap-3">
+            <div class="health-main flex items-center gap-3 min-w-0">
               <div
                   class="health-icon-wrap w-14 h-14 rounded-[14px] flex items-center justify-center flex-shrink-0 p-2.5 box-border bg-[var(--home-hover-bg)]">
                 <img :src="item.icon" class="w-full h-full object-contain" :alt="$t(item.labelKey)"/>
@@ -660,9 +848,6 @@ onBeforeUnmount(() => {
             </div>
             <span
                 class="health-status inline-flex items-center gap-1.5 flex-shrink-0 text-xs font-medium text-[#16a34a]">
-              <span class="text-[13px] font-semibold text-[var(--home-text-muted)]">{{
-                  $t('pages.dashboard.healthStatusLabel')
-                }}：</span>
               <span
                   class="health-status-badge inline-flex items-center justify-center w-[22px] h-[22px] rounded-full bg-[rgba(22,163,74,0.15)] border border-[rgba(22,163,74,0.4)] flex-shrink-0">
                 <el-icon class="text-sm text-[#16a34a]"><CircleCheck/></el-icon>
@@ -683,6 +868,10 @@ onBeforeUnmount(() => {
               :key="item.key"
               class="action-item flex items-center gap-2.5 py-2.5 px-3 rounded-[10px] border transition-all duration-200 action-item-theme"
               :class="index === 0 ? 'action-item-first' : ''"
+              role="button"
+              tabindex="0"
+              @click="handleQuickAction(item.key)"
+              @keyup.enter="handleQuickAction(item.key)"
           >
             <div
                 class="action-icon-wrap w-10 h-10 rounded-[10px] flex items-center justify-center flex-shrink-0"
@@ -705,12 +894,283 @@ onBeforeUnmount(() => {
 <style scoped>
 .dashboard-shell {
   position: relative;
-  isolation: auto;
+  isolation: isolate;
 }
 
 .dashboard-shell::before,
 .dashboard-shell::after {
-  display: none;
+  content: '';
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(56px);
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0.5;
+  animation: dashboardGlowFloat 12s ease-in-out infinite;
+}
+
+.dashboard-shell::before {
+  width: 320px;
+  height: 320px;
+  top: -140px;
+  right: 6%;
+  background: radial-gradient(circle at center, rgba(99, 102, 241, 0.3), rgba(99, 102, 241, 0));
+}
+
+.dashboard-shell::after {
+  width: 260px;
+  height: 260px;
+  left: 4%;
+  top: 34%;
+  background: radial-gradient(circle at center, rgba(14, 165, 164, 0.22), rgba(14, 165, 164, 0));
+  animation-delay: -4s;
+}
+
+@keyframes dashboardGlowFloat {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(0, -10px, 0) scale(1.04);
+  }
+}
+
+.hero-panel {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--home-card-border);
+  border-radius: 18px;
+  padding: 22px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  box-shadow: 0 10px 24px var(--home-card-shadow);
+  background: radial-gradient(circle at 12% 24%, rgba(99, 102, 241, 0.16), rgba(99, 102, 241, 0)),
+  radial-gradient(circle at 88% 72%, rgba(14, 165, 164, 0.13), rgba(14, 165, 164, 0)),
+  var(--home-card-bg);
+}
+
+.hero-panel::after {
+  content: '';
+  position: absolute;
+  right: -54px;
+  bottom: -58px;
+  width: 200px;
+  height: 200px;
+  border-radius: 999px;
+  background: radial-gradient(circle at center, rgba(99, 102, 241, 0.16), rgba(99, 102, 241, 0));
+  pointer-events: none;
+}
+
+.hero-main {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 30%;
+  min-width: 230px;
+}
+
+.hero-brand {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: #6366f1;
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  padding: 3px 10px;
+  border-radius: 999px;
+  margin-bottom: 10px;
+}
+
+.hero-side {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 10px;
+  flex: 0 0 auto;
+  min-width: 172px;
+}
+
+.hero-clock {
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--home-text-primary);
+  letter-spacing: 1.6px;
+  text-shadow: 0 8px 24px rgba(99, 102, 241, 0.16);
+}
+
+.hero-date {
+  font-size: 13px;
+  color: var(--home-text-muted);
+  letter-spacing: 0.5px;
+}
+
+.hero-health-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #16a34a;
+  background: rgba(22, 163, 74, 0.12);
+  border: 1px solid rgba(22, 163, 74, 0.26);
+}
+
+.hero-health-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #22c55e;
+  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.42);
+  animation: heroHealthPulse 1.9s ease-in-out infinite;
+}
+
+@keyframes heroHealthPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.42);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0);
+  }
+}
+
+.resource-card-visual {
+  position: relative;
+  overflow: hidden;
+}
+
+.resource-card-visual::after {
+  content: '';
+  position: absolute;
+  right: -42px;
+  top: -42px;
+  width: 120px;
+  height: 120px;
+  border-radius: 999px;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.resource-cpu::after {
+  background: radial-gradient(circle at center, rgba(79, 70, 229, 0.18), rgba(79, 70, 229, 0));
+}
+
+.resource-memory::after {
+  background: radial-gradient(circle at center, rgba(14, 165, 164, 0.18), rgba(14, 165, 164, 0));
+}
+
+.resource-gpu::after {
+  background: radial-gradient(circle at center, rgba(245, 158, 11, 0.2), rgba(245, 158, 11, 0));
+}
+
+.resource-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.resource-pill {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+
+.resource-cpu .resource-pill {
+  color: #4f46e5;
+  background: rgba(79, 70, 229, 0.12);
+  border-color: rgba(79, 70, 229, 0.25);
+}
+
+.resource-memory .resource-pill {
+  color: #0d9488;
+  background: rgba(13, 148, 136, 0.13);
+  border-color: rgba(13, 148, 136, 0.28);
+}
+
+.resource-gpu .resource-pill {
+  color: #d97706;
+  background: rgba(217, 119, 6, 0.13);
+  border-color: rgba(217, 119, 6, 0.28);
+}
+
+.resource-delta {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.resource-delta.trend-up {
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.14);
+}
+
+.resource-delta.trend-down {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.resource-delta.trend-flat {
+  color: var(--home-text-muted);
+  background: rgba(148, 163, 184, 0.16);
+}
+
+.resource-progress {
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--home-hover-bg);
+  overflow: hidden;
+}
+
+.resource-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  transition: width 0.45s ease;
+}
+
+.resource-cpu .resource-progress > span {
+  background: linear-gradient(90deg, #818cf8, #4f46e5);
+}
+
+.resource-memory .resource-progress > span {
+  background: linear-gradient(90deg, #2dd4bf, #0d9488);
+}
+
+.resource-gpu .resource-progress > span {
+  background: linear-gradient(90deg, #fbbf24, #d97706);
+}
+
+.health-summary-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #16a34a;
+  background: rgba(22, 163, 74, 0.14);
+  border: 1px solid rgba(22, 163, 74, 0.28);
 }
 
 .enter-rise {
@@ -732,15 +1192,48 @@ onBeforeUnmount(() => {
 
 /* 主题相关：卡片阴影（所有 dashboard-card 统一） */
 .dashboard-card {
+  position: relative;
+  overflow: hidden;
   box-shadow: 0 1px 3px var(--home-card-shadow);
   transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease, background-color 0.22s ease;
   backdrop-filter: blur(8px);
+}
+
+.dashboard-card::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+      from 140deg,
+      rgba(99, 102, 241, 0.35),
+      rgba(14, 165, 164, 0.12),
+      rgba(99, 102, 241, 0.28)
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.2;
+  pointer-events: none;
+  animation: cardEdgeBreath 4.6s ease-in-out infinite;
 }
 
 .dashboard-card:hover {
   transform: translateY(-2px);
   border-color: rgba(99, 102, 241, 0.22);
   box-shadow: 0 10px 22px var(--home-card-shadow);
+}
+
+@keyframes cardEdgeBreath {
+  0%, 100% {
+    opacity: 0.16;
+    filter: saturate(0.95);
+  }
+  50% {
+    opacity: 0.38;
+    filter: saturate(1.2);
+  }
 }
 
 .card-title {
@@ -761,6 +1254,7 @@ onBeforeUnmount(() => {
 }
 
 .recent-item-theme {
+  --item-delay: 0s;
   background: var(--home-hover-bg);
   border: 1px solid transparent;
   transition: transform 0.2s, border-color 0.2s, background-color 0.2s;
@@ -790,6 +1284,27 @@ onBeforeUnmount(() => {
   transition: transform 0.2s, border-color 0.2s, background-color 0.2s;
 }
 
+.health-item {
+  min-width: 0;
+  gap: 10px;
+}
+
+.health-main {
+  flex: 1;
+}
+
+.health-name {
+  display: block;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.health-status {
+  white-space: nowrap;
+}
+
 .health-item-theme:hover {
   transform: translateY(-1px);
   border-color: rgba(99, 102, 241, 0.25);
@@ -799,6 +1314,8 @@ onBeforeUnmount(() => {
 .action-item-theme {
   background: var(--home-hover-bg);
   border: 1px solid var(--home-border);
+  cursor: pointer;
+  user-select: none;
   transition: transform 0.2s, border-color 0.2s, background-color 0.2s;
 }
 
@@ -806,6 +1323,10 @@ onBeforeUnmount(() => {
   transform: translateY(-1px);
   border-color: rgba(99, 102, 241, 0.2);
   background: var(--home-card-bg);
+}
+
+.action-item-theme:active {
+  transform: translateY(0);
 }
 
 .action-item-first {
@@ -890,6 +1411,18 @@ onBeforeUnmount(() => {
   border-color: rgba(139, 92, 246, 0.35);
 }
 
+.recent-list-fade-enter-active,
+.recent-list-fade-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition-delay: var(--item-delay, 0s);
+}
+
+.recent-list-fade-enter-from,
+.recent-list-fade-leave-to {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
 /* 实时资源趋势图：增高容器，纵坐标刻度更疏 */
 .chart-realtime-h {
   height: 200px;
@@ -932,12 +1465,16 @@ onBeforeUnmount(() => {
     transform: none;
   }
 
+  .dashboard-shell::before,
+  .dashboard-shell::after,
+  .dashboard-card::before,
   .dashboard-card,
   .stat-card-theme,
   .recent-item-theme,
   .health-item-theme,
   .action-item-theme,
   .health-status-badge,
+  .hero-health-dot,
   .recent-status.status-in_progress::before {
     animation: none;
     transition: none;
@@ -946,6 +1483,16 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 900px) {
+  .hero-panel {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .hero-side {
+    width: 100%;
+    align-items: flex-start;
+  }
+
   .realtime-resource-grid {
     grid-template-columns: 1fr;
   }
@@ -979,4 +1526,5 @@ onBeforeUnmount(() => {
     grid-row: 3;
   }
 }
+
 </style>
