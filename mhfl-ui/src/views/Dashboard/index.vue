@@ -43,7 +43,6 @@ let chartRealtimeCpu: echarts.ECharts | null = null
 let chartRealtimeMem: echarts.ECharts | null = null
 let chartRealtimeGpu: echarts.ECharts | null = null
 
-/** 从 CSS 变量读取颜色，与「CPU/内存/GPU 标题」等区域一致，随深浅色主题切换 */
 function getChartColorVar(name: string): string {
   const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
   return v || (document.documentElement.classList.contains('dark') ? '#e2e8f0' : '#1e293b')
@@ -56,7 +55,7 @@ const chartTooltipBg = () => document.documentElement.classList.contains('dark')
     : 'rgba(255, 255, 255, 0.96)'
 const chartTooltipBorder = () => getChartColorVar('--home-card-border')
 const realtimeChartColor = {
-  cpu: '#4f46e5',
+  cpu: '#6366f1',
   memory: '#0ea5a4',
   gpu: '#f59e0b',
 }
@@ -266,14 +265,16 @@ const goTo = (path: string) => router.push(path)
 
 function getStatusPieOption() {
   const textColor = chartTextColor()
+  const isDark = document.documentElement.classList.contains('dark')
   return {
     backgroundColor: 'transparent',
     tooltip: {
       trigger: 'item',
-      textStyle: {color: textColor},
+      textStyle: {color: textColor, fontSize: 13},
       backgroundColor: chartTooltipBg(),
       borderColor: chartTooltipBorder(),
-      borderWidth: 1
+      borderWidth: 1,
+      padding: [8, 12],
     },
     legend: {
       show: true,
@@ -294,7 +295,12 @@ function getStatusPieOption() {
       data: taskStatusPieData,
       emphasis: {
         scale: true,
-        itemStyle: {shadowBlur: 12, shadowOffsetY: 2}
+        scaleSize: 8,
+        itemStyle: {
+          shadowBlur: 20,
+          shadowOffsetY: 4,
+          shadowColor: isDark ? 'rgba(99, 102, 241, 0.4)' : 'rgba(99, 102, 241, 0.25)',
+        }
       },
       animationDuration: 700,
       animationEasing: 'cubicOut',
@@ -307,6 +313,7 @@ function getStatusPieOption() {
 function getTrendLineOption() {
   const textColor = chartTextColor()
   const mutedColor = chartMutedColor()
+  const isDark = document.documentElement.classList.contains('dark')
   return {
     backgroundColor: 'transparent',
     tooltip: {
@@ -314,22 +321,23 @@ function getTrendLineOption() {
       textStyle: {fontSize: 13, color: textColor},
       axisPointer: {
         type: 'line',
-        lineStyle: {color: mutedColor, type: 'dashed'}
+        lineStyle: {color: isDark ? 'rgba(99,102,241,0.5)' : 'rgba(99,102,241,0.3)', type: 'dashed'}
       },
       backgroundColor: chartTooltipBg(),
       borderColor: chartTooltipBorder(),
-      borderWidth: 1
+      borderWidth: 1,
+      padding: [8, 12],
     },
-    grid: {left: 48, right: 16, top: 8, bottom: 32},
+    grid: {left: 48, right: 16, top: 12, bottom: 32},
     xAxis: {
       type: 'category',
       data: taskTrendDays,
       axisLine: {lineStyle: {color: mutedColor}},
-      axisLabel: {color: textColor, fontSize: 14, margin: 14}
+      axisLabel: {color: textColor, fontSize: 13, margin: 14}
     },
     yAxis: {
       type: 'value',
-      splitLine: {lineStyle: {color: mutedColor, type: 'dashed', opacity: 0.4}},
+      splitLine: {lineStyle: {color: mutedColor, type: 'dashed', opacity: 0.3}},
       axisLabel: {color: textColor, fontSize: 13}
     },
     series: [{
@@ -337,18 +345,23 @@ function getTrendLineOption() {
       data: taskTrendValues,
       smooth: true,
       symbol: 'circle',
-      symbolSize: 6,
-      lineStyle: {width: 2, color: '#6366f1'},
-      itemStyle: {color: '#6366f1'},
+      symbolSize: 7,
+      lineStyle: {width: 2.5, color: '#6366f1'},
+      itemStyle: {color: '#6366f1', borderWidth: 2, borderColor: isDark ? '#1e1b4b' : '#fff'},
       emphasis: {
         focus: 'series',
-        lineStyle: {width: 3, color: '#4f46e5'},
-        itemStyle: {borderWidth: 2, borderColor: '#ffffff'}
+        lineStyle: {width: 3.5, color: '#4f46e5'},
+        itemStyle: {
+          borderWidth: 3,
+          borderColor: isDark ? '#1e1b4b' : '#ffffff',
+          shadowBlur: 12,
+          shadowColor: 'rgba(99,102,241,0.5)'
+        }
       },
       areaStyle: {
         color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-          {offset: 0, color: 'rgba(99,102,241,0.35)'},
-          {offset: 1, color: 'rgba(99,102,241,0.02)'}
+          {offset: 0, color: isDark ? 'rgba(99,102,241,0.4)' : 'rgba(99,102,241,0.3)'},
+          {offset: 1, color: 'rgba(99,102,241,0.01)'}
         ])
       },
       animationDuration: 850,
@@ -362,6 +375,7 @@ function getTrendLineOption() {
 function getAlgorithmBarOption() {
   const textColor = chartTextColor()
   const mutedColor = chartMutedColor()
+  const isDark = document.documentElement.classList.contains('dark')
   return {
     backgroundColor: 'transparent',
     tooltip: {
@@ -369,42 +383,43 @@ function getAlgorithmBarOption() {
       textStyle: {fontSize: 13, color: textColor},
       axisPointer: {
         type: 'shadow',
-        shadowStyle: {color: 'rgba(99,102,241,0.1)'}
+        shadowStyle: {color: isDark ? 'rgba(99,102,241,0.15)' : 'rgba(99,102,241,0.08)'}
       },
       backgroundColor: chartTooltipBg(),
       borderColor: chartTooltipBorder(),
-      borderWidth: 1
+      borderWidth: 1,
+      padding: [8, 12],
     },
     grid: {left: 56, right: 12, top: 16, bottom: 28},
     xAxis: {
       type: 'category',
       data: algorithmBarData.map(d => d.name),
       axisLine: {lineStyle: {color: mutedColor}},
-      axisLabel: {color: textColor, fontSize: 14, rotate: 0, margin: 14}
+      axisLabel: {color: textColor, fontSize: 13, rotate: 0, margin: 14}
     },
     yAxis: {
       type: 'value',
       axisLine: {show: false},
-      splitLine: {lineStyle: {color: mutedColor, type: 'dashed', opacity: 0.4}},
+      splitLine: {lineStyle: {color: mutedColor, type: 'dashed', opacity: 0.3}},
       axisLabel: {color: textColor, fontSize: 13}
     },
     series: [{
       type: 'bar',
       data: algorithmBarData.map(d => d.value),
-      barWidth: '56%',
+      barWidth: '52%',
       itemStyle: {
         color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-          {offset: 0, color: '#818cf8'},
+          {offset: 0, color: isDark ? '#a5b4fc' : '#818cf8'},
           {offset: 1, color: '#6366f1'}
         ]),
-        borderRadius: [4, 4, 0, 0]
+        borderRadius: [6, 6, 0, 0]
       },
       emphasis: {
         focus: 'series',
         itemStyle: {
-          shadowBlur: 16,
-          shadowColor: 'rgba(99,102,241,0.35)',
-          borderRadius: [4, 4, 0, 0]
+          shadowBlur: 20,
+          shadowColor: 'rgba(99,102,241,0.4)',
+          borderRadius: [6, 6, 0, 0]
         }
       },
       animationDuration: 760,
@@ -431,7 +446,6 @@ function initCharts() {
   initRealtimeCharts()
 }
 
-/** 主题切换时重新应用所有图表颜色（与 CPU/内存/GPU 标题区域一致） */
 function applyChartTheme() {
   chartStatus?.setOption(getStatusPieOption(), {notMerge: true})
   chartTrend?.setOption(getTrendLineOption(), {notMerge: true})
@@ -442,6 +456,7 @@ function applyChartTheme() {
 function makeRealtimeLineOption(data: number[], color: string) {
   const textColor = chartTextColor()
   const mutedColor = chartMutedColor()
+  const isDark = document.documentElement.classList.contains('dark')
   const xData = data.map((_, i) => i)
   return {
     backgroundColor: 'transparent',
@@ -457,7 +472,7 @@ function makeRealtimeLineOption(data: number[], color: string) {
       min: 0,
       max: 100,
       splitNumber: 5,
-      splitLine: {lineStyle: {color: mutedColor, type: 'dashed', opacity: 0.3}},
+      splitLine: {lineStyle: {color: mutedColor, type: 'dashed', opacity: 0.25}},
       axisLabel: {color: textColor, fontSize: 12, formatter: '{value}%', margin: 8},
     },
     series: [{
@@ -465,11 +480,11 @@ function makeRealtimeLineOption(data: number[], color: string) {
       data,
       smooth: true,
       symbol: 'none',
-      lineStyle: {width: 2, color},
+      lineStyle: {width: 2.5, color, shadowColor: color + '60', shadowBlur: isDark ? 10 : 4},
       areaStyle: {
         color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-          {offset: 0, color: color + '40'},
-          {offset: 1, color: color + '08'},
+          {offset: 0, color: color + (isDark ? '50' : '35')},
+          {offset: 1, color: color + '05'},
         ]),
       },
       animationDuration: 420,
@@ -554,9 +569,17 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="dashboard-page dashboard-shell p-8 h-full overflow-y-auto">
+    <!-- 科技感背景网格 -->
+    <div class="tech-grid-bg"></div>
+
+    <!-- Hero Panel -->
     <section class="hero-panel enter-rise mb-6" style="--enter-delay: 0.02s">
+      <div class="hero-scanline"></div>
       <div class="hero-main">
-        <span class="hero-brand">MHFL-VS</span>
+        <span class="hero-brand">
+          <span class="hero-brand-dot"></span>
+          MHFL-VS
+        </span>
         <h2 class="page-title text-2xl font-bold mb-2 text-[var(--home-text-primary)]">
           {{ $t('pages.dashboard.title') }}
         </h2>
@@ -574,136 +597,124 @@ onBeforeUnmount(() => {
       </div>
     </section>
 
+    <!-- 实时资源趋势 -->
     <section class="mb-6 enter-rise" style="--enter-delay: 0.08s">
       <h3 class="section-title text-[15px] font-semibold mb-3 text-[var(--home-text-secondary)]">
         {{ $t('pages.dashboard.realtimeResourceTrend') }}
       </h3>
       <div class="realtime-resource-grid grid gap-4">
-        <div
-            class="dashboard-card resource-card-visual resource-cpu min-w-0 p-5 rounded-xl border bg-[var(--home-card-bg)] border-[var(--home-card-border)]">
+        <div class="tech-card resource-card-visual resource-cpu min-w-0 p-5 rounded-xl">
+          <div class="tech-card-glow"></div>
+          <div class="tech-card-scanline"></div>
           <div class="resource-head">
             <h3 class="card-title text-[15px] font-semibold m-0 text-[var(--home-text-primary)]">
               {{ $t('pages.dashboard.cpu') }}</h3>
-            <span class="resource-pill">{{ Math.round(animatedCpuUsage) }}%</span>
+            <span class="resource-pill resource-pill-cpu">{{ Math.round(animatedCpuUsage) }}%</span>
           </div>
           <div class="resource-delta" :class="'trend-' + getDeltaLevel(cpuDelta)">
             {{ formatDelta(cpuDelta) }}
           </div>
           <div ref="chartRealtimeCpuRef" class="chart-wrap chart-realtime-h w-full mt-2"></div>
           <div class="resource-progress mt-1.5">
-            <span :style="{ width: `${clampPercent(animatedCpuUsage).toFixed(1)}%` }"></span>
+            <span class="resource-progress-cpu"
+                  :style="{ width: `${clampPercent(animatedCpuUsage).toFixed(1)}%` }"></span>
           </div>
         </div>
-        <div
-            class="dashboard-card resource-card-visual resource-memory min-w-0 p-5 rounded-xl border bg-[var(--home-card-bg)] border-[var(--home-card-border)]">
+        <div class="tech-card resource-card-visual resource-memory min-w-0 p-5 rounded-xl">
+          <div class="tech-card-glow"></div>
+          <div class="tech-card-scanline"></div>
           <div class="resource-head">
             <h3 class="card-title text-[15px] font-semibold m-0 text-[var(--home-text-primary)]">
               {{ $t('pages.dashboard.memory') }}</h3>
-            <span class="resource-pill">{{ Math.round(animatedMemoryUsage) }}%</span>
+            <span class="resource-pill resource-pill-memory">{{ Math.round(animatedMemoryUsage) }}%</span>
           </div>
           <div class="resource-delta" :class="'trend-' + getDeltaLevel(memoryDelta)">
             {{ formatDelta(memoryDelta) }}
           </div>
           <div ref="chartRealtimeMemRef" class="chart-wrap chart-realtime-h w-full mt-2"></div>
           <div class="resource-progress mt-1.5">
-            <span :style="{ width: `${clampPercent(animatedMemoryUsage).toFixed(1)}%` }"></span>
+            <span class="resource-progress-memory"
+                  :style="{ width: `${clampPercent(animatedMemoryUsage).toFixed(1)}%` }"></span>
           </div>
         </div>
-        <div
-            class="dashboard-card resource-card-visual resource-gpu min-w-0 p-5 rounded-xl border bg-[var(--home-card-bg)] border-[var(--home-card-border)]">
+        <div class="tech-card resource-card-visual resource-gpu min-w-0 p-5 rounded-xl">
+          <div class="tech-card-glow"></div>
+          <div class="tech-card-scanline"></div>
           <div class="resource-head">
             <h3 class="card-title text-[15px] font-semibold m-0 text-[var(--home-text-primary)]">
               {{ $t('pages.dashboard.gpu') }}</h3>
-            <span class="resource-pill">{{ Math.round(animatedGpuUsage) }}%</span>
+            <span class="resource-pill resource-pill-gpu">{{ Math.round(animatedGpuUsage) }}%</span>
           </div>
           <div class="resource-delta" :class="'trend-' + getDeltaLevel(gpuDelta)">
             {{ formatDelta(gpuDelta) }}
           </div>
           <div ref="chartRealtimeGpuRef" class="chart-wrap chart-realtime-h w-full mt-2"></div>
           <div class="resource-progress mt-1.5">
-            <span :style="{ width: `${clampPercent(animatedGpuUsage).toFixed(1)}%` }"></span>
+            <span class="resource-progress-gpu"
+                  :style="{ width: `${clampPercent(animatedGpuUsage).toFixed(1)}%` }"></span>
           </div>
         </div>
       </div>
     </section>
 
+    <!-- 平台概览 (admin) -->
     <section v-if="isAdmin" class="mb-5 enter-rise" style="--enter-delay: 0.12s">
       <h3 class="section-title text-[15px] font-semibold mb-3 text-[var(--home-text-secondary)]">
         {{ $t('pages.dashboard.platformOverview') }}
       </h3>
       <div class="grid gap-5 platform-layout-grid">
         <div class="flex flex-col gap-2.5 w-[220px] min-w-0 h-full platform-stats-col">
-          <div
-              class="stat-card flex items-center gap-3 p-4 flex-1 min-h-0 max-w-none rounded-xl stat-card-theme platform-card">
-            <div
-                class="stat-icon w-11 h-11 rounded-[10px] flex items-center justify-center bg-[rgba(139,92,246,0.12)] text-[var(--home-text-secondary)]">
-              <el-icon :size="24">
+          <div class="stat-card-tech flex items-center gap-3 p-4 flex-1 min-h-0 max-w-none rounded-xl">
+            <div class="stat-icon-tech stat-icon-purple">
+              <el-icon :size="22">
                 <User/>
               </el-icon>
             </div>
             <div class="flex flex-col gap-0.5">
-              <span class="stat-value text-[22px] font-bold leading-tight text-[var(--home-text-primary)]">{{
-                  platformStats.totalUsers
-                }}</span>
-              <span class="stat-label text-xs text-[var(--home-text-muted)]">{{
-                  $t('pages.dashboard.totalUsers')
-                }}</span>
+              <span class="stat-value-tech text-[var(--home-text-primary)]">{{ platformStats.totalUsers }}</span>
+              <span class="stat-label-tech text-[var(--home-text-muted)]">{{ $t('pages.dashboard.totalUsers') }}</span>
             </div>
           </div>
-          <div
-              class="stat-card flex items-center gap-3 p-4 flex-1 min-h-0 max-w-none rounded-xl stat-card-theme platform-card">
-            <div
-                class="stat-icon w-11 h-11 rounded-[10px] flex items-center justify-center bg-[rgba(139,92,246,0.12)] text-[var(--home-text-secondary)]">
-              <el-icon :size="24">
+          <div class="stat-card-tech flex items-center gap-3 p-4 flex-1 min-h-0 max-w-none rounded-xl">
+            <div class="stat-icon-tech stat-icon-purple">
+              <el-icon :size="22">
                 <FolderOpened/>
               </el-icon>
             </div>
             <div class="flex flex-col gap-0.5">
-              <span class="stat-value text-[22px] font-bold leading-tight text-[var(--home-text-primary)]">{{
-                  platformStats.totalTasks
-                }}</span>
-              <span class="stat-label text-xs text-[var(--home-text-muted)]">{{
-                  $t('pages.dashboard.totalTasks')
-                }}</span>
+              <span class="stat-value-tech text-[var(--home-text-primary)]">{{ platformStats.totalTasks }}</span>
+              <span class="stat-label-tech text-[var(--home-text-muted)]">{{ $t('pages.dashboard.totalTasks') }}</span>
             </div>
           </div>
-          <div
-              class="stat-card flex items-center gap-3 p-4 flex-1 min-h-0 max-w-none rounded-xl stat-card-theme platform-card">
-            <div
-                class="stat-icon w-11 h-11 rounded-[10px] flex items-center justify-center bg-[rgba(139,92,246,0.12)] text-[var(--home-text-secondary)]">
-              <el-icon :size="24">
+          <div class="stat-card-tech flex items-center gap-3 p-4 flex-1 min-h-0 max-w-none rounded-xl">
+            <div class="stat-icon-tech stat-icon-purple">
+              <el-icon :size="22">
                 <Document/>
               </el-icon>
             </div>
             <div class="flex flex-col gap-0.5">
-              <span class="stat-value text-[22px] font-bold leading-tight text-[var(--home-text-primary)]">{{
-                  platformStats.totalDatasets
-                }}</span>
-              <span class="stat-label text-xs text-[var(--home-text-muted)]">{{
+              <span class="stat-value-tech text-[var(--home-text-primary)]">{{ platformStats.totalDatasets }}</span>
+              <span class="stat-label-tech text-[var(--home-text-muted)]">{{
                   $t('pages.dashboard.totalDatasets')
                 }}</span>
             </div>
           </div>
-          <div
-              class="stat-card flex items-center gap-3 p-4 flex-1 min-h-0 max-w-none rounded-xl stat-card-theme platform-card">
-            <div
-                class="stat-icon w-11 h-11 rounded-[10px] flex items-center justify-center bg-[rgba(139,92,246,0.12)] text-[var(--home-text-secondary)]">
-              <el-icon :size="24">
+          <div class="stat-card-tech flex items-center gap-3 p-4 flex-1 min-h-0 max-w-none rounded-xl">
+            <div class="stat-icon-tech stat-icon-purple">
+              <el-icon :size="22">
                 <List/>
               </el-icon>
             </div>
             <div class="flex flex-col gap-0.5">
-              <span class="stat-value text-[22px] font-bold leading-tight text-[var(--home-text-primary)]">{{
-                  platformStats.totalAlgorithms
-                }}</span>
-              <span class="stat-label text-xs text-[var(--home-text-muted)]">{{
+              <span class="stat-value-tech text-[var(--home-text-primary)]">{{ platformStats.totalAlgorithms }}</span>
+              <span class="stat-label-tech text-[var(--home-text-muted)]">{{
                   $t('pages.dashboard.totalAlgorithms')
                 }}</span>
             </div>
           </div>
         </div>
-        <div
-            class="dashboard-card min-w-0 p-5 rounded-xl border bg-[var(--home-card-bg)] border-[var(--home-card-border)]">
+        <div class="tech-card min-w-0 p-5 rounded-xl">
+          <div class="tech-card-glow"></div>
           <h3 class="card-title text-[15px] font-semibold m-0 text-[var(--home-text-primary)]">
             {{ $t('pages.dashboard.chartTasksByAlgorithm') }}</h3>
           <div ref="chartAlgorithmRef" class="chart-wrap chart-algo w-full h-[280px] mt-2"></div>
@@ -711,89 +722,77 @@ onBeforeUnmount(() => {
       </div>
     </section>
 
+    <!-- 统计卡片 -->
     <section class="mb-6 enter-rise" style="--enter-delay: 0.16s">
       <div class="flex gap-4 flex-wrap">
-        <div class="stat-card flex items-center gap-3 p-4 min-w-[140px] flex-1 rounded-xl stat-card-theme">
-          <div
-              class="stat-icon w-11 h-11 rounded-[10px] flex items-center justify-center bg-[rgba(99,102,241,0.12)] text-[var(--home-text-secondary)]">
+        <div class="stat-card-tech stat-card-glow flex items-center gap-3 p-4 min-w-[140px] flex-1 rounded-xl">
+          <div class="stat-icon-tech stat-icon-indigo">
             <el-icon :size="22">
               <List/>
             </el-icon>
           </div>
           <div class="flex flex-col gap-0.5">
-            <span class="stat-value text-[22px] font-bold leading-tight text-[var(--home-text-primary)]">{{
-                Math.round(animatedTotal)
-              }}</span>
-            <span class="stat-label text-xs text-[var(--home-text-muted)]">{{ $t('pages.dashboard.statTotal') }}</span>
+            <span class="stat-value-tech text-[var(--home-text-primary)]">{{ Math.round(animatedTotal) }}</span>
+            <span class="stat-label-tech text-[var(--home-text-muted)]">{{ $t('pages.dashboard.statTotal') }}</span>
           </div>
         </div>
-        <div class="stat-card flex items-center gap-3 p-4 min-w-[140px] flex-1 rounded-xl stat-card-theme">
-          <div
-              class="stat-icon w-11 h-11 rounded-[10px] flex items-center justify-center bg-[rgba(34,197,94,0.15)] text-[#22c55e]">
+        <div class="stat-card-tech stat-card-glow flex items-center gap-3 p-4 min-w-[140px] flex-1 rounded-xl">
+          <div class="stat-icon-tech stat-icon-green">
             <el-icon :size="22">
               <VideoPlay/>
             </el-icon>
           </div>
           <div class="flex flex-col gap-0.5">
-            <span class="stat-value text-[22px] font-bold leading-tight text-[var(--home-text-primary)]">{{
-                Math.round(animatedRunning)
-              }}</span>
-            <span class="stat-label text-xs text-[var(--home-text-muted)]">{{
-                $t('pages.dashboard.statRunning')
-              }}</span>
+            <span class="stat-value-tech text-[var(--home-text-primary)]">{{ Math.round(animatedRunning) }}</span>
+            <span class="stat-label-tech text-[var(--home-text-muted)]">{{ $t('pages.dashboard.statRunning') }}</span>
           </div>
         </div>
-        <div class="stat-card flex items-center gap-3 p-4 min-w-[140px] flex-1 rounded-xl stat-card-theme">
-          <div
-              class="stat-icon w-11 h-11 rounded-[10px] flex items-center justify-center bg-[rgba(99,102,241,0.15)] text-[var(--home-text-secondary)]">
+        <div class="stat-card-tech stat-card-glow flex items-center gap-3 p-4 min-w-[140px] flex-1 rounded-xl">
+          <div class="stat-icon-tech stat-icon-indigo">
+            <el-icon :size="22">
+              <CircleCheck/>
+            </el-icon>
+          </div>
+          <div class="flex flex-col gap-0.5">
+            <span class="stat-value-tech text-[var(--home-text-primary)]">{{ Math.round(animatedSuccess) }}</span>
+            <span class="stat-label-tech text-[var(--home-text-muted)]">{{ $t('pages.dashboard.statSuccess') }}</span>
+          </div>
+        </div>
+        <div class="stat-card-tech stat-card-glow flex items-center gap-3 p-4 min-w-[140px] flex-1 rounded-xl">
+          <div class="stat-icon-tech stat-icon-amber">
             <el-icon :size="22">
               <Document/>
             </el-icon>
           </div>
           <div class="flex flex-col gap-0.5">
-            <span class="stat-value text-[22px] font-bold leading-tight text-[var(--home-text-primary)]">{{
-                Math.round(animatedSuccess)
-              }}</span>
-            <span class="stat-label text-xs text-[var(--home-text-muted)]">{{
-                $t('pages.dashboard.statSuccess')
-              }}</span>
-          </div>
-        </div>
-        <div class="stat-card flex items-center gap-3 p-4 min-w-[140px] flex-1 rounded-xl stat-card-theme">
-          <div
-              class="stat-icon w-11 h-11 rounded-[10px] flex items-center justify-center bg-[rgba(99,102,241,0.12)] text-[var(--home-text-secondary)]">
-            <el-icon :size="22">
-              <Document/>
-            </el-icon>
-          </div>
-          <div class="flex flex-col gap-0.5">
-            <span class="stat-value text-[22px] font-bold leading-tight text-[var(--home-text-primary)]">{{
-                Math.round(animatedToday)
-              }}</span>
-            <span class="stat-label text-xs text-[var(--home-text-muted)]">{{ $t('pages.dashboard.statToday') }}</span>
+            <span class="stat-value-tech text-[var(--home-text-primary)]">{{ Math.round(animatedToday) }}</span>
+            <span class="stat-label-tech text-[var(--home-text-muted)]">{{ $t('pages.dashboard.statToday') }}</span>
           </div>
         </div>
       </div>
     </section>
 
+    <!-- 图表区域 -->
     <section class="flex gap-4 flex-wrap items-stretch mb-6 enter-rise" style="--enter-delay: 0.2s">
-      <div
-          class="dashboard-card w-[260px] flex-shrink-0 min-h-0 p-5 rounded-xl border bg-[var(--home-card-bg)] border-[var(--home-card-border)]">
+      <div class="tech-card w-[260px] flex-shrink-0 min-h-0 p-5 rounded-xl">
+        <div class="tech-card-glow"></div>
         <h3 class="card-title text-[15px] font-semibold m-0 text-[var(--home-text-primary)]">
           {{ $t('pages.dashboard.chartTaskStatus') }}</h3>
         <div ref="chartStatusRef" class="chart-wrap w-full h-[220px] mt-3"></div>
       </div>
-      <div
-          class="dashboard-card flex-1 min-w-[280px] min-h-0 p-5 rounded-xl border bg-[var(--home-card-bg)] border-[var(--home-card-border)]">
+      <div class="tech-card flex-1 min-w-[280px] min-h-0 p-5 rounded-xl">
+        <div class="tech-card-glow"></div>
         <h3 class="card-title text-[15px] font-semibold m-0 text-[var(--home-text-primary)]">
           {{ $t('pages.dashboard.chartTaskTrend') }}</h3>
         <div ref="chartTrendRef" class="chart-wrap w-full h-[240px] mt-2"></div>
       </div>
     </section>
 
+    <!-- 底部网格 -->
     <div class="dashboard-grid grid gap-4 items-stretch enter-rise" style="--enter-delay: 0.24s">
-      <div
-          class="recent-card dashboard-card flex flex-col min-h-0 p-5 rounded-xl border bg-[var(--home-card-bg)] border-[var(--home-card-border)]">
+      <!-- 最近任务 -->
+      <div class="recent-card tech-card flex flex-col min-h-0 p-5 rounded-xl">
+        <div class="tech-card-glow"></div>
         <div class="flex items-center justify-between mb-2.5">
           <h3 class="card-title text-[15px] font-semibold m-0 text-[var(--home-text-primary)]">
             {{ $t('pages.dashboard.recentTasks') }}</h3>
@@ -812,7 +811,7 @@ onBeforeUnmount(() => {
           >
             <div
                 class="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[13px] text-[var(--home-text-primary)]">
-              <span>{{ task.algorithmName }}</span>
+              <span class="font-medium">{{ task.algorithmName }}</span>
               <span class="text-[var(--home-text-muted)]"> / {{ task.dataName }}</span>
             </div>
             <span class="recent-status text-xs py-0.5 px-2 rounded-md flex-shrink-0"
@@ -824,8 +823,9 @@ onBeforeUnmount(() => {
           {{ $t('pages.dashboard.noRecentTasks') }}</p>
       </div>
 
-      <div
-          class="resource-card dashboard-card flex flex-col min-h-0 py-3.5 px-4 rounded-xl border bg-[var(--home-card-bg)] border-[var(--home-card-border)]">
+      <!-- 系统健康 -->
+      <div class="resource-card tech-card flex flex-col min-h-0 py-3.5 px-4 rounded-xl">
+        <div class="tech-card-glow"></div>
         <div class="flex items-center justify-between mb-2.5">
           <h3 class="card-title text-[15px] font-semibold m-0 text-[var(--home-text-primary)]">
             {{ $t('pages.dashboard.systemHealth') }}</h3>
@@ -835,38 +835,38 @@ onBeforeUnmount(() => {
           <div
               v-for="item in systemHealthItems"
               :key="item.key"
-              class="health-item flex items-center justify-between py-3.5 px-4 rounded-xl border transition-all duration-200 health-item-theme"
+              class="health-item flex items-center justify-between py-3.5 px-4 rounded-xl transition-all duration-200 health-item-theme"
           >
             <div class="health-main flex items-center gap-3 min-w-0">
               <div
-                  class="health-icon-wrap w-14 h-14 rounded-[14px] flex items-center justify-center flex-shrink-0 p-2.5 box-border bg-[var(--home-hover-bg)]">
+                  class="health-icon-wrap w-14 h-14 rounded-[14px] flex items-center justify-center flex-shrink-0 p-2.5 box-border">
                 <img :src="item.icon" class="w-full h-full object-contain" :alt="$t(item.labelKey)"/>
               </div>
               <span class="health-name text-[15px] font-semibold text-[var(--home-text-primary)]">{{
                   $t(item.labelKey)
                 }}</span>
             </div>
-            <span
-                class="health-status inline-flex items-center gap-1.5 flex-shrink-0 text-xs font-medium text-[#16a34a]">
+            <span class="health-status inline-flex items-center gap-1.5 flex-shrink-0 text-xs font-medium">
               <span
-                  class="health-status-badge inline-flex items-center justify-center w-[22px] h-[22px] rounded-full bg-[rgba(22,163,74,0.15)] border border-[rgba(22,163,74,0.4)] flex-shrink-0">
-                <el-icon class="text-sm text-[#16a34a]"><CircleCheck/></el-icon>
+                  class="health-status-badge inline-flex items-center justify-center w-[22px] h-[22px] rounded-full flex-shrink-0">
+                <el-icon class="text-sm"><CircleCheck/></el-icon>
               </span>
-              <span class="text-[13px] font-semibold text-[#16a34a]">{{ $t('pages.dashboard.healthHealthy') }}</span>
+              <span class="text-[13px] font-semibold">{{ $t('pages.dashboard.healthHealthy') }}</span>
             </span>
           </div>
         </div>
       </div>
 
-      <div
-          class="actions-card dashboard-card flex flex-col min-h-0 py-3.5 px-4 rounded-xl border bg-[var(--home-card-bg)] border-[var(--home-card-border)]">
+      <!-- 快捷操作 -->
+      <div class="actions-card tech-card flex flex-col min-h-0 py-3.5 px-4 rounded-xl">
+        <div class="tech-card-glow"></div>
         <h3 class="card-title text-[15px] font-semibold mb-2 m-0 text-[var(--home-text-primary)]">
           {{ $t('pages.dashboard.quickActions') }}</h3>
         <div class="grid grid-cols-2 gap-2 mt-2">
           <div
               v-for="(item, index) in quickActionItems"
               :key="item.key"
-              class="action-item flex items-center gap-2.5 py-2.5 px-3 rounded-[10px] border transition-all duration-200 action-item-theme"
+              class="action-item flex items-center gap-2.5 py-2.5 px-3 rounded-[10px] transition-all duration-200 action-item-theme"
               :class="index === 0 ? 'action-item-first' : ''"
               role="button"
               tabindex="0"
@@ -875,7 +875,7 @@ onBeforeUnmount(() => {
           >
             <div
                 class="action-icon-wrap w-10 h-10 rounded-[10px] flex items-center justify-center flex-shrink-0"
-                :class="index === 0 ? 'bg-[rgba(99,102,241,0.15)] text-[#6366f1]' : 'bg-[rgba(99,102,241,0.08)] text-[var(--home-text-secondary)]'"
+                :class="index === 0 ? 'action-icon-primary' : 'action-icon-default'"
             >
               <el-icon class="text-xl">
                 <component :is="item.icon"/>
@@ -892,6 +892,29 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+/* ========================================
+   科技大屏风格 - Dashboard
+   ======================================== */
+
+/* --- 背景网格 --- */
+.tech-grid-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: -2;
+  background-image: linear-gradient(var(--dash-grid-color) 1px, transparent 1px),
+  linear-gradient(90deg, var(--dash-grid-color) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse 70% 50% at 50% 30%, black 20%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 50% at 50% 30%, black 20%, transparent 70%);
+  --dash-grid-color: rgba(99, 102, 241, 0.04);
+}
+
+:global(html.dark) .tech-grid-bg {
+  --dash-grid-color: rgba(99, 102, 241, 0.06);
+}
+
+/* --- Shell 光晕 --- */
 .dashboard-shell {
   position: relative;
   isolation: isolate;
@@ -902,28 +925,38 @@ onBeforeUnmount(() => {
   content: '';
   position: absolute;
   border-radius: 999px;
-  filter: blur(56px);
+  filter: blur(72px);
   pointer-events: none;
   z-index: -1;
-  opacity: 0.5;
-  animation: dashboardGlowFloat 12s ease-in-out infinite;
+  opacity: 0.45;
+  animation: dashboardGlowFloat 14s ease-in-out infinite;
 }
 
 .dashboard-shell::before {
-  width: 320px;
-  height: 320px;
-  top: -140px;
-  right: 6%;
-  background: radial-gradient(circle at center, rgba(99, 102, 241, 0.3), rgba(99, 102, 241, 0));
+  width: 380px;
+  height: 380px;
+  top: -160px;
+  right: 4%;
+  background: radial-gradient(circle at center, rgba(99, 102, 241, 0.28), transparent 70%);
 }
 
 .dashboard-shell::after {
-  width: 260px;
-  height: 260px;
-  left: 4%;
-  top: 34%;
-  background: radial-gradient(circle at center, rgba(14, 165, 164, 0.22), rgba(14, 165, 164, 0));
-  animation-delay: -4s;
+  width: 300px;
+  height: 300px;
+  left: 2%;
+  top: 30%;
+  background: radial-gradient(circle at center, rgba(14, 165, 164, 0.2), transparent 70%);
+  animation-delay: -5s;
+}
+
+:global(html.dark) .dashboard-shell::before {
+  opacity: 0.55;
+  background: radial-gradient(circle at center, rgba(99, 102, 241, 0.35), transparent 70%);
+}
+
+:global(html.dark) .dashboard-shell::after {
+  opacity: 0.5;
+  background: radial-gradient(circle at center, rgba(14, 165, 164, 0.25), transparent 70%);
 }
 
 @keyframes dashboardGlowFloat {
@@ -931,36 +964,187 @@ onBeforeUnmount(() => {
     transform: translate3d(0, 0, 0) scale(1);
   }
   50% {
-    transform: translate3d(0, -10px, 0) scale(1.04);
+    transform: translate3d(0, -12px, 0) scale(1.05);
   }
 }
 
+/* ========================================
+   科技卡片 - 统一基础样式
+   ======================================== */
+.tech-card {
+  position: relative;
+  overflow: hidden;
+  background: var(--home-card-bg);
+  border: 1px solid var(--home-card-border);
+  box-shadow: 0 2px 8px var(--home-card-shadow);
+  transition: border-color 0.28s ease, box-shadow 0.28s ease;
+}
+
+/* 悬浮效果 */
+.tech-card:hover {
+  border-color: rgba(99, 102, 241, 0.35);
+  box-shadow: 0 8px 28px var(--home-card-shadow),
+  inset 0 0 0 1px rgba(99, 102, 241, 0.12),
+  0 0 12px rgba(99, 102, 241, 0.06);
+}
+
+:global(html.dark) .tech-card:hover {
+  border-color: rgba(99, 102, 241, 0.45);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35),
+  inset 0 0 0 1px rgba(99, 102, 241, 0.18),
+  0 0 18px rgba(99, 102, 241, 0.08);
+}
+
+/* 顶部发光条 */
+.tech-card-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(99, 102, 241, 0.5) 30%,
+      rgba(14, 165, 164, 0.4) 50%,
+      rgba(99, 102, 241, 0.5) 70%,
+      transparent 100%
+  );
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+:global(html.dark) .tech-card-glow {
+  opacity: 0.8;
+  background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(99, 102, 241, 0.7) 30%,
+      rgba(14, 165, 164, 0.5) 50%,
+      rgba(99, 102, 241, 0.7) 70%,
+      transparent 100%
+  );
+}
+
+/* 扫描线效果 */
+.tech-card-scanline {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(99, 102, 241, 0.03) 45%,
+      rgba(99, 102, 241, 0.06) 50%,
+      rgba(99, 102, 241, 0.03) 55%,
+      transparent 100%
+  );
+  pointer-events: none;
+  animation: scanlineMove 8s ease-in-out infinite;
+}
+
+:global(html.dark) .tech-card-scanline {
+  background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(99, 102, 241, 0.04) 45%,
+      rgba(99, 102, 241, 0.1) 50%,
+      rgba(99, 102, 241, 0.04) 55%,
+      transparent 100%
+  );
+}
+
+@keyframes scanlineMove {
+  0% {
+    left: -100%;
+  }
+  40% {
+    left: 100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* ========================================
+   Hero Panel
+   ======================================== */
 .hero-panel {
   position: relative;
   overflow: hidden;
   border: 1px solid var(--home-card-border);
   border-radius: 18px;
-  padding: 22px 24px;
+  padding: 24px 28px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  box-shadow: 0 10px 24px var(--home-card-shadow);
-  background: radial-gradient(circle at 12% 24%, rgba(99, 102, 241, 0.16), rgba(99, 102, 241, 0)),
-  radial-gradient(circle at 88% 72%, rgba(14, 165, 164, 0.13), rgba(14, 165, 164, 0)),
+  background: radial-gradient(ellipse 60% 80% at 10% 20%, rgba(99, 102, 241, 0.12), transparent),
+  radial-gradient(ellipse 50% 60% at 90% 80%, rgba(14, 165, 164, 0.1), transparent),
   var(--home-card-bg);
+  box-shadow: 0 8px 32px var(--home-card-shadow);
+}
+
+:global(html.dark) .hero-panel {
+  background: radial-gradient(ellipse 60% 80% at 10% 20%, rgba(99, 102, 241, 0.18), transparent),
+  radial-gradient(ellipse 50% 60% at 90% 80%, rgba(14, 165, 164, 0.12), transparent),
+  var(--home-card-bg);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3);
 }
 
 .hero-panel::after {
   content: '';
   position: absolute;
-  right: -54px;
-  bottom: -58px;
-  width: 200px;
-  height: 200px;
+  right: -60px;
+  bottom: -60px;
+  width: 220px;
+  height: 220px;
   border-radius: 999px;
-  background: radial-gradient(circle at center, rgba(99, 102, 241, 0.16), rgba(99, 102, 241, 0));
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.12), transparent 70%);
   pointer-events: none;
+}
+
+.hero-scanline {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(99, 102, 241, 0.04) 40%,
+      rgba(99, 102, 241, 0.08) 50%,
+      rgba(99, 102, 241, 0.04) 60%,
+      transparent 100%
+  );
+  pointer-events: none;
+  animation: heroScanlineMove 10s ease-in-out infinite;
+}
+
+:global(html.dark) .hero-scanline {
+  background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(99, 102, 241, 0.06) 40%,
+      rgba(99, 102, 241, 0.14) 50%,
+      rgba(99, 102, 241, 0.06) 60%,
+      transparent 100%
+  );
+}
+
+@keyframes heroScanlineMove {
+  0% {
+    left: -60%;
+  }
+  50% {
+    left: 100%;
+  }
+  100% {
+    left: 100%;
+  }
 }
 
 .hero-main {
@@ -973,15 +1157,46 @@ onBeforeUnmount(() => {
 .hero-brand {
   display: inline-flex;
   align-items: center;
+  gap: 6px;
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.6px;
+  letter-spacing: 0.8px;
   color: #6366f1;
-  background: rgba(99, 102, 241, 0.12);
+  background: rgba(99, 102, 241, 0.1);
   border: 1px solid rgba(99, 102, 241, 0.25);
-  padding: 3px 10px;
+  padding: 4px 12px;
   border-radius: 999px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
+}
+
+:global(html.dark) .hero-brand {
+  color: #a5b4fc;
+  background: rgba(99, 102, 241, 0.15);
+  border-color: rgba(99, 102, 241, 0.35);
+}
+
+.hero-brand-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #6366f1;
+  animation: brandDotPulse 2s ease-in-out infinite;
+}
+
+:global(html.dark) .hero-brand-dot {
+  background: #a5b4fc;
+  box-shadow: 0 0 8px rgba(165, 180, 252, 0.5);
+}
+
+@keyframes brandDotPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.8);
+  }
 }
 
 .hero-side {
@@ -997,18 +1212,23 @@ onBeforeUnmount(() => {
 }
 
 .hero-clock {
-  font-size: 34px;
+  font-size: 36px;
   font-weight: 700;
   line-height: 1;
   color: var(--home-text-primary);
-  letter-spacing: 1.6px;
-  text-shadow: 0 8px 24px rgba(99, 102, 241, 0.16);
+  letter-spacing: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+:global(html.dark) .hero-clock {
+  text-shadow: 0 0 30px rgba(99, 102, 241, 0.3);
 }
 
 .hero-date {
   font-size: 13px;
   color: var(--home-text-muted);
   letter-spacing: 0.5px;
+  font-variant-numeric: tabular-nums;
 }
 
 .hero-health-chip {
@@ -1016,13 +1236,19 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 6px;
   height: 26px;
-  padding: 0 10px;
+  padding: 0 12px;
   border-radius: 999px;
   font-size: 12px;
   font-weight: 600;
   color: #16a34a;
+  background: rgba(22, 163, 74, 0.1);
+  border: 1px solid rgba(22, 163, 74, 0.22);
+}
+
+:global(html.dark) .hero-health-chip {
+  color: #4ade80;
   background: rgba(22, 163, 74, 0.12);
-  border: 1px solid rgba(22, 163, 74, 0.26);
+  border-color: rgba(34, 197, 94, 0.3);
 }
 
 .hero-health-dot {
@@ -1030,19 +1256,25 @@ onBeforeUnmount(() => {
   height: 7px;
   border-radius: 999px;
   background: #22c55e;
-  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.42);
-  animation: heroHealthPulse 1.9s ease-in-out infinite;
+  animation: heroHealthPulse 2s ease-in-out infinite;
+}
+
+:global(html.dark) .hero-health-dot {
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
 }
 
 @keyframes heroHealthPulse {
   0%, 100% {
-    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.42);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
   }
   50% {
-    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0);
+    box-shadow: 0 0 0 5px rgba(34, 197, 94, 0);
   }
 }
 
+/* ========================================
+   资源卡片
+   ======================================== */
 .resource-card-visual {
   position: relative;
   overflow: hidden;
@@ -1051,25 +1283,37 @@ onBeforeUnmount(() => {
 .resource-card-visual::after {
   content: '';
   position: absolute;
-  right: -42px;
-  top: -42px;
-  width: 120px;
-  height: 120px;
+  right: -50px;
+  top: -50px;
+  width: 140px;
+  height: 140px;
   border-radius: 999px;
   pointer-events: none;
-  opacity: 0.6;
+  opacity: 0.5;
 }
 
 .resource-cpu::after {
-  background: radial-gradient(circle at center, rgba(79, 70, 229, 0.18), rgba(79, 70, 229, 0));
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.15), transparent 70%);
 }
 
 .resource-memory::after {
-  background: radial-gradient(circle at center, rgba(14, 165, 164, 0.18), rgba(14, 165, 164, 0));
+  background: radial-gradient(circle, rgba(14, 165, 164, 0.15), transparent 70%);
 }
 
 .resource-gpu::after {
-  background: radial-gradient(circle at center, rgba(245, 158, 11, 0.2), rgba(245, 158, 11, 0));
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.15), transparent 70%);
+}
+
+:global(html.dark) .resource-cpu::after {
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.25), transparent 70%);
+}
+
+:global(html.dark) .resource-memory::after {
+  background: radial-gradient(circle, rgba(14, 165, 164, 0.2), transparent 70%);
+}
+
+:global(html.dark) .resource-gpu::after {
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.2), transparent 70%);
 }
 
 .resource-head {
@@ -1083,27 +1327,46 @@ onBeforeUnmount(() => {
   font-size: 12px;
   font-weight: 700;
   line-height: 1;
-  padding: 6px 10px;
+  padding: 6px 12px;
   border-radius: 999px;
   border: 1px solid transparent;
+  font-variant-numeric: tabular-nums;
 }
 
-.resource-cpu .resource-pill {
-  color: #4f46e5;
-  background: rgba(79, 70, 229, 0.12);
-  border-color: rgba(79, 70, 229, 0.25);
+.resource-pill-cpu {
+  color: #6366f1;
+  background: rgba(99, 102, 241, 0.1);
+  border-color: rgba(99, 102, 241, 0.2);
 }
 
-.resource-memory .resource-pill {
+.resource-pill-memory {
   color: #0d9488;
-  background: rgba(13, 148, 136, 0.13);
-  border-color: rgba(13, 148, 136, 0.28);
+  background: rgba(13, 148, 136, 0.1);
+  border-color: rgba(13, 148, 136, 0.22);
 }
 
-.resource-gpu .resource-pill {
+.resource-pill-gpu {
   color: #d97706;
-  background: rgba(217, 119, 6, 0.13);
-  border-color: rgba(217, 119, 6, 0.28);
+  background: rgba(217, 119, 6, 0.1);
+  border-color: rgba(217, 119, 6, 0.22);
+}
+
+:global(html.dark) .resource-pill-cpu {
+  color: #a5b4fc;
+  background: rgba(99, 102, 241, 0.15);
+  border-color: rgba(99, 102, 241, 0.35);
+}
+
+:global(html.dark) .resource-pill-memory {
+  color: #5eead4;
+  background: rgba(14, 165, 164, 0.15);
+  border-color: rgba(14, 165, 164, 0.35);
+}
+
+:global(html.dark) .resource-pill-gpu {
+  color: #fcd34d;
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.35);
 }
 
 .resource-delta {
@@ -1114,21 +1377,22 @@ onBeforeUnmount(() => {
   border-radius: 999px;
   font-size: 12px;
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
 .resource-delta.trend-up {
   color: #22c55e;
-  background: rgba(34, 197, 94, 0.14);
+  background: rgba(34, 197, 94, 0.12);
 }
 
 .resource-delta.trend-down {
   color: #ef4444;
-  background: rgba(239, 68, 68, 0.12);
+  background: rgba(239, 68, 68, 0.1);
 }
 
 .resource-delta.trend-flat {
   color: var(--home-text-muted);
-  background: rgba(148, 163, 184, 0.16);
+  background: rgba(148, 163, 184, 0.12);
 }
 
 .resource-progress {
@@ -1143,21 +1407,141 @@ onBeforeUnmount(() => {
   display: block;
   height: 100%;
   border-radius: inherit;
-  transition: width 0.45s ease;
+  transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  position: relative;
 }
 
-.resource-cpu .resource-progress > span {
-  background: linear-gradient(90deg, #818cf8, #4f46e5);
+.resource-progress-cpu {
+  background: linear-gradient(90deg, #818cf8, #6366f1);
 }
 
-.resource-memory .resource-progress > span {
+.resource-progress-memory {
   background: linear-gradient(90deg, #2dd4bf, #0d9488);
 }
 
-.resource-gpu .resource-progress > span {
+.resource-progress-gpu {
   background: linear-gradient(90deg, #fbbf24, #d97706);
 }
 
+:global(html.dark) .resource-progress-cpu {
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.4);
+}
+
+:global(html.dark) .resource-progress-memory {
+  box-shadow: 0 0 8px rgba(14, 165, 164, 0.4);
+}
+
+:global(html.dark) .resource-progress-gpu {
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+}
+
+/* ========================================
+   统计卡片
+   ======================================== */
+.stat-card-tech {
+  position: relative;
+  background: var(--home-card-bg);
+  border: 1px solid var(--home-card-border);
+  box-shadow: 0 1px 4px var(--home-card-shadow);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.stat-card-tech:hover {
+  border-color: rgba(99, 102, 241, 0.25);
+  box-shadow: 0 4px 16px var(--home-card-shadow);
+}
+
+:global(html.dark) .stat-card-tech:hover {
+  border-color: rgba(99, 102, 241, 0.35);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.stat-card-glow::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.3), transparent);
+  pointer-events: none;
+}
+
+:global(html.dark) .stat-card-glow::after {
+  background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.5), transparent);
+}
+
+.stat-icon-tech {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.stat-card-tech:hover .stat-icon-tech {
+  transform: scale(1.05);
+}
+
+.stat-icon-indigo {
+  background: rgba(99, 102, 241, 0.1);
+  color: #6366f1;
+}
+
+.stat-icon-green {
+  background: rgba(34, 197, 94, 0.12);
+  color: #22c55e;
+}
+
+.stat-icon-purple {
+  background: rgba(139, 92, 246, 0.1);
+  color: #8b5cf6;
+}
+
+.stat-icon-amber {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+:global(html.dark) .stat-icon-indigo {
+  background: rgba(99, 102, 241, 0.18);
+  color: #a5b4fc;
+}
+
+:global(html.dark) .stat-icon-green {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+}
+
+:global(html.dark) .stat-icon-purple {
+  background: rgba(139, 92, 246, 0.15);
+  color: #c4b5fd;
+}
+
+:global(html.dark) .stat-icon-amber {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fcd34d;
+}
+
+.stat-value-tech {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.5px;
+}
+
+.stat-label-tech {
+  font-size: 12px;
+  letter-spacing: 0.2px;
+}
+
+/* ========================================
+   健康状态
+   ======================================== */
 .health-summary-badge {
   display: inline-flex;
   align-items: center;
@@ -1169,119 +1553,22 @@ onBeforeUnmount(() => {
   font-size: 12px;
   font-weight: 700;
   color: #16a34a;
-  background: rgba(22, 163, 74, 0.14);
-  border: 1px solid rgba(22, 163, 74, 0.28);
+  background: rgba(22, 163, 74, 0.12);
+  border: 1px solid rgba(22, 163, 74, 0.25);
 }
 
-.enter-rise {
-  opacity: 0;
-  animation: dashboardRise 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  animation-delay: var(--enter-delay, 0s);
-}
-
-@keyframes dashboardRise {
-  from {
-    opacity: 0;
-    transform: translateY(14px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* 主题相关：卡片阴影（所有 dashboard-card 统一） */
-.dashboard-card {
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 1px 3px var(--home-card-shadow);
-  transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease, background-color 0.22s ease;
-  backdrop-filter: blur(8px);
-}
-
-.dashboard-card::before {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  padding: 1px;
-  background: conic-gradient(
-      from 140deg,
-      rgba(99, 102, 241, 0.35),
-      rgba(14, 165, 164, 0.12),
-      rgba(99, 102, 241, 0.28)
-  );
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  opacity: 0.2;
-  pointer-events: none;
-  animation: cardEdgeBreath 4.6s ease-in-out infinite;
-}
-
-.dashboard-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(99, 102, 241, 0.22);
-  box-shadow: 0 10px 22px var(--home-card-shadow);
-}
-
-@keyframes cardEdgeBreath {
-  0%, 100% {
-    opacity: 0.16;
-    filter: saturate(0.95);
-  }
-  50% {
-    opacity: 0.38;
-    filter: saturate(1.2);
-  }
-}
-
-.card-title {
-  letter-spacing: 0.2px;
-}
-
-.stat-card-theme {
-  background: var(--home-card-bg);
-  border: 1px solid var(--home-card-border);
-  box-shadow: 0 1px 3px var(--home-card-shadow);
-  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
-}
-
-.stat-card-theme:hover {
-  transform: translateY(-1px);
-  border-color: rgba(99, 102, 241, 0.25);
-  box-shadow: 0 8px 18px var(--home-card-shadow);
-}
-
-.recent-item-theme {
-  --item-delay: 0s;
-  background: var(--home-hover-bg);
-  border: 1px solid transparent;
-  transition: transform 0.2s, border-color 0.2s, background-color 0.2s;
-}
-
-.recent-item-theme:hover {
-  transform: translateX(2px);
-  border-color: var(--home-card-border);
-  background: var(--home-card-bg);
-}
-
-.recent-list {
-  overflow-x: hidden;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.recent-list::-webkit-scrollbar {
-  width: 0;
-  height: 0;
-  display: none;
+:global(html.dark) .health-summary-badge {
+  color: #4ade80;
+  background: rgba(22, 163, 74, 0.15);
+  border-color: rgba(34, 197, 94, 0.35);
 }
 
 .health-item-theme {
   background: var(--home-hover-bg);
   border: 1px solid var(--home-border);
-  transition: transform 0.2s, border-color 0.2s, background-color 0.2s;
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+  border-color 0.22s ease,
+  background-color 0.22s ease;
 }
 
 .health-item {
@@ -1305,62 +1592,156 @@ onBeforeUnmount(() => {
   white-space: nowrap;
 }
 
-.health-item-theme:hover {
-  transform: translateY(-1px);
-  border-color: rgba(99, 102, 241, 0.25);
-  background: var(--home-card-bg);
-}
-
-.action-item-theme {
+.health-icon-wrap {
   background: var(--home-hover-bg);
-  border: 1px solid var(--home-border);
-  cursor: pointer;
-  user-select: none;
-  transition: transform 0.2s, border-color 0.2s, background-color 0.2s;
-}
-
-.action-item-theme:hover {
-  transform: translateY(-1px);
-  border-color: rgba(99, 102, 241, 0.2);
-  background: var(--home-card-bg);
-}
-
-.action-item-theme:active {
-  transform: translateY(0);
-}
-
-.action-item-first {
-  border-color: rgba(99, 102, 241, 0.28);
-  background: linear-gradient(90deg, rgba(99, 102, 241, 0.12), var(--home-hover-bg));
 }
 
 .health-status-badge {
-  animation: statusBadgePulse 2.1s ease-in-out infinite;
+  background: rgba(22, 163, 74, 0.12);
+  border: 1px solid rgba(22, 163, 74, 0.35);
+  color: #16a34a;
+  animation: statusBadgePulse 2.2s ease-in-out infinite;
+}
+
+:global(html.dark) .health-status-badge {
+  background: rgba(22, 163, 74, 0.15);
+  border-color: rgba(34, 197, 94, 0.4);
+  color: #4ade80;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.2);
+}
+
+.health-status span:last-child {
+  color: #16a34a;
+}
+
+:global(html.dark) .health-status span:last-child {
+  color: #4ade80;
+}
+
+.health-item-theme:hover {
+  border-color: rgba(99, 102, 241, 0.2);
+  background: var(--home-card-bg);
+  box-shadow: 0 2px 12px var(--home-card-shadow);
+}
+
+:global(html.dark) .health-item-theme:hover {
+  border-color: rgba(99, 102, 241, 0.3);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
 }
 
 @keyframes statusBadgePulse {
   0%, 100% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.25);
+    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.2);
   }
   50% {
-    transform: scale(1.03);
+    transform: scale(1.04);
     box-shadow: 0 0 0 4px rgba(22, 163, 74, 0);
   }
 }
 
-/* 任务状态标签（主题/语义色） */
+/* ========================================
+   快捷操作
+   ======================================== */
+.action-item-theme {
+  background: var(--home-hover-bg);
+  border: 1px solid var(--home-border);
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+  border-color 0.22s ease,
+  background-color 0.22s ease;
+}
+
+.action-item-theme:hover {
+  border-color: rgba(99, 102, 241, 0.2);
+  background: var(--home-card-bg);
+  box-shadow: 0 2px 12px var(--home-card-shadow);
+}
+
+:global(html.dark) .action-item-theme:hover {
+  border-color: rgba(99, 102, 241, 0.35);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+}
+
+.action-item-first {
+  border-color: rgba(99, 102, 241, 0.25);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), var(--home-hover-bg));
+}
+
+:global(html.dark) .action-item-first {
+  border-color: rgba(99, 102, 241, 0.35);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), var(--home-hover-bg));
+}
+
+.action-icon-primary {
+  background: rgba(99, 102, 241, 0.12);
+  color: #6366f1;
+}
+
+:global(html.dark) .action-icon-primary {
+  background: rgba(99, 102, 241, 0.2);
+  color: #a5b4fc;
+}
+
+.action-icon-default {
+  background: rgba(99, 102, 241, 0.06);
+  color: var(--home-text-secondary);
+}
+
+:global(html.dark) .action-icon-default {
+  background: rgba(99, 102, 241, 0.1);
+}
+
+/* ========================================
+   最近任务
+   ======================================== */
+.recent-item-theme {
+  --item-delay: 0s;
+  background: var(--home-hover-bg);
+  border: 1px solid transparent;
+  transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.recent-item-theme:hover {
+  border-color: var(--home-card-border);
+  background: var(--home-card-bg);
+}
+
+:global(html.dark) .recent-item-theme:hover {
+  border-color: rgba(99, 102, 241, 0.2);
+}
+
+.recent-list {
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.recent-list::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+/* 任务状态标签 */
 .recent-status {
   border: 1px solid transparent;
   font-weight: 600;
 }
 
 .recent-status.status-in_progress {
-  background: rgba(34, 197, 94, 0.15);
+  background: rgba(34, 197, 94, 0.12);
   color: #22c55e;
-  border-color: rgba(34, 197, 94, 0.3);
+  border-color: rgba(34, 197, 94, 0.25);
   position: relative;
   padding-left: 16px;
+}
+
+:global(html.dark) .recent-status.status-in_progress {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  border-color: rgba(34, 197, 94, 0.35);
 }
 
 .recent-status.status-in_progress::before {
@@ -1376,10 +1757,15 @@ onBeforeUnmount(() => {
   animation: runningDotPulse 1.6s ease-in-out infinite;
 }
 
+:global(html.dark) .recent-status.status-in_progress::before {
+  background: #4ade80;
+  box-shadow: 0 0 6px rgba(74, 222, 128, 0.4);
+}
+
 @keyframes runningDotPulse {
   0%, 100% {
     opacity: 0.55;
-    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
   }
   50% {
     opacity: 1;
@@ -1388,27 +1774,65 @@ onBeforeUnmount(() => {
 }
 
 .recent-status.status-success {
+  background: rgba(99, 102, 241, 0.12);
+  color: #6366f1;
+  border-color: rgba(99, 102, 241, 0.22);
+}
+
+:global(html.dark) .recent-status.status-success {
   background: rgba(99, 102, 241, 0.15);
-  color: var(--home-text-secondary);
-  border-color: rgba(99, 102, 241, 0.25);
+  color: #a5b4fc;
+  border-color: rgba(99, 102, 241, 0.3);
 }
 
 .recent-status.status-not_started {
-  background: rgba(148, 163, 184, 0.2);
+  background: rgba(148, 163, 184, 0.15);
   color: var(--home-text-muted);
-  border-color: rgba(148, 163, 184, 0.3);
+  border-color: rgba(148, 163, 184, 0.22);
 }
 
 .recent-status.status-failed {
-  background: rgba(248, 113, 113, 0.2);
+  background: rgba(248, 113, 113, 0.15);
   color: #f87171;
+  border-color: rgba(248, 113, 113, 0.28);
+}
+
+:global(html.dark) .recent-status.status-failed {
+  background: rgba(248, 113, 113, 0.18);
+  color: #fca5a5;
   border-color: rgba(248, 113, 113, 0.35);
 }
 
 .recent-status.status-recommended {
-  background: rgba(139, 92, 246, 0.2);
-  color: #a78bfa;
+  background: rgba(139, 92, 246, 0.15);
+  color: #8b5cf6;
+  border-color: rgba(139, 92, 246, 0.28);
+}
+
+:global(html.dark) .recent-status.status-recommended {
+  background: rgba(139, 92, 246, 0.18);
+  color: #c4b5fd;
   border-color: rgba(139, 92, 246, 0.35);
+}
+
+/* ========================================
+   动画
+   ======================================== */
+.enter-rise {
+  opacity: 0;
+  animation: dashboardRise 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: var(--enter-delay, 0s);
+}
+
+@keyframes dashboardRise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .recent-list-fade-enter-active,
@@ -1423,12 +1847,20 @@ onBeforeUnmount(() => {
   transform: translateY(8px);
 }
 
-/* 实时资源趋势图：增高容器，纵坐标刻度更疏 */
+.card-title {
+  letter-spacing: 0.3px;
+}
+
+/* ========================================
+   实时资源趋势图
+   ======================================== */
 .chart-realtime-h {
   height: 200px;
 }
 
-/* 复杂布局：网格列/行与占位（UnoCSS 难以表达） */
+/* ========================================
+   布局网格
+   ======================================== */
 .realtime-resource-grid {
   grid-template-columns: repeat(3, 1fr);
 }
@@ -1458,6 +1890,9 @@ onBeforeUnmount(() => {
   grid-row: 2;
 }
 
+/* ========================================
+   无障碍 / 减少动画
+   ======================================== */
 @media (prefers-reduced-motion: reduce) {
   .enter-rise {
     animation: none;
@@ -1467,21 +1902,29 @@ onBeforeUnmount(() => {
 
   .dashboard-shell::before,
   .dashboard-shell::after,
-  .dashboard-card::before,
-  .dashboard-card,
-  .stat-card-theme,
-  .recent-item-theme,
-  .health-item-theme,
-  .action-item-theme,
-  .health-status-badge,
+  .tech-card::before,
+  .tech-card-scanline,
+  .hero-scanline,
   .hero-health-dot,
+  .hero-brand-dot,
+  .health-status-badge,
   .recent-status.status-in_progress::before {
     animation: none;
+  }
+
+  .tech-card,
+  .stat-card-tech,
+  .recent-item-theme,
+  .health-item-theme,
+  .action-item-theme {
     transition: none;
     transform: none;
   }
 }
 
+/* ========================================
+   响应式
+   ======================================== */
 @media (max-width: 900px) {
   .hero-panel {
     flex-direction: column;
@@ -1526,5 +1969,4 @@ onBeforeUnmount(() => {
     grid-row: 3;
   }
 }
-
 </style>
