@@ -258,6 +258,8 @@
     "inputPlaceholder": "输入你的问题，按 Enter 发送（Shift+Enter 换行）",
     "inputHint": "AI 助手可能出现错误，建议核实重要信息",
     "attachFile": "上传文件",
-    "send": "发送"
+    "send": "发送",
+    "collapseSidebar": "收起侧边栏",
+    "expandSidebar": "展开侧边栏"
   }
 }

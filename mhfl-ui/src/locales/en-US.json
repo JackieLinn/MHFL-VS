@@ -258,6 +258,8 @@
     "inputPlaceholder": "Ask a question, press Enter to send (Shift+Enter for newline)",
     "inputHint": "AI may make mistakes. Please verify important information.",
     "attachFile": "Attach file",
-    "send": "Send"
+    "send": "Send",
+    "collapseSidebar": "Collapse sidebar",
+    "expandSidebar": "Expand sidebar"
   }
 }

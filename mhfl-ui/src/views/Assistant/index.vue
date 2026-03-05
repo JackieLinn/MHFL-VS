@@ -10,6 +10,7 @@ interface Message {
   role: 'user' | 'assistant'
   content: string
   time: string
+  streaming?: boolean
 }
 
 interface Conversation {
@@ -30,12 +31,12 @@ let msgIdCounter = 1000
 
 // ===================== AI 回复池（模拟）=====================
 const aiReplies = {
-  fedavg: 'FedAvg 通过对所有客户端模型参数加权平均来聚合全局模型，适合**同构模型 + 轻度 Non-IID** 场景，通信内容是完整模型参数。',
-  fedproto: 'FedProto 专为**模型异构**场景设计，每个客户端上传各类别的特征原型（Prototype），服务器聚合原型后分发，客户端只需对齐特征空间，无需相同模型结构。',
-  noniid: '推荐从中度 Non-IID 开始实验：`classes_per_node=10, low_prob=0.1`。这个组合在 CIFAR-100 上表现稳定，收敛曲线通常比较平滑，之后再根据结果决定是否加强异质性。',
-  gpu: 'CIFAR-100 训练约需 **3GB 显存**，Tiny-ImageNet 约需 **5.5GB**。可在仪表盘首页实时查看当前 GPU 使用率，显存不足时建议降低 `fraction` 或开启混合精度训练（AMP）。',
-  epochs: '`num_steps` 是全局通信轮数（服务器-客户端迭代次数），`epochs` 是每个客户端在每轮本地训练的轮次。建议 `num_steps=200, epochs=5` 作为标准配置起点，先跑通再调整。',
-  fallback: '这是个好问题！目前我还在学习阶段，建议你可以参考平台的推荐展示页面，里面有经过验证的成功案例和参数配置，或者直接创建一个任务动手实验看看效果。'
+  fedavg: 'FedAvg 通过对所有客户端模型参数加权平均来聚合全局模型，适合**同构模型 + 轻度 Non-IID** 场景，通信内容是完整模型参数。\n\n主要优势：实现简单、通信轮次少、适合大规模部署。但在高度 Non-IID 场景下，客户端梯度方向差异过大，容易导致全局模型收敛缓慢甚至发散。\n\n如需在异构设备上部署，建议配合 FedProto 使用。',
+  fedproto: 'FedProto 专为**模型异构**场景设计，每个客户端上传各类别的特征原型（Prototype），服务器聚合原型后分发，客户端只需对齐特征空间，无需相同模型结构。\n\n核心优势：\n- 支持客户端使用不同大小/结构的模型\n- 通信量远小于传输完整参数\n- 在高度 Non-IID 下鲁棒性更强\n\n本平台的 CIFAR-100 + Non-IID 场景推荐优先使用 FedProto。',
+  noniid: '推荐从**中度 Non-IID** 开始实验：`classes_per_node=10, low_prob=0.1`。\n\n这个组合在 CIFAR-100 上表现稳定，收敛曲线通常比较平滑，之后再根据结果决定是否加强异质性。\n\n参数说明：\n- `classes_per_node`：每个节点拥有的类别数，越小异质性越强\n- `low_prob`：稀少类别的采样概率，越小分布越不均匀\n\n建议先跑 50~100 轮观察 loss 趋势，再决定是否调整。',
+  gpu: 'CIFAR-100 训练约需 **3GB 显存**，Tiny-ImageNet 约需 **5.5GB**。\n\n可在仪表盘首页实时查看当前 GPU 使用率，显存不足时建议：\n1. 降低 `fraction`（减少并发客户端）\n2. 开启混合精度训练（AMP），可节省约 40~50% 显存\n3. 逐步降低 batch size：64 → 32 → 16',
+  epochs: '`num_steps` 是**全局通信轮数**（服务器-客户端迭代次数），`epochs` 是每个客户端在每轮本地训练的轮次。\n\n建议 `num_steps=200, epochs=5` 作为标准配置起点。\n\n增加 `num_steps` 比增加 `epochs` 更稳定：前者增加全局协作次数，后者增加本地自适应程度——过多 epochs 会加剧 Non-IID 漂移问题。',
+  fallback: '这是个好问题！目前我的知识库主要覆盖联邦学习相关内容，如算法对比、参数配置、训练调优等。\n\n你可以尝试问我：\n- 各算法（FedAvg、FedProto、FedSSA、LG-FedAvg）的区别\n- Non-IID 参数如何配置\n- GPU 显存不足的解决方案\n- num_steps 与 epochs 的选择策略\n\n或者直接前往**推荐展示**页面，查看经过验证的成功案例和参数配置！'
 }
 
 const getAiReply = (input: string): string => {
@@ -76,24 +77,14 @@ const conversations = ref<Conversation[]>([
     preview: '推荐 classes_per_node 设置为 5~10，low_prob 建议...',
     time: '今天 10:15',
     messages: [
-      {
-        id: 1,
-        role: 'user',
-        content: '我想做一个 Non-IID 实验，classes_per_node 和 low_prob 应该怎么配置？',
-        time: '10:13'
-      },
+      {id: 1, role: 'user', content: '我想做一个 Non-IID 实验，classes_per_node 和 low_prob 应该怎么配置？', time: '10:13'},
       {
         id: 2, role: 'assistant',
         content: '**`classes_per_node`（每节点类别数）**\n\n- `100`：近似 IID\n- `10`：中度 Non-IID（推荐入门）\n- `5`：高度 Non-IID\n- `2`：极端 Non-IID\n\n**`low_prob`（稀少类别采样概率）**\n\n- `0.0`：只有主要类别数据\n- `0.1`：推荐值，保留少量稀少类别\n- `0.5`：接近均匀\n\n| 场景 | classes_per_node | low_prob |\n|------|-----------------|----------|\n| 轻度 | 20 | 0.3 |\n| 中度 | 10 | 0.1 |\n| 重度 | 5 | 0.05 |',
         time: '10:14'
       },
       {id: 3, role: 'user', content: '谢谢，我先用中度配置跑一轮试试。', time: '10:15'},
-      {
-        id: 4,
-        role: 'assistant',
-        content: '好的！中度配置是个不错的起点，祝实验顺利！\n\n跑完可以把训练曲线给我看，我帮你分析 loss/accuracy 趋势。',
-        time: '10:15'
-      }
+      {id: 4, role: 'assistant', content: '好的！中度配置是个不错的起点，祝实验顺利！\n\n跑完可以把训练曲线给我看，我帮你分析 loss/accuracy 趋势。', time: '10:15'}
     ]
   },
   {
@@ -109,12 +100,7 @@ const conversations = ref<Conversation[]>([
         time: '16:42'
       },
       {id: 3, role: 'user', content: '好的，我用混合精度训练试试，谢谢！', time: '16:44'},
-      {
-        id: 4,
-        role: 'assistant',
-        content: '混合精度是最推荐的方案，几乎无精度损失，显存和速度都有明显改善，好好试试！',
-        time: '16:44'
-      }
+      {id: 4, role: 'assistant', content: '混合精度是最推荐的方案，几乎无精度损失，显存和速度都有明显改善，好好试试！', time: '16:44'}
     ]
   },
   {
@@ -153,26 +139,33 @@ const inputText = ref('')
 const isSending = ref(false)
 const chatBodyRef = ref<HTMLElement | null>(null)
 const searchKeyword = ref('')
+const sidebarCollapsed = ref(false)
+// 正在流式输出的消息 id
+const streamingMsgId = ref<number | null>(null)
+
+const toggleSidebar = () => {
+  sidebarCollapsed.value = !sidebarCollapsed.value
+}
 
 const filteredConversations = computed(() => {
   const kw = searchKeyword.value.trim().toLowerCase()
   if (!kw) return conversations.value
   return conversations.value.filter(c =>
-      c.title.toLowerCase().includes(kw) || c.preview.toLowerCase().includes(kw)
+    c.title.toLowerCase().includes(kw) || c.preview.toLowerCase().includes(kw)
   )
 })
 
 const activeConv = computed(() =>
-    conversations.value.find(c => c.id === activeConvId.value) ?? null
+  conversations.value.find(c => c.id === activeConvId.value) ?? null
 )
 
 const selectConv = (id: number) => {
+  if (isSending.value) return
   activeConvId.value = id
   nextTick(() => scrollToBottom())
 }
 
 const newChat = () => {
-  // 新建一条空会话
   const id = Date.now()
   conversations.value.unshift({
     id,
@@ -191,12 +184,47 @@ const scrollToBottom = () => {
   }
 }
 
+// ===================== 流式输出 =====================
+const streamText = (convId: number, msgId: number, fullText: string) => {
+  const conv = conversations.value.find(c => c.id === convId)
+  if (!conv) return
+
+  // 找到占位消息
+  const msg = conv.messages.find(m => m.id === msgId)
+  if (!msg) return
+
+  streamingMsgId.value = msgId
+  let index = 0
+  // 每次追加 1~3 个字符，模拟不均匀的流式速度
+  const INTERVAL = 18
+
+  const tick = () => {
+    if (index >= fullText.length) {
+      msg.streaming = false
+      streamingMsgId.value = null
+      isSending.value = false
+      // 更新侧边栏预览
+      conv.preview = fullText.slice(0, 40)
+      nextTick(() => scrollToBottom())
+      return
+    }
+    // 一次追加 1~3 个字符（让速度看起来更自然）
+    const step = Math.min(Math.floor(Math.random() * 3) + 1, fullText.length - index)
+    msg.content += fullText.slice(index, index + step)
+    index += step
+    nextTick(() => scrollToBottom())
+    setTimeout(tick, INTERVAL)
+  }
+
+  setTimeout(tick, INTERVAL)
+}
+
 // ===================== 发送消息 =====================
 const sendMessage = () => {
   const text = inputText.value.trim()
   if (!text || isSending.value) return
 
-  // 若没有选中会话，新建一条
+  // 若没有选中会话或选中的是空会话，新建一条
   if (!activeConv.value) {
     newChat()
   }
@@ -205,29 +233,41 @@ const sendMessage = () => {
   if (!conv) return
 
   // 添加用户消息
-  const userMsg: Message = {id: ++msgIdCounter, role: 'user', content: text, time: nowTime()}
-  conv.messages.push(userMsg)
+  conv.messages.push({id: ++msgIdCounter, role: 'user', content: text, time: nowTime()})
 
-  // 更新侧边栏预览
-  if (conv.title === '新对话' && conv.messages.length === 1) {
+  // 更新会话标题（仅首条消息时）
+  if (conv.title === '新对话' && conv.messages.filter(m => m.role === 'user').length === 1) {
     conv.title = text.length > 18 ? text.slice(0, 18) + '...' : text
   }
   conv.preview = text
 
   inputText.value = ''
   isSending.value = true
-
   nextTick(() => scrollToBottom())
 
-  // 模拟 AI 回复
+  // 先延迟一点，模拟"思考"，然后开始流式输出
+  const convId = activeConvId.value!
   setTimeout(() => {
-    const conv2 = conversations.value.find(c => c.id === activeConvId.value)
+    const conv2 = conversations.value.find(c => c.id === convId)
     if (!conv2) return
-    const reply = getAiReply(text)
-    conv2.messages.push({id: ++msgIdCounter, role: 'assistant', content: reply, time: nowTime()})
-    isSending.value = false
-    nextTick(() => scrollToBottom())
-  }, 1400)
+
+    const fullReply = getAiReply(text)
+    const aiMsgId = ++msgIdCounter
+
+    // 添加空占位消息，streaming=true
+    conv2.messages.push({
+      id: aiMsgId,
+      role: 'assistant',
+      content: '',
+      time: nowTime(),
+      streaming: true
+    })
+
+    nextTick(() => {
+      scrollToBottom()
+      streamText(convId, aiMsgId, fullReply)
+    })
+  }, 600)
 }
 
 const handleKeydown = (e: KeyboardEvent) => {
@@ -240,17 +280,17 @@ const handleKeydown = (e: KeyboardEvent) => {
 // ===================== Markdown 简单渲染 =====================
 const formatContent = (raw: string): string => {
   return raw
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/`(.*?)`/g, '<code>$1</code>')
-      .replace(/\n\n/g, '</p><p>')
-      .replace(/\n/g, '<br>')
-      .replace(/^/, '<p>')
-      .replace(/$/, '</p>')
-      .replace(/---/g, '<hr>')
-      .replace(/\|(.+)\|/g, (match) => {
-        const cells = match.split('|').filter(c => c.trim() !== '')
-        return '<tr>' + cells.map(c => `<td>${c.trim()}</td>`).join('') + '</tr>'
-      })
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/`(.*?)`/g, '<code>$1</code>')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/\n/g, '<br>')
+    .replace(/^/, '<p>')
+    .replace(/$/, '</p>')
+    .replace(/---/g, '<hr>')
+    .replace(/\|(.+)\|/g, (match) => {
+      const cells = match.split('|').filter(c => c.trim() !== '')
+      return '<tr>' + cells.map(c => `<td>${c.trim()}</td>`).join('') + '</tr>'
+    })
 }
 
 // ===================== 快捷提问 =====================
@@ -270,54 +310,87 @@ const askQuickQuestion = (text: string) => {
 <template>
   <div class="assistant-page">
     <!-- ======= 左侧历史会话栏 ======= -->
-    <aside class="conv-sidebar">
-      <div class="conv-sidebar-header">
-        <div class="conv-brand">
-          <span class="i-mdi-robot-outline conv-brand-icon"></span>
-          <span class="conv-brand-text">AI 助手</span>
-        </div>
-        <button class="new-chat-btn" @click="newChat" :title="t('assistant.newChat')">
-          <span class="i-mdi-square-edit-outline"></span>
-        </button>
-      </div>
+    <aside class="conv-sidebar" :class="{ 'conv-sidebar--collapsed': sidebarCollapsed }">
 
-      <div class="conv-search">
-        <span class="i-mdi-magnify conv-search-icon"></span>
-        <input
+      <!-- 展开状态 -->
+      <template v-if="!sidebarCollapsed">
+        <div class="conv-sidebar-header">
+          <div class="conv-brand">
+            <span class="i-mdi-robot-outline conv-brand-icon"></span>
+            <span class="conv-brand-text">AI 助手</span>
+          </div>
+          <div class="conv-header-btns">
+            <button class="icon-btn" @click="newChat" :title="t('assistant.newChat')">
+              <span class="i-mdi-square-edit-outline"></span>
+            </button>
+            <button class="icon-btn" @click="toggleSidebar" :title="t('assistant.collapseSidebar')">
+              <span class="i-mdi-chevron-double-left"></span>
+            </button>
+          </div>
+        </div>
+
+        <div class="conv-search">
+          <span class="i-mdi-magnify conv-search-icon"></span>
+          <input
             v-model="searchKeyword"
             class="conv-search-input"
             :placeholder="t('assistant.searchPlaceholder')"
-        />
-      </div>
+          />
+        </div>
 
-      <div class="conv-list">
-        <div class="conv-list-label">{{ t('assistant.recentChats') }}</div>
-        <div
+        <div class="conv-list">
+          <div class="conv-list-label">{{ t('assistant.recentChats') }}</div>
+          <div
             v-for="conv in filteredConversations"
             :key="conv.id"
             class="conv-item"
             :class="{ 'conv-item--active': activeConvId === conv.id }"
             @click="selectConv(conv.id)"
-        >
-          <div class="conv-item-icon">
-            <span class="i-mdi-chat-outline"></span>
+          >
+            <div class="conv-item-icon">
+              <span class="i-mdi-chat-outline"></span>
+            </div>
+            <div class="conv-item-body">
+              <div class="conv-item-title">{{ conv.title }}</div>
+              <div class="conv-item-preview">{{ conv.preview }}</div>
+              <div class="conv-item-time">{{ conv.time }}</div>
+            </div>
           </div>
-          <div class="conv-item-body">
-            <div class="conv-item-title">{{ conv.title }}</div>
-            <div class="conv-item-preview">{{ conv.preview }}</div>
-            <div class="conv-item-time">{{ conv.time }}</div>
+          <div v-if="filteredConversations.length === 0" class="conv-empty">
+            <span class="i-mdi-chat-sleep-outline conv-empty-icon"></span>
+            <span>{{ t('assistant.noConvFound') }}</span>
           </div>
         </div>
-        <div v-if="filteredConversations.length === 0" class="conv-empty">
-          <span class="i-mdi-chat-sleep-outline conv-empty-icon"></span>
-          <span>{{ t('assistant.noConvFound') }}</span>
-        </div>
-      </div>
 
-      <div class="conv-sidebar-footer">
-        <span class="i-mdi-information-outline"></span>
-        <span>{{ t('assistant.footerTip') }}</span>
-      </div>
+        <div class="conv-sidebar-footer">
+          <span class="i-mdi-information-outline"></span>
+          <span>{{ t('assistant.footerTip') }}</span>
+        </div>
+      </template>
+
+      <!-- 收起状态：只显示图标列 -->
+      <template v-else>
+        <div class="collapsed-btns">
+          <button class="icon-btn icon-btn--collapsed" @click="toggleSidebar" :title="t('assistant.expandSidebar')">
+            <span class="i-mdi-chevron-double-right"></span>
+          </button>
+          <button class="icon-btn icon-btn--collapsed" @click="newChat" :title="t('assistant.newChat')">
+            <span class="i-mdi-square-edit-outline"></span>
+          </button>
+          <div class="collapsed-divider"></div>
+          <button
+            v-for="conv in conversations.slice(0, 6)"
+            :key="conv.id"
+            class="icon-btn icon-btn--collapsed"
+            :class="{ 'icon-btn--active': activeConvId === conv.id }"
+            :title="conv.title"
+            @click="selectConv(conv.id)"
+          >
+            <span class="i-mdi-chat-outline"></span>
+          </button>
+        </div>
+      </template>
+
     </aside>
 
     <!-- ======= 右侧主体 ======= -->
@@ -331,11 +404,9 @@ const askQuickQuestion = (text: string) => {
               {{ activeConv ? activeConv.title : t('pages.assistant.title') }}
             </div>
             <div class="chat-topbar-sub">
-              {{
-                activeConv
-                    ? t('assistant.msgCount', {count: activeConv.messages.length})
-                    : t('pages.assistant.desc')
-              }}
+              {{ activeConv
+                ? t('assistant.msgCount', {count: activeConv.messages.length})
+                : t('pages.assistant.desc') }}
             </div>
           </div>
         </div>
@@ -345,7 +416,7 @@ const askQuickQuestion = (text: string) => {
         </div>
       </div>
 
-      <!-- 欢迎屏（无会话时） -->
+      <!-- 欢迎屏 -->
       <div v-if="!activeConv || activeConv.messages.length === 0" class="chat-welcome">
         <div class="welcome-avatar">
           <span class="i-mdi-robot-excited-outline welcome-avatar-icon"></span>
@@ -354,10 +425,10 @@ const askQuickQuestion = (text: string) => {
         <p class="welcome-sub">{{ t('assistant.welcomeSub') }}</p>
         <div class="quick-grid">
           <button
-              v-for="q in quickQuestions"
-              :key="q.text"
-              class="quick-card"
-              @click="askQuickQuestion(q.text)"
+            v-for="q in quickQuestions"
+            :key="q.text"
+            class="quick-card"
+            @click="askQuickQuestion(q.text)"
           >
             <span :class="[q.icon, 'quick-card-icon']"></span>
             <span class="quick-card-text">{{ q.text }}</span>
@@ -368,6 +439,7 @@ const askQuickQuestion = (text: string) => {
       <!-- 聊天消息区 -->
       <div v-else ref="chatBodyRef" class="chat-body">
         <template v-for="msg in activeConv.messages" :key="msg.id">
+
           <!-- 用户消息 -->
           <div v-if="msg.role === 'user'" class="msg-row msg-row--user">
             <div class="msg-bubble msg-bubble--user">
@@ -388,9 +460,22 @@ const askQuickQuestion = (text: string) => {
               <div class="msg-ai-header">
                 <span class="msg-ai-name">MHFL 助手</span>
                 <span class="msg-time">{{ msg.time }}</span>
+                <!-- 流式输出中的状态提示 -->
+                <span v-if="streamingMsgId === msg.id" class="streaming-badge">
+                  <span class="streaming-dot"></span>
+                  正在输出
+                </span>
               </div>
-              <div class="msg-content" v-html="formatContent(msg.content)"></div>
-              <div class="msg-actions">
+
+              <!-- 有内容就渲染，还没内容就显示光标占位 -->
+              <div v-if="msg.content" class="msg-content" v-html="formatContent(msg.content)"></div>
+              <span v-else class="stream-cursor-only"></span>
+
+              <!-- 流式光标（输出中尾部追加） -->
+              <span v-if="streamingMsgId === msg.id" class="stream-cursor"></span>
+
+              <!-- 操作按钮（输出完成后才显示） -->
+              <div v-if="!msg.streaming" class="msg-actions">
                 <button class="msg-action-btn" :title="t('assistant.copyMsg')">
                   <span class="i-mdi-content-copy"></span>
                 </button>
@@ -403,10 +488,11 @@ const askQuickQuestion = (text: string) => {
               </div>
             </div>
           </div>
+
         </template>
 
-        <!-- 打字动画 -->
-        <div v-if="isSending" class="msg-row msg-row--ai">
+        <!-- 思考中动画（600ms 延迟期） -->
+        <div v-if="isSending && streamingMsgId === null" class="msg-row msg-row--ai">
           <div class="msg-avatar msg-avatar--ai">
             <span class="i-mdi-robot-outline"></span>
           </div>
@@ -422,19 +508,19 @@ const askQuickQuestion = (text: string) => {
       <div class="chat-input-area">
         <div class="chat-input-wrap">
           <textarea
-              v-model="inputText"
-              class="chat-input"
-              :placeholder="t('assistant.inputPlaceholder')"
-              rows="1"
-              :disabled="isSending"
-              @keydown="handleKeydown"
+            v-model="inputText"
+            class="chat-input"
+            :placeholder="t('assistant.inputPlaceholder')"
+            rows="1"
+            :disabled="isSending"
+            @keydown="handleKeydown"
           ></textarea>
           <button
-              class="input-send-btn"
-              :class="{ 'input-send-btn--active': inputText.trim() && !isSending }"
-              :disabled="!inputText.trim() || isSending"
-              @click="sendMessage"
-              :title="t('assistant.send')"
+            class="input-send-btn"
+            :class="{ 'input-send-btn--active': inputText.trim() && !isSending }"
+            :disabled="!inputText.trim() || isSending"
+            @click="sendMessage"
+            :title="t('assistant.send')"
           >
             <span v-if="!isSending" class="i-mdi-send"></span>
             <span v-else class="i-mdi-loading spin"></span>
@@ -464,14 +550,38 @@ const askQuickQuestion = (text: string) => {
   background: var(--home-card-bg);
   border-right: 1px solid var(--home-border);
   overflow: hidden;
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              min-width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.conv-sidebar--collapsed {
+  width: 52px;
+  min-width: 52px;
+}
+
+/* 收起状态按钮列 */
+.collapsed-btns {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 0;
+}
+
+.collapsed-divider {
+  width: 28px;
+  height: 1px;
+  background: var(--home-border);
+  margin: 6px 0;
 }
 
 .conv-sidebar-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 14px 12px;
+  padding: 14px 12px 12px;
   border-bottom: 1px solid var(--home-border);
+  flex-shrink: 0;
 }
 
 .conv-brand {
@@ -483,6 +593,7 @@ const askQuickQuestion = (text: string) => {
 .conv-brand-icon {
   font-size: 20px;
   color: #6366f1;
+  flex-shrink: 0;
 }
 
 .conv-brand-text {
@@ -490,9 +601,16 @@ const askQuickQuestion = (text: string) => {
   font-weight: 700;
   color: var(--home-text-primary);
   letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
-.new-chat-btn {
+.conv-header-btns {
+  display: flex;
+  gap: 4px;
+}
+
+/* 通用图标按钮 */
+.icon-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -502,21 +620,36 @@ const askQuickQuestion = (text: string) => {
   background: transparent;
   border-radius: 8px;
   color: var(--home-text-muted);
-  font-size: 17px;
+  font-size: 16px;
   cursor: pointer;
   transition: all 0.18s;
+  flex-shrink: 0;
 }
 
-.new-chat-btn:hover {
+.icon-btn:hover {
   border-color: rgba(99, 102, 241, 0.4);
   color: #6366f1;
   background: rgba(99, 102, 241, 0.06);
+}
+
+.icon-btn--collapsed {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  font-size: 17px;
+}
+
+.icon-btn--active {
+  background: rgba(99, 102, 241, 0.12);
+  border-color: rgba(99, 102, 241, 0.3);
+  color: #6366f1;
 }
 
 /* 搜索框 */
 .conv-search {
   position: relative;
   padding: 10px 10px 6px;
+  flex-shrink: 0;
 }
 
 .conv-search-icon {
@@ -541,13 +674,8 @@ const askQuickQuestion = (text: string) => {
   transition: border-color 0.2s;
 }
 
-.conv-search-input::placeholder {
-  color: var(--home-text-muted);
-}
-
-.conv-search-input:focus {
-  border-color: rgba(99, 102, 241, 0.5);
-}
+.conv-search-input::placeholder {color: var(--home-text-muted);}
+.conv-search-input:focus {border-color: rgba(99, 102, 241, 0.5);}
 
 /* 会话列表 */
 .conv-list {
@@ -569,7 +697,7 @@ const askQuickQuestion = (text: string) => {
   display: flex;
   align-items: flex-start;
   gap: 9px;
-  padding: 9px 9px;
+  padding: 9px;
   border-radius: 9px;
   cursor: pointer;
   transition: background 0.16s;
@@ -577,9 +705,7 @@ const askQuickQuestion = (text: string) => {
   border: 1px solid transparent;
 }
 
-.conv-item:hover {
-  background: var(--home-hover-bg);
-}
+.conv-item:hover {background: var(--home-hover-bg);}
 
 .conv-item--active {
   background: rgba(99, 102, 241, 0.08);
@@ -600,14 +726,9 @@ const askQuickQuestion = (text: string) => {
   margin-top: 1px;
 }
 
-.conv-item--active .conv-item-icon {
-  background: rgba(99, 102, 241, 0.18);
-}
+.conv-item--active .conv-item-icon {background: rgba(99, 102, 241, 0.18);}
 
-.conv-item-body {
-  flex: 1;
-  min-width: 0;
-}
+.conv-item-body {flex: 1; min-width: 0;}
 
 .conv-item-title {
   font-size: 13px;
@@ -644,10 +765,7 @@ const askQuickQuestion = (text: string) => {
   font-size: 13px;
 }
 
-.conv-empty-icon {
-  font-size: 26px;
-  opacity: 0.45;
-}
+.conv-empty-icon {font-size: 26px; opacity: 0.45;}
 
 .conv-sidebar-footer {
   display: flex;
@@ -657,6 +775,7 @@ const askQuickQuestion = (text: string) => {
   border-top: 1px solid var(--home-border);
   font-size: 11px;
   color: var(--home-text-muted);
+  flex-shrink: 0;
 }
 
 /* ===================== 右侧主体 ===================== */
@@ -727,12 +846,8 @@ const askQuickQuestion = (text: string) => {
 }
 
 @keyframes badgePulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.4;
-  }
+  0%, 100% {opacity: 1;}
+  50% {opacity: 0.35;}
 }
 
 /* ===================== 欢迎屏 ===================== */
@@ -758,10 +873,7 @@ const askQuickQuestion = (text: string) => {
   margin-bottom: 6px;
 }
 
-.welcome-avatar-icon {
-  font-size: 32px;
-  color: #6366f1;
-}
+.welcome-avatar-icon {font-size: 32px; color: #6366f1;}
 
 .welcome-title {
   font-size: 21px;
@@ -810,16 +922,8 @@ const askQuickQuestion = (text: string) => {
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
 }
 
-.quick-card-icon {
-  font-size: 19px;
-  flex-shrink: 0;
-  color: #6366f1;
-  opacity: 0.8;
-}
-
-.quick-card-text {
-  line-height: 1.4;
-}
+.quick-card-icon {font-size: 19px; flex-shrink: 0; color: #6366f1; opacity: 0.8;}
+.quick-card-text {line-height: 1.4;}
 
 /* ===================== 消息区 ===================== */
 .chat-body {
@@ -837,9 +941,7 @@ const askQuickQuestion = (text: string) => {
   gap: 10px;
 }
 
-.msg-row--user {
-  flex-direction: row-reverse;
-}
+.msg-row--user {flex-direction: row-reverse;}
 
 /* 头像 */
 .msg-avatar {
@@ -908,30 +1010,67 @@ const askQuickQuestion = (text: string) => {
   margin-bottom: 6px;
 }
 
-.msg-ai-name {
-  font-size: 12px;
-  font-weight: 700;
-  color: #6366f1;
+.msg-ai-name {font-size: 12px; font-weight: 700; color: #6366f1;}
+.msg-time {font-size: 11px; color: var(--home-text-muted);}
+
+/* 流式输出状态徽章 */
+.streaming-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-weight: 500;
 }
 
-.msg-time {
-  font-size: 11px;
-  color: var(--home-text-muted);
+.streaming-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #10b981;
+  animation: streamDotPulse 1s ease-in-out infinite;
+}
+
+@keyframes streamDotPulse {
+  0%, 100% {opacity: 1; transform: scale(1);}
+  50% {opacity: 0.4; transform: scale(0.7);}
+}
+
+/* 流式光标 */
+.stream-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: #6366f1;
+  margin-left: 1px;
+  vertical-align: text-bottom;
+  border-radius: 1px;
+  animation: cursorBlink 0.7s step-end infinite;
+}
+
+.stream-cursor-only {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: #6366f1;
+  vertical-align: text-bottom;
+  border-radius: 1px;
+  animation: cursorBlink 0.7s step-end infinite;
+}
+
+@keyframes cursorBlink {
+  0%, 100% {opacity: 1;}
+  50% {opacity: 0;}
 }
 
 /* 消息内容 */
-.msg-content :deep(p) {
-  margin-bottom: 8px;
-}
-
-.msg-content :deep(p:last-child) {
-  margin-bottom: 0;
-}
-
-.msg-content :deep(strong) {
-  color: var(--home-text-primary);
-  font-weight: 700;
-}
+.msg-content :deep(p) {margin-bottom: 8px;}
+.msg-content :deep(p:last-child) {margin-bottom: 0;}
+.msg-content :deep(strong) {color: var(--home-text-primary); font-weight: 700;}
 
 .msg-content :deep(code) {
   background: rgba(99, 102, 241, 0.1);
@@ -955,9 +1094,7 @@ const askQuickQuestion = (text: string) => {
   font-size: 13px;
 }
 
-.msg-content :deep(tr) {
-  border-bottom: 1px solid var(--home-border);
-}
+.msg-content :deep(tr) {border-bottom: 1px solid var(--home-border);}
 
 .msg-content :deep(td) {
   padding: 5px 9px;
@@ -979,9 +1116,7 @@ const askQuickQuestion = (text: string) => {
   transition: opacity 0.2s;
 }
 
-.msg-bubble:hover .msg-actions {
-  opacity: 1;
-}
+.msg-bubble:hover .msg-actions {opacity: 1;}
 
 .msg-action-btn {
   width: 25px;
@@ -1004,7 +1139,7 @@ const askQuickQuestion = (text: string) => {
   background: rgba(99, 102, 241, 0.06);
 }
 
-/* 打字动画 */
+/* 思考中打字动画 */
 .msg-bubble--typing {
   display: flex;
   align-items: center;
@@ -1021,23 +1156,12 @@ const askQuickQuestion = (text: string) => {
   animation: typingBounce 1.2s infinite;
 }
 
-.typing-dot:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.typing-dot:nth-child(3) {
-  animation-delay: 0.4s;
-}
+.typing-dot:nth-child(2) {animation-delay: 0.2s;}
+.typing-dot:nth-child(3) {animation-delay: 0.4s;}
 
 @keyframes typingBounce {
-  0%, 60%, 100% {
-    transform: translateY(0);
-    opacity: 0.35;
-  }
-  30% {
-    transform: translateY(-6px);
-    opacity: 1;
-  }
+  0%, 60%, 100% {transform: translateY(0); opacity: 0.35;}
+  30% {transform: translateY(-6px); opacity: 1;}
 }
 
 /* ===================== 底部输入区 ===================== */
@@ -1078,9 +1202,7 @@ const askQuickQuestion = (text: string) => {
   font-family: inherit;
 }
 
-.chat-input::placeholder {
-  color: var(--home-text-muted);
-}
+.chat-input::placeholder {color: var(--home-text-muted);}
 
 .input-send-btn {
   width: 34px;
@@ -1119,16 +1241,10 @@ const askQuickQuestion = (text: string) => {
 }
 
 /* 旋转动画 */
-.spin {
-  animation: spin 1s linear infinite;
-}
+.spin {animation: spin 1s linear infinite;}
 
 @keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+  from {transform: rotate(0deg);}
+  to {transform: rotate(360deg);}
 }
 </style>
