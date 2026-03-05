@@ -1,0 +1,75 @@
+/* ========================================
+   推荐展示页 - 主题适配
+   ======================================== */
+
+/* 数据集切换器 */
+.recommended-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 0;
+    padding: 4px;
+    border-radius: 12px;
+    background: var(--home-hover-bg);
+    border: 1px solid var(--home-border);
+    transition: border-color 0.28s ease, background 0.28s ease;
+}
+
+.recommended-switch:hover {
+    border-color: rgba(99, 102, 241, 0.25);
+}
+
+html.dark .recommended-switch:hover {
+    border-color: rgba(99, 102, 241, 0.4);
+}
+
+.recommended-switch-btn {
+    padding: 10px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--home-text-secondary);
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: color 0.25s ease, background 0.25s ease;
+}
+
+.recommended-switch-btn:hover {
+    color: var(--home-text-primary);
+    background: rgba(99, 102, 241, 0.06);
+}
+
+html.dark .recommended-switch-btn:hover {
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.recommended-switch-btn.active {
+    color: #fff;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
+}
+
+html.dark .recommended-switch-btn.active {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    box-shadow: 0 2px 12px rgba(99, 102, 241, 0.4);
+}
+
+/* 内容卡片 - 主题适配 */
+.recommended-placeholder.recommended-card {
+    position: relative;
+    overflow: hidden;
+    background: var(--home-card-bg);
+    border: 1px solid var(--home-card-border);
+    box-shadow: 0 2px 8px var(--home-card-shadow);
+    transition: border-color 0.32s ease, box-shadow 0.32s ease, background 0.32s ease;
+}
+
+.recommended-placeholder.recommended-card:hover {
+    border-color: rgba(99, 102, 241, 0.35);
+    box-shadow: 0 8px 30px rgba(99, 102, 241, 0.08), 0 2px 8px var(--home-card-shadow);
+}
+
+html.dark .recommended-placeholder.recommended-card:hover {
+    border-color: rgba(99, 102, 241, 0.5);
+    box-shadow: 0 8px 36px rgba(99, 102, 241, 0.12), 0 0 24px rgba(99, 102, 241, 0.06), 0 2px 8px rgba(0, 0, 0, 0.3);
+}
