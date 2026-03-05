@@ -4,6 +4,28 @@ import {useI18n} from 'vue-i18n'
 
 const {t} = useI18n()
 
+// ===================== 输入框自动扩展 =====================
+const textareaRef = ref<HTMLTextAreaElement | null>(null)
+// 14px * 1.6 line-height = 22.4px/行，3 行上限
+const MAX_INPUT_LINES = 3
+const LINE_HEIGHT_PX = Math.ceil(14 * 1.6) // 23px
+
+const autoResize = () => {
+  const el = textareaRef.value
+  if (!el) return
+  el.style.height = 'auto'
+  const maxH = LINE_HEIGHT_PX * MAX_INPUT_LINES + 4 // 4px 缓冲
+  el.style.height = Math.min(el.scrollHeight, maxH) + 'px'
+  el.style.overflowY = el.scrollHeight > maxH ? 'auto' : 'hidden'
+}
+
+const resetInputHeight = () => {
+  const el = textareaRef.value
+  if (!el) return
+  el.style.height = LINE_HEIGHT_PX + 'px'
+  el.style.overflowY = 'hidden'
+}
+
 // ===================== 类型定义 =====================
 interface Message {
   id: number
@@ -242,6 +264,7 @@ const sendMessage = () => {
   conv.preview = text
 
   inputText.value = ''
+  nextTick(() => resetInputHeight())
   isSending.value = true
   nextTick(() => scrollToBottom())
 
@@ -368,7 +391,7 @@ const askQuickQuestion = (text: string) => {
         </div>
       </template>
 
-      <!-- 收起状态：只显示图标列 -->
+      <!-- 收起状态：只显示展开 + 新建 -->
       <template v-else>
         <div class="collapsed-btns">
           <button class="icon-btn icon-btn--collapsed" @click="toggleSidebar" :title="t('assistant.expandSidebar')">
@@ -376,17 +399,6 @@ const askQuickQuestion = (text: string) => {
           </button>
           <button class="icon-btn icon-btn--collapsed" @click="newChat" :title="t('assistant.newChat')">
             <span class="i-mdi-square-edit-outline"></span>
-          </button>
-          <div class="collapsed-divider"></div>
-          <button
-            v-for="conv in conversations.slice(0, 6)"
-            :key="conv.id"
-            class="icon-btn icon-btn--collapsed"
-            :class="{ 'icon-btn--active': activeConvId === conv.id }"
-            :title="conv.title"
-            @click="selectConv(conv.id)"
-          >
-            <span class="i-mdi-chat-outline"></span>
           </button>
         </div>
       </template>
@@ -508,12 +520,13 @@ const askQuickQuestion = (text: string) => {
       <div class="chat-input-area">
         <div class="chat-input-wrap">
           <textarea
+            ref="textareaRef"
             v-model="inputText"
             class="chat-input"
             :placeholder="t('assistant.inputPlaceholder')"
-            rows="1"
             :disabled="isSending"
             @keydown="handleKeydown"
+            @input="autoResize"
           ></textarea>
           <button
             class="input-send-btn"
@@ -647,19 +660,22 @@ const askQuickQuestion = (text: string) => {
 
 /* 搜索框 */
 .conv-search {
-  position: relative;
-  padding: 10px 10px 6px;
+  padding: 8px 10px;
   flex-shrink: 0;
+  position: relative;
 }
 
 .conv-search-icon {
   position: absolute;
+  /* left: 10px(padding) + 10px(input padding-left)/2 = 18px，让图标在 input 的左内边距中居中 */
   left: 20px;
   top: 50%;
   transform: translateY(-50%);
   font-size: 14px;
   color: var(--home-text-muted);
   pointer-events: none;
+  line-height: 1;
+  display: flex;
 }
 
 .conv-search-input {
@@ -770,11 +786,23 @@ const askQuickQuestion = (text: string) => {
 .conv-sidebar-footer {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   padding: 11px 14px;
   border-top: 1px solid var(--home-border);
   font-size: 11px;
   color: var(--home-text-muted);
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.conv-sidebar-footer > span {
+  display: flex;
+  align-items: center;
+  line-height: 1;
+}
+
+.conv-sidebar-footer > span:first-child {
+  font-size: 13px;
   flex-shrink: 0;
 }
 
@@ -1197,12 +1225,21 @@ const askQuickQuestion = (text: string) => {
   font-size: 14px;
   line-height: 1.6;
   resize: none;
-  max-height: 130px;
-  overflow-y: auto;
+  overflow-y: hidden;
   font-family: inherit;
+  /* 初始高度 = 1行，由 JS autoResize 动态扩展，最多 3 行 */
+  height: 23px;
+  min-height: 23px;
+  /* 垂直方向不加 padding，由外层 wrap 的 padding 负责视觉居中 */
+  padding: 0;
+  /* 对齐到 flex 容器底部，多行时自然向上扩展 */
+  align-self: center;
 }
 
-.chat-input::placeholder {color: var(--home-text-muted);}
+.chat-input::placeholder {
+  color: var(--home-text-muted);
+  line-height: 1.6;
+}
 
 .input-send-btn {
   width: 34px;
