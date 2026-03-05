@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import {CircleCheck} from '@element-plus/icons-vue'
 import mysqlIcon from '@/assets/middleware/mysql.svg'
 import redisIcon from '@/assets/middleware/redis.svg'
 import rabbitmqIcon from '@/assets/middleware/rabbitmq.svg'
@@ -39,7 +38,7 @@ const systemHealthItems = [
         <span class="health-status inline-flex items-center gap-1.5 flex-shrink-0 text-xs font-medium">
           <span
               class="health-status-badge inline-flex items-center justify-center w-[22px] h-[22px] rounded-full flex-shrink-0">
-            <el-icon class="text-sm"><CircleCheck/></el-icon>
+            <span class="i-mdi-check-circle-outline text-sm"></span>
           </span>
           <span class="text-[13px] font-semibold">{{ $t('pages.dashboard.healthHealthy') }}</span>
         </span>

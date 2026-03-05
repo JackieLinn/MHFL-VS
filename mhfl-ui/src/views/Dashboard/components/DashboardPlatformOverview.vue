@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import {ref, computed, watch, onMounted, onBeforeUnmount, nextTick} from 'vue'
-import {Document, User, FolderOpened, List} from '@element-plus/icons-vue'
 import {getUserInfo} from '@/api/user'
 import {useTheme} from '@/stores/theme'
 import * as echarts from 'echarts'
@@ -136,9 +135,7 @@ onBeforeUnmount(() => {
       <div class="flex flex-col gap-2.5 w-[220px] min-w-0 h-full platform-stats-col">
         <div class="stat-card-tech flex items-center gap-3 p-4 flex-1 min-h-0 max-w-none rounded-xl">
           <div class="stat-icon-tech stat-icon-purple">
-            <el-icon :size="22">
-              <User/>
-            </el-icon>
+            <span class="i-mdi-account-group-outline text-[22px]"></span>
           </div>
           <div class="flex flex-col gap-0.5">
             <span class="stat-value-tech text-[var(--home-text-primary)]">{{ platformStats.totalUsers }}</span>
@@ -147,9 +144,7 @@ onBeforeUnmount(() => {
         </div>
         <div class="stat-card-tech flex items-center gap-3 p-4 flex-1 min-h-0 max-w-none rounded-xl">
           <div class="stat-icon-tech stat-icon-purple">
-            <el-icon :size="22">
-              <FolderOpened/>
-            </el-icon>
+            <span class="i-mdi-clipboard-list-outline text-[22px]"></span>
           </div>
           <div class="flex flex-col gap-0.5">
             <span class="stat-value-tech text-[var(--home-text-primary)]">{{ platformStats.totalTasks }}</span>
@@ -158,9 +153,7 @@ onBeforeUnmount(() => {
         </div>
         <div class="stat-card-tech flex items-center gap-3 p-4 flex-1 min-h-0 max-w-none rounded-xl">
           <div class="stat-icon-tech stat-icon-purple">
-            <el-icon :size="22">
-              <Document/>
-            </el-icon>
+            <span class="i-mdi-database-outline text-[22px]"></span>
           </div>
           <div class="flex flex-col gap-0.5">
             <span class="stat-value-tech text-[var(--home-text-primary)]">{{ platformStats.totalDatasets }}</span>
@@ -169,9 +162,7 @@ onBeforeUnmount(() => {
         </div>
         <div class="stat-card-tech flex items-center gap-3 p-4 flex-1 min-h-0 max-w-none rounded-xl">
           <div class="stat-icon-tech stat-icon-purple">
-            <el-icon :size="22">
-              <List/>
-            </el-icon>
+            <span class="i-mdi-code-braces text-[22px]"></span>
           </div>
           <div class="flex flex-col gap-0.5">
             <span class="stat-value-tech text-[var(--home-text-primary)]">{{ platformStats.totalAlgorithms }}</span>

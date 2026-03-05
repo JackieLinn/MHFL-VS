@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import {computed, ref, onMounted} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
-import {DataBoard, List, Star, MagicStick, Setting, Fold, Expand} from '@element-plus/icons-vue'
 import {useI18n} from 'vue-i18n'
 import {getUserInfo} from '@/api/user'
 
@@ -29,17 +28,17 @@ const toggleCollapse = () => {
 }
 
 // 导航项：管理员显示「任务管理」，普通用户显示「我的任务」；所有人有推荐展示、智能助手；仅 admin 显示「系统管理」
-type MenuItem = { key: string; label: string; icon: typeof DataBoard; path: string }
+type MenuItem = { key: string; label: string; icon: string; path: string }
 const menuItems = computed<MenuItem[]>(() => {
   const isAdmin = getUserInfo()?.role === 'admin'
   const items: MenuItem[] = [
-    {key: 'dashboard', label: t('sidebar.dashboard'), icon: DataBoard, path: '/home/dashboard'},
-    {key: 'task', label: isAdmin ? t('sidebar.taskManage') : t('sidebar.myTasks'), icon: List, path: '/home/task'},
-    {key: 'recommended', label: t('sidebar.recommendedShow'), icon: Star, path: '/home/recommended'},
-    {key: 'assistant', label: t('sidebar.smartAssistant'), icon: MagicStick, path: '/home/assistant'},
+    {key: 'dashboard', label: t('sidebar.dashboard'), icon: 'i-mdi-view-dashboard-outline', path: '/home/dashboard'},
+    {key: 'task', label: isAdmin ? t('sidebar.taskManage') : t('sidebar.myTasks'), icon: 'i-mdi-clipboard-list-outline', path: '/home/task'},
+    {key: 'recommended', label: t('sidebar.recommendedShow'), icon: 'i-mdi-trophy-outline', path: '/home/recommended'},
+    {key: 'assistant', label: t('sidebar.smartAssistant'), icon: 'i-mdi-robot-outline', path: '/home/assistant'},
   ]
   if (isAdmin) {
-    items.push({key: 'admin', label: t('sidebar.admin'), icon: Setting, path: '/home/admin'})
+    items.push({key: 'admin', label: t('sidebar.admin'), icon: 'i-mdi-cog-outline', path: '/home/admin'})
   }
   return items
 })
@@ -72,9 +71,7 @@ const handleMenuClick = (path: string) => {
           @click="handleMenuClick(item.path)"
           :title="isCollapsed ? item.label : ''"
       >
-        <el-icon class="text-lg flex-shrink-0">
-          <component :is="item.icon"/>
-        </el-icon>
+        <span :class="item.icon" class="text-lg flex-shrink-0"></span>
         <span class="menu-label text-sm transition-opacity" v-show="!isCollapsed">{{ item.label }}</span>
       </div>
     </div>
@@ -82,10 +79,7 @@ const handleMenuClick = (path: string) => {
     <!-- 收缩/展开按钮 -->
     <div class="collapse-btn p-3 cursor-pointer flex items-center justify-center transition-all border-t"
          @click="toggleCollapse">
-      <el-icon class="text-lg transition-transform">
-        <Fold v-if="!isCollapsed"/>
-        <Expand v-else/>
-      </el-icon>
+      <span :class="isCollapsed ? 'i-mdi-chevron-right' : 'i-mdi-chevron-left'" class="text-lg transition-transform"></span>
     </div>
   </aside>
 </template>

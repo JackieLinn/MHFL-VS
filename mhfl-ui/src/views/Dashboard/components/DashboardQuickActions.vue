@@ -1,23 +1,22 @@
 <script setup lang="ts">
 import {computed} from 'vue'
 import {useRouter} from 'vue-router'
-import {List, DataBoard, Setting, MagicStick, Star} from '@element-plus/icons-vue'
 import {getUserInfo} from '@/api/user'
 
 const router = useRouter()
 const isAdmin = computed(() => getUserInfo()?.role === 'admin')
 
 const quickActionItemsAdmin = [
-  {key: 'dashboard', labelKey: 'pages.dashboard.actionDashboard', icon: DataBoard},
-  {key: 'taskManage', labelKey: 'pages.dashboard.actionTaskManage', icon: List},
-  {key: 'systemAdmin', labelKey: 'pages.dashboard.actionSystemAdmin', icon: Setting},
-  {key: 'smartAssistant', labelKey: 'pages.dashboard.actionSmartAssistant', icon: MagicStick},
+  {key: 'dashboard', labelKey: 'pages.dashboard.actionDashboard', icon: 'i-mdi-view-dashboard-outline'},
+  {key: 'taskManage', labelKey: 'pages.dashboard.actionTaskManage', icon: 'i-mdi-clipboard-list-outline'},
+  {key: 'systemAdmin', labelKey: 'pages.dashboard.actionSystemAdmin', icon: 'i-mdi-cog-outline'},
+  {key: 'smartAssistant', labelKey: 'pages.dashboard.actionSmartAssistant', icon: 'i-mdi-robot-outline'},
 ]
 const quickActionItemsUser = [
-  {key: 'dashboard', labelKey: 'pages.dashboard.actionDashboard', icon: DataBoard},
-  {key: 'myTasks', labelKey: 'pages.dashboard.actionMyTasks', icon: List},
-  {key: 'recommendedShow', labelKey: 'pages.dashboard.actionRecommendedShow', icon: Star},
-  {key: 'smartAssistant', labelKey: 'pages.dashboard.actionSmartAssistant', icon: MagicStick},
+  {key: 'dashboard', labelKey: 'pages.dashboard.actionDashboard', icon: 'i-mdi-view-dashboard-outline'},
+  {key: 'myTasks', labelKey: 'pages.dashboard.actionMyTasks', icon: 'i-mdi-clipboard-list-outline'},
+  {key: 'recommendedShow', labelKey: 'pages.dashboard.actionRecommendedShow', icon: 'i-mdi-trophy-outline'},
+  {key: 'smartAssistant', labelKey: 'pages.dashboard.actionSmartAssistant', icon: 'i-mdi-robot-outline'},
 ]
 const quickActionItems = computed(() => isAdmin.value ? quickActionItemsAdmin : quickActionItemsUser)
 
@@ -60,9 +59,7 @@ const handleQuickAction = (key: string) => {
             class="action-icon-wrap w-10 h-10 rounded-[10px] flex items-center justify-center flex-shrink-0"
             :class="index === 0 ? 'action-icon-primary' : 'action-icon-default'"
         >
-          <el-icon class="text-xl">
-            <component :is="item.icon"/>
-          </el-icon>
+          <span :class="item.icon" class="text-xl"></span>
         </div>
         <span class="action-label text-sm font-semibold text-[var(--home-text-primary)]">{{
             $t(item.labelKey)

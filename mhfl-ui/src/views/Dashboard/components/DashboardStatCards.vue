@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import {ref, onMounted, onBeforeUnmount, type Ref} from 'vue'
-import {Document, VideoPlay, List, CircleCheck} from '@element-plus/icons-vue'
 
 const stats = {
   total: 12,
@@ -60,9 +59,7 @@ onBeforeUnmount(() => {
     <div class="flex gap-4 flex-wrap">
       <div class="stat-card-tech stat-card-glow flex items-center gap-3 p-4 min-w-[140px] flex-1 rounded-xl">
         <div class="stat-icon-tech stat-icon-indigo">
-          <el-icon :size="22">
-            <List/>
-          </el-icon>
+          <span class="i-mdi-clipboard-text-outline text-[22px]"></span>
         </div>
         <div class="flex flex-col gap-0.5">
           <span class="stat-value-tech text-[var(--home-text-primary)]">{{ Math.round(animatedTotal) }}</span>
@@ -71,9 +68,7 @@ onBeforeUnmount(() => {
       </div>
       <div class="stat-card-tech stat-card-glow flex items-center gap-3 p-4 min-w-[140px] flex-1 rounded-xl">
         <div class="stat-icon-tech stat-icon-green">
-          <el-icon :size="22">
-            <VideoPlay/>
-          </el-icon>
+          <span class="i-mdi-play-circle-outline text-[22px]"></span>
         </div>
         <div class="flex flex-col gap-0.5">
           <span class="stat-value-tech text-[var(--home-text-primary)]">{{ Math.round(animatedRunning) }}</span>
@@ -82,9 +77,7 @@ onBeforeUnmount(() => {
       </div>
       <div class="stat-card-tech stat-card-glow flex items-center gap-3 p-4 min-w-[140px] flex-1 rounded-xl">
         <div class="stat-icon-tech stat-icon-indigo">
-          <el-icon :size="22">
-            <CircleCheck/>
-          </el-icon>
+          <span class="i-mdi-check-circle-outline text-[22px]"></span>
         </div>
         <div class="flex flex-col gap-0.5">
           <span class="stat-value-tech text-[var(--home-text-primary)]">{{ Math.round(animatedSuccess) }}</span>
@@ -93,9 +86,7 @@ onBeforeUnmount(() => {
       </div>
       <div class="stat-card-tech stat-card-glow flex items-center gap-3 p-4 min-w-[140px] flex-1 rounded-xl">
         <div class="stat-icon-tech stat-icon-amber">
-          <el-icon :size="22">
-            <Document/>
-          </el-icon>
+          <span class="i-mdi-calendar-today-outline text-[22px]"></span>
         </div>
         <div class="flex flex-col gap-0.5">
           <span class="stat-value-tech text-[var(--home-text-primary)]">{{ Math.round(animatedToday) }}</span>
