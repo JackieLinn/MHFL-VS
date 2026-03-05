@@ -977,22 +977,36 @@ onBeforeUnmount(() => {
   background: var(--home-card-bg);
   border: 1px solid var(--home-card-border);
   box-shadow: 0 2px 8px var(--home-card-shadow);
-  transition: border-color 0.28s ease, box-shadow 0.28s ease;
+  transition: border-color 0.32s ease, box-shadow 0.32s ease, background 0.32s ease;
 }
 
-/* 悬浮效果 */
 .tech-card:hover {
   border-color: rgba(99, 102, 241, 0.35);
-  box-shadow: 0 8px 28px var(--home-card-shadow),
-  inset 0 0 0 1px rgba(99, 102, 241, 0.12),
-  0 0 12px rgba(99, 102, 241, 0.06);
+  box-shadow: 0 8px 30px rgba(99, 102, 241, 0.08),
+  0 2px 8px var(--home-card-shadow);
 }
 
 :global(html.dark) .tech-card:hover {
-  border-color: rgba(99, 102, 241, 0.45);
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35),
-  inset 0 0 0 1px rgba(99, 102, 241, 0.18),
-  0 0 18px rgba(99, 102, 241, 0.08);
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow: 0 8px 36px rgba(99, 102, 241, 0.12),
+  0 0 24px rgba(99, 102, 241, 0.06),
+  0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* hover 时顶部发光条变亮、变粗 */
+.tech-card:hover .tech-card-glow {
+  opacity: 1;
+  height: 2px;
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.3);
+}
+
+:global(html.dark) .tech-card:hover .tech-card-glow {
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.45);
+}
+
+/* hover 时扫描线加速 */
+.tech-card:hover .tech-card-scanline {
+  animation-duration: 3s;
 }
 
 /* 顶部发光条 */
@@ -1012,6 +1026,7 @@ onBeforeUnmount(() => {
   );
   opacity: 0.6;
   pointer-events: none;
+  transition: opacity 0.32s ease, height 0.32s ease, box-shadow 0.32s ease;
 }
 
 :global(html.dark) .tech-card-glow {
@@ -1085,6 +1100,17 @@ onBeforeUnmount(() => {
   radial-gradient(ellipse 50% 60% at 90% 80%, rgba(14, 165, 164, 0.1), transparent),
   var(--home-card-bg);
   box-shadow: 0 8px 32px var(--home-card-shadow);
+  transition: border-color 0.32s ease, box-shadow 0.32s ease;
+}
+
+.hero-panel:hover {
+  border-color: rgba(99, 102, 241, 0.3);
+  box-shadow: 0 10px 40px rgba(99, 102, 241, 0.08), 0 4px 16px var(--home-card-shadow);
+}
+
+:global(html.dark) .hero-panel:hover {
+  border-color: rgba(99, 102, 241, 0.45);
+  box-shadow: 0 10px 40px rgba(99, 102, 241, 0.1), 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
 :global(html.dark) .hero-panel {
@@ -1122,6 +1148,11 @@ onBeforeUnmount(() => {
   );
   pointer-events: none;
   animation: heroScanlineMove 10s ease-in-out infinite;
+  transition: animation-duration 0.3s ease;
+}
+
+.hero-panel:hover .hero-scanline {
+  animation-duration: 4s;
 }
 
 :global(html.dark) .hero-scanline {
@@ -1290,6 +1321,13 @@ onBeforeUnmount(() => {
   border-radius: 999px;
   pointer-events: none;
   opacity: 0.5;
+  transition: opacity 0.35s ease, transform 0.35s ease, filter 0.35s ease;
+}
+
+.resource-card-visual:hover::after {
+  opacity: 0.85;
+  transform: scale(1.25);
+  filter: blur(4px);
 }
 
 .resource-cpu::after {
@@ -1331,6 +1369,23 @@ onBeforeUnmount(() => {
   border-radius: 999px;
   border: 1px solid transparent;
   font-variant-numeric: tabular-nums;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.resource-card-visual:hover .resource-pill {
+  transform: scale(1.08);
+}
+
+:global(html.dark) .resource-card-visual:hover .resource-pill-cpu {
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
+}
+
+:global(html.dark) .resource-card-visual:hover .resource-pill-memory {
+  box-shadow: 0 0 10px rgba(14, 165, 164, 0.3);
+}
+
+:global(html.dark) .resource-card-visual:hover .resource-pill-gpu {
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
 }
 
 .resource-pill-cpu {
@@ -1440,23 +1495,45 @@ onBeforeUnmount(() => {
    ======================================== */
 .stat-card-tech {
   position: relative;
+  overflow: hidden;
   background: var(--home-card-bg);
   border: 1px solid var(--home-card-border);
   box-shadow: 0 1px 4px var(--home-card-shadow);
-  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  transition: border-color 0.28s ease, box-shadow 0.28s ease, background 0.28s ease;
+}
+
+.stat-card-tech::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 30% 50%, rgba(99, 102, 241, 0.08), transparent 70%);
+  transition: opacity 0.32s ease;
 }
 
 .stat-card-tech:hover {
-  border-color: rgba(99, 102, 241, 0.25);
-  box-shadow: 0 4px 16px var(--home-card-shadow);
+  border-color: rgba(99, 102, 241, 0.28);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.06),
+  0 1px 4px var(--home-card-shadow);
+}
+
+.stat-card-tech:hover::after {
+  opacity: 1;
 }
 
 :global(html.dark) .stat-card-tech:hover {
-  border-color: rgba(99, 102, 241, 0.35);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 0 6px 24px rgba(99, 102, 241, 0.1),
+  0 0 16px rgba(99, 102, 241, 0.05),
+  0 1px 4px rgba(0, 0, 0, 0.2);
 }
 
-.stat-card-glow::after {
+:global(html.dark) .stat-card-tech::after {
+  background: radial-gradient(circle at 30% 50%, rgba(99, 102, 241, 0.12), transparent 70%);
+}
+
+.stat-card-glow::before {
   content: '';
   position: absolute;
   top: 0;
@@ -1465,10 +1542,22 @@ onBeforeUnmount(() => {
   height: 1px;
   background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.3), transparent);
   pointer-events: none;
+  transition: height 0.28s ease, opacity 0.28s ease, box-shadow 0.28s ease;
+  z-index: 1;
 }
 
-:global(html.dark) .stat-card-glow::after {
+.stat-card-glow:hover::before {
+  height: 2px;
+  opacity: 1;
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.2);
+}
+
+:global(html.dark) .stat-card-glow::before {
   background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.5), transparent);
+}
+
+:global(html.dark) .stat-card-glow:hover::before {
+  box-shadow: 0 0 14px rgba(99, 102, 241, 0.35);
 }
 
 .stat-icon-tech {
@@ -1479,11 +1568,35 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: transform 0.2s ease;
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease;
 }
 
 .stat-card-tech:hover .stat-icon-tech {
-  transform: scale(1.05);
+  transform: scale(1.1);
+}
+
+:global(html.dark) .stat-card-tech:hover .stat-icon-indigo {
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.25);
+}
+
+:global(html.dark) .stat-card-tech:hover .stat-icon-green {
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.25);
+}
+
+:global(html.dark) .stat-card-tech:hover .stat-icon-purple {
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.25);
+}
+
+:global(html.dark) .stat-card-tech:hover .stat-icon-amber {
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.25);
+}
+
+.stat-value-tech {
+  transition: letter-spacing 0.25s ease;
+}
+
+.stat-card-tech:hover .stat-value-tech {
+  letter-spacing: 1px;
 }
 
 .stat-icon-indigo {
@@ -1564,11 +1677,25 @@ onBeforeUnmount(() => {
 }
 
 .health-item-theme {
+  position: relative;
+  overflow: hidden;
   background: var(--home-hover-bg);
   border: 1px solid var(--home-border);
-  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
-  border-color 0.22s ease,
-  background-color 0.22s ease;
+  transition: border-color 0.28s ease, background-color 0.28s ease, box-shadow 0.28s ease;
+}
+
+.health-item-theme::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  background: linear-gradient(135deg, rgba(22, 163, 74, 0.05), transparent 60%);
+  transition: opacity 0.3s ease;
+}
+
+.health-item-theme:hover::after {
+  opacity: 1;
 }
 
 .health-item {
@@ -1594,6 +1721,15 @@ onBeforeUnmount(() => {
 
 .health-icon-wrap {
   background: var(--home-hover-bg);
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease;
+}
+
+.health-item-theme:hover .health-icon-wrap {
+  transform: scale(1.06);
+}
+
+:global(html.dark) .health-item-theme:hover .health-icon-wrap {
+  box-shadow: 0 0 10px rgba(22, 163, 74, 0.12);
 }
 
 .health-status-badge {
@@ -1619,14 +1755,14 @@ onBeforeUnmount(() => {
 }
 
 .health-item-theme:hover {
-  border-color: rgba(99, 102, 241, 0.2);
+  border-color: rgba(22, 163, 74, 0.25);
   background: var(--home-card-bg);
-  box-shadow: 0 2px 12px var(--home-card-shadow);
+  box-shadow: 0 4px 16px rgba(22, 163, 74, 0.06);
 }
 
 :global(html.dark) .health-item-theme:hover {
-  border-color: rgba(99, 102, 241, 0.3);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+  border-color: rgba(34, 197, 94, 0.3);
+  box-shadow: 0 4px 18px rgba(34, 197, 94, 0.08);
 }
 
 @keyframes statusBadgePulse {
@@ -1644,24 +1780,47 @@ onBeforeUnmount(() => {
    快捷操作
    ======================================== */
 .action-item-theme {
+  position: relative;
+  overflow: hidden;
   background: var(--home-hover-bg);
   border: 1px solid var(--home-border);
   cursor: pointer;
   user-select: none;
-  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
-  border-color 0.22s ease,
-  background-color 0.22s ease;
+  transition: border-color 0.28s ease, background-color 0.28s ease, box-shadow 0.28s ease;
+}
+
+.action-item-theme::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 25% 50%, rgba(99, 102, 241, 0.08), transparent 70%);
+  transition: opacity 0.3s ease;
+}
+
+.action-item-theme:hover::after {
+  opacity: 1;
+}
+
+:global(html.dark) .action-item-theme::after {
+  background: radial-gradient(circle at 25% 50%, rgba(99, 102, 241, 0.12), transparent 70%);
 }
 
 .action-item-theme:hover {
-  border-color: rgba(99, 102, 241, 0.2);
+  border-color: rgba(99, 102, 241, 0.25);
   background: var(--home-card-bg);
-  box-shadow: 0 2px 12px var(--home-card-shadow);
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.06);
 }
 
 :global(html.dark) .action-item-theme:hover {
-  border-color: rgba(99, 102, 241, 0.35);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 0 4px 18px rgba(99, 102, 241, 0.1);
+}
+
+.action-item-theme:active {
+  box-shadow: 0 1px 4px var(--home-card-shadow);
+  transition-duration: 0.08s;
 }
 
 .action-item-first {
@@ -1672,6 +1831,18 @@ onBeforeUnmount(() => {
 :global(html.dark) .action-item-first {
   border-color: rgba(99, 102, 241, 0.35);
   background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), var(--home-hover-bg));
+}
+
+.action-icon-wrap {
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease;
+}
+
+.action-item-theme:hover .action-icon-wrap {
+  transform: scale(1.1);
+}
+
+:global(html.dark) .action-item-theme:hover .action-icon-primary {
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.25);
 }
 
 .action-icon-primary {
@@ -1698,18 +1869,44 @@ onBeforeUnmount(() => {
    ======================================== */
 .recent-item-theme {
   --item-delay: 0s;
+  position: relative;
   background: var(--home-hover-bg);
   border: 1px solid transparent;
-  transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+  transition: border-color 0.25s ease, background-color 0.25s ease, box-shadow 0.25s ease, padding-left 0.25s ease;
+}
+
+.recent-item-theme::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 20%;
+  bottom: 20%;
+  width: 2px;
+  border-radius: 999px;
+  background: #6366f1;
+  opacity: 0;
+  transition: opacity 0.25s ease;
 }
 
 .recent-item-theme:hover {
   border-color: var(--home-card-border);
   background: var(--home-card-bg);
+  box-shadow: 0 2px 10px rgba(99, 102, 241, 0.05);
+  padding-left: 16px;
+}
+
+.recent-item-theme:hover::before {
+  opacity: 1;
 }
 
 :global(html.dark) .recent-item-theme:hover {
   border-color: rgba(99, 102, 241, 0.2);
+  box-shadow: 0 2px 12px rgba(99, 102, 241, 0.06);
+}
+
+:global(html.dark) .recent-item-theme::before {
+  background: #a5b4fc;
+  box-shadow: 0 0 6px rgba(165, 180, 252, 0.4);
 }
 
 .recent-list {
