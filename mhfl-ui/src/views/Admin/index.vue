@@ -1,16 +1,17 @@
 <script setup lang="ts">
-import {useI18n} from 'vue-i18n'
+import PageHeader from '@/components/PageHeader.vue'
 import AccountManage from './components/AccountManage.vue'
 import DatasetManage from './components/DatasetManage.vue'
 import AlgorithmManage from './components/AlgorithmManage.vue'
-
-const {t} = useI18n()
 </script>
 
 <template>
   <div class="admin-page">
-    <h2 class="page-title">{{ $t('pages.admin.title') }}</h2>
-    <p class="page-desc">{{ $t('pages.admin.desc') }}</p>
+    <PageHeader
+        class="mb-5"
+        :title="$t('pages.admin.title')"
+        :desc="$t('pages.admin.desc')"
+    />
 
     <el-tabs type="border-card" class="admin-tabs">
       <el-tab-pane :label="$t('pages.admin.tabMembers')">
@@ -35,21 +36,6 @@ const {t} = useI18n()
   min-height: 0;
 }
 
-.page-title {
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--home-text-primary);
-  margin-bottom: 8px;
-  animation: fadeSlideUp 0.4s ease both;
-}
-
-.page-desc {
-  font-size: 14px;
-  color: var(--home-text-muted);
-  margin-bottom: 24px;
-  animation: fadeSlideUp 0.4s ease 0.1s both;
-}
-
 .admin-tabs {
   flex: 1;
   display: flex;
@@ -60,6 +46,17 @@ const {t} = useI18n()
   animation: fadeSlideUp 0.5s ease 0.15s both;
   border-radius: 12px;
   overflow: hidden;
+}
+
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .admin-tabs :deep(.el-tabs__header) {

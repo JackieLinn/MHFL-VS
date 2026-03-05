@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import DashboardHero from './components/DashboardHero.vue'
+import PageHeader from '@/components/PageHeader.vue'
 import DashboardRealtimeResource from './components/DashboardRealtimeResource.vue'
 import DashboardPlatformOverview from './components/DashboardPlatformOverview.vue'
 import DashboardStatCards from './components/DashboardStatCards.vue'
@@ -14,7 +14,12 @@ import DashboardQuickActions from './components/DashboardQuickActions.vue'
     <!-- 科技感背景网格 -->
     <div class="tech-grid-bg"></div>
 
-    <DashboardHero/>
+    <PageHeader
+        class="mb-6"
+        :title="$t('pages.dashboard.title')"
+        :desc="$t('pages.dashboard.desc')"
+        enter-delay="0.02s"
+    />
     <DashboardRealtimeResource/>
     <DashboardPlatformOverview/>
     <DashboardStatCards/>
