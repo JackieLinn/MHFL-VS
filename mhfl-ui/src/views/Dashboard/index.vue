@@ -43,7 +43,7 @@ let chartRealtimeCpu: echarts.ECharts | null = null
 let chartRealtimeMem: echarts.ECharts | null = null
 let chartRealtimeGpu: echarts.ECharts | null = null
 
-function getChartColorVar(name: string): string {
+const getChartColorVar = (name: string): string => {
   const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
   return v || (document.documentElement.classList.contains('dark') ? '#e2e8f0' : '#1e293b')
 }
@@ -141,18 +141,18 @@ const quickActionRouteMap: Record<string, string> = {
   smartAssistant: '/home/monitor',
 }
 
-function handleQuickAction(key: string) {
+const handleQuickAction = (key: string) => {
   const targetRoute = quickActionRouteMap[key]
   if (targetRoute) {
     goTo(targetRoute)
   }
 }
 
-function getLatestUsage(history: number[]) {
+const getLatestUsage = (history: number[]) => {
   return Math.round(history[history.length - 1] ?? 0)
 }
 
-function getUsageDelta(history: number[]) {
+const getUsageDelta = (history: number[]) => {
   if (history.length < 2) {
     return 0
   }
@@ -161,14 +161,14 @@ function getUsageDelta(history: number[]) {
   return Number((latest - previous).toFixed(1))
 }
 
-function formatDelta(delta: number) {
+const formatDelta = (delta: number) => {
   if (delta > 0) {
     return `+${delta.toFixed(1)}%`
   }
   return `${delta.toFixed(1)}%`
 }
 
-function getDeltaLevel(delta: number) {
+const getDeltaLevel = (delta: number) => {
   if (delta > 0.4) {
     return 'up'
   }
@@ -199,7 +199,7 @@ const liveDate = ref('')
 let liveClockTimer: ReturnType<typeof window.setInterval> | null = null
 const numberAnimationFrameMap = new Map<string, number>()
 
-function animateNumber(key: string, targetRef: Ref<number>, to: number, duration = 560) {
+const animateNumber = (key: string, targetRef: Ref<number>, to: number, duration = 560) => {
   const from = Number(targetRef.value) || 0
   const target = Number(to) || 0
 
@@ -231,11 +231,11 @@ function animateNumber(key: string, targetRef: Ref<number>, to: number, duration
   numberAnimationFrameMap.set(key, frame)
 }
 
-function clampPercent(value: number) {
+const clampPercent = (value: number) => {
   return Math.min(100, Math.max(0, value))
 }
 
-function updateLiveClock() {
+const updateLiveClock = () => {
   const now = new Date()
   const hh = String(now.getHours()).padStart(2, '0')
   const mm = String(now.getMinutes()).padStart(2, '0')
@@ -263,7 +263,7 @@ const statusLabel = (s: string) => t(`pages.dashboard.${statusKey(s)}`)
 
 const goTo = (path: string) => router.push(path)
 
-function getStatusPieOption() {
+const getStatusPieOption = () => {
   const textColor = chartTextColor()
   const isDark = document.documentElement.classList.contains('dark')
   return {
@@ -310,7 +310,7 @@ function getStatusPieOption() {
   }
 }
 
-function getTrendLineOption() {
+const getTrendLineOption = () => {
   const textColor = chartTextColor()
   const mutedColor = chartMutedColor()
   const isDark = document.documentElement.classList.contains('dark')
@@ -372,7 +372,7 @@ function getTrendLineOption() {
   }
 }
 
-function getAlgorithmBarOption() {
+const getAlgorithmBarOption = () => {
   const textColor = chartTextColor()
   const mutedColor = chartMutedColor()
   const isDark = document.documentElement.classList.contains('dark')
@@ -430,7 +430,7 @@ function getAlgorithmBarOption() {
   }
 }
 
-function initCharts() {
+const initCharts = () => {
   if (chartStatusRef.value) {
     chartStatus = echarts.init(chartStatusRef.value)
     chartStatus.setOption(getStatusPieOption())
@@ -446,14 +446,14 @@ function initCharts() {
   initRealtimeCharts()
 }
 
-function applyChartTheme() {
+const applyChartTheme = () => {
   chartStatus?.setOption(getStatusPieOption(), {notMerge: true})
   chartTrend?.setOption(getTrendLineOption(), {notMerge: true})
   chartAlgorithm?.setOption(getAlgorithmBarOption(), {notMerge: true})
   updateRealtimeCharts()
 }
 
-function makeRealtimeLineOption(data: number[], color: string) {
+const makeRealtimeLineOption = (data: number[], color: string) => {
   const textColor = chartTextColor()
   const mutedColor = chartMutedColor()
   const isDark = document.documentElement.classList.contains('dark')
@@ -495,7 +495,7 @@ function makeRealtimeLineOption(data: number[], color: string) {
   }
 }
 
-function initRealtimeCharts() {
+const initRealtimeCharts = () => {
   if (chartRealtimeCpuRef.value && !chartRealtimeCpu) {
     chartRealtimeCpu = echarts.init(chartRealtimeCpuRef.value)
     chartRealtimeCpu.setOption(makeRealtimeLineOption([...cpuUsageHistory.value], realtimeChartColor.cpu))
@@ -510,13 +510,13 @@ function initRealtimeCharts() {
   }
 }
 
-function updateRealtimeCharts() {
+const updateRealtimeCharts = () => {
   chartRealtimeCpu?.setOption(makeRealtimeLineOption([...cpuUsageHistory.value], realtimeChartColor.cpu))
   chartRealtimeMem?.setOption(makeRealtimeLineOption([...memoryUsageHistory.value], realtimeChartColor.memory))
   chartRealtimeGpu?.setOption(makeRealtimeLineOption([...gpuUsageHistory.value], realtimeChartColor.gpu))
 }
 
-function resizeCharts() {
+const resizeCharts = () => {
   chartStatus?.resize()
   chartTrend?.resize()
   chartAlgorithm?.resize()

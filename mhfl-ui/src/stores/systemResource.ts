@@ -11,7 +11,7 @@ const cpuUsageHistory = ref<number[]>([])
 const memoryUsageHistory = ref<number[]>([])
 const gpuUsageHistory = ref<number[]>([])
 
-function pushFromResponse(data: SystemResources) {
+const pushFromResponse = (data: SystemResources) => {
     const push = (arrRef: Ref<number[]>, value: number) => {
         arrRef.value = [...arrRef.value, value].slice(-MAX_HISTORY)
     }
@@ -20,7 +20,7 @@ function pushFromResponse(data: SystemResources) {
     push(gpuUsageHistory, data.gpu?.usagePercent ?? 0)
 }
 
-export function useSystemResourceStore() {
+export const useSystemResourceStore = () => {
     return {
         cpuUsageHistory,
         memoryUsageHistory,
