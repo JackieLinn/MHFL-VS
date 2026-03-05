@@ -13,7 +13,7 @@ const setDataset = (ds: DatasetType) => {
 </script>
 
 <template>
-  <div class="recommended-page">
+  <div class="recommended-page p-8 pb-4 h-full flex flex-col min-h-0">
     <PageHeader
         class="mb-5"
         :title="$t('pages.recommended.title')"
@@ -21,7 +21,7 @@ const setDataset = (ds: DatasetType) => {
     />
 
     <!-- 中间切换：CIFAR-100 / Tiny-ImageNet -->
-    <div class="recommended-switch-wrap">
+    <div class="flex justify-center mb-6">
       <div class="recommended-switch">
         <button
             type="button"
@@ -43,7 +43,7 @@ const setDataset = (ds: DatasetType) => {
     </div>
 
     <!-- 内容区：根据切换显示不同占位 -->
-    <div class="recommended-body">
+    <div class="flex-1 min-h-0 flex flex-col">
       <RecommendedContent :dataset="activeDataset"/>
     </div>
   </div>
@@ -51,11 +51,6 @@ const setDataset = (ds: DatasetType) => {
 
 <style scoped>
 .recommended-page {
-  padding: 32px 32px 16px 32px;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
   animation: recommendedFadeIn 0.5s ease 0.1s both;
 }
 
@@ -68,19 +63,6 @@ const setDataset = (ds: DatasetType) => {
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-.recommended-switch-wrap {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 24px;
-}
-
-.recommended-body {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
 }
 </style>
 

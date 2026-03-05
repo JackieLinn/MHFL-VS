@@ -83,49 +83,51 @@ const metricKeys = [
 </script>
 
 <template>
-  <div class="recommended-content">
+  <div class="recommended-content flex-1 min-h-0 overflow-y-auto flex flex-col gap-6">
     <!-- 实验设置 -->
-    <section class="recommended-section recommended-tech-card">
+    <section class="recommended-section recommended-tech-card relative overflow-hidden rounded-xl py-5 px-6">
       <div class="recommended-card-glow"></div>
       <div class="recommended-card-scanline"></div>
-      <h3 class="recommended-section-title">
-        <span class="i-mdi-cog-outline recommended-section-icon"></span>
+      <h3 class="recommended-section-title m-0 mb-4 text-[15px] font-semibold flex items-center gap-2 relative z-[1]">
+        <span class="i-mdi-cog-outline recommended-section-icon text-xl"></span>
         {{ $t('pages.recommended.expSettings') }}
       </h3>
-      <div class="recommended-settings-grid">
+      <div class="recommended-settings-grid grid grid-cols-2 md:grid-cols-4 gap-x-5 gap-y-3 relative z-[1]">
         <div
             v-for="item in settingKeys"
             :key="item.key"
-            class="recommended-setting-item"
+            class="recommended-setting-item flex items-start gap-3 py-3 px-3.5 rounded-lg"
         >
-          <span :class="[item.icon, 'recommended-setting-icon']"></span>
-          <div class="recommended-setting-text">
-            <span class="recommended-setting-label">{{ $t(`pages.recommended.${item.key}`) }}</span>
-            <span class="recommended-setting-value">{{ settings[item.val] }}</span>
+          <span :class="[item.icon, 'recommended-setting-icon shrink-0 mt-0.5 text-xl']"></span>
+          <div class="recommended-setting-text flex flex-col gap-1 min-w-0">
+            <span class="recommended-setting-label text-xs">{{ $t(`pages.recommended.${item.key}`) }}</span>
+            <span class="recommended-setting-value text-sm font-semibold tabular-nums">{{ settings[item.val] }}</span>
           </div>
         </div>
       </div>
     </section>
 
     <!-- 实验指标 -->
-    <section class="recommended-section recommended-tech-card">
+    <section class="recommended-section recommended-tech-card relative overflow-hidden rounded-xl py-5 px-6">
       <div class="recommended-card-glow"></div>
       <div class="recommended-card-scanline"></div>
-      <h3 class="recommended-section-title">
-        <span class="i-mdi-chart-line recommended-section-icon"></span>
+      <h3 class="recommended-section-title m-0 mb-4 text-[15px] font-semibold flex items-center gap-2 relative z-[1]">
+        <span class="i-mdi-chart-line recommended-section-icon text-xl"></span>
         {{ $t('pages.recommended.expMetrics') }}
       </h3>
-      <div class="recommended-metrics-grid">
+      <div class="recommended-metrics-grid grid grid-cols-2 md:grid-cols-5 gap-4 relative z-[1]">
         <div
             v-for="item in metricKeys"
             :key="item.key"
-            class="recommended-metric-card"
+            class="recommended-metric-card flex flex-col items-center justify-center gap-2 py-5 px-4 rounded-xl"
             :class="`recommended-metric-${item.color}`"
         >
           <div class="recommended-metric-scanline"></div>
-          <span :class="[item.icon, 'recommended-metric-icon']"></span>
-          <span class="recommended-metric-value">{{ item.format(metrics[item.val]) }}</span>
-          <span class="recommended-metric-label">{{ $t(`pages.recommended.${item.key}`) }}</span>
+          <span :class="[item.icon, 'recommended-metric-icon text-[28px] relative z-[1]']"></span>
+          <span class="recommended-metric-value text-2xl font-bold tabular-nums tracking-wide relative z-[1]">{{
+              item.format(metrics[item.val])
+            }}</span>
+          <span class="recommended-metric-label text-xs relative z-[1]">{{ $t(`pages.recommended.${item.key}`) }}</span>
         </div>
       </div>
     </section>
@@ -134,12 +136,6 @@ const metricKeys = [
 
 <style scoped>
 .recommended-content {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -151,12 +147,8 @@ const metricKeys = [
 }
 
 .recommended-section {
-  position: relative;
-  overflow: hidden;
   background: var(--home-card-bg);
   border: 1px solid var(--home-card-border);
-  border-radius: 12px;
-  padding: 20px 24px;
   box-shadow: 0 2px 8px var(--home-card-shadow);
   transition: border-color 0.32s ease, box-shadow 0.32s ease, background 0.32s ease;
 }
@@ -230,20 +222,11 @@ html.dark .recommended-card-scanline {
 }
 
 .recommended-section-title {
-  margin: 0 0 16px 0;
-  font-size: 15px;
-  font-weight: 600;
   color: var(--home-text-primary);
   letter-spacing: 0.3px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  position: relative;
-  z-index: 1;
 }
 
 .recommended-section-icon {
-  font-size: 20px;
   color: #6366f1;
   opacity: 0.9;
 }
@@ -252,23 +235,10 @@ html.dark .recommended-section-icon {
   color: #a5b4fc;
 }
 
-.recommended-settings-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px 20px;
-  position: relative;
-  z-index: 1;
-}
-
 .recommended-setting-item {
   position: relative;
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 12px 14px;
   background: var(--home-hover-bg);
   border: 1px solid transparent;
-  border-radius: 8px;
   transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease, padding-left 0.25s ease;
 }
 
@@ -307,11 +277,8 @@ html.dark .recommended-setting-item::before {
 }
 
 .recommended-setting-icon {
-  font-size: 20px;
   color: #6366f1;
   opacity: 0.8;
-  flex-shrink: 0;
-  margin-top: 2px;
   transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -323,23 +290,12 @@ html.dark .recommended-setting-icon {
   color: #a5b4fc;
 }
 
-.recommended-setting-text {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
 .recommended-setting-label {
-  font-size: 12px;
   color: var(--home-text-muted);
 }
 
 .recommended-setting-value {
-  font-size: 14px;
-  font-weight: 600;
   color: var(--home-text-primary);
-  font-variant-numeric: tabular-nums;
   transition: letter-spacing 0.25s ease;
 }
 
@@ -347,27 +303,12 @@ html.dark .recommended-setting-icon {
   letter-spacing: 0.5px;
 }
 
-.recommended-metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 16px;
-  position: relative;
-  z-index: 1;
-}
-
 .recommended-metric-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 20px 16px;
-  background: var(--home-card-bg);
-  border: 1px solid var(--home-card-border);
-  border-radius: 12px;
-  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.25s ease, box-shadow 0.25s ease;
   position: relative;
   overflow: hidden;
+  background: var(--home-card-bg);
+  border: 1px solid var(--home-card-border);
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
 .recommended-metric-card::after {
@@ -438,10 +379,7 @@ html.dark .recommended-metric-scanline {
 }
 
 .recommended-metric-icon {
-  font-size: 28px;
   opacity: 0.9;
-  position: relative;
-  z-index: 1;
   transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -506,30 +444,11 @@ html.dark .recommended-metric-card:hover {
 }
 
 .recommended-metric-value {
-  font-size: 22px;
-  font-weight: 700;
   color: var(--home-text-primary);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.5px;
-  position: relative;
-  z-index: 1;
 }
 
 .recommended-metric-label {
-  font-size: 12px;
   color: var(--home-text-muted);
-  position: relative;
-  z-index: 1;
-}
-
-@media (max-width: 900px) {
-  .recommended-settings-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .recommended-metrics-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
