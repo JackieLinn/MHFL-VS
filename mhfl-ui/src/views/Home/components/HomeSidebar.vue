@@ -72,7 +72,7 @@ const handleMenuClick = (path: string) => {
           :title="isCollapsed ? item.label : ''"
       >
         <span :class="item.icon" class="text-lg flex-shrink-0"></span>
-        <span class="menu-label text-sm transition-opacity" v-show="!isCollapsed">{{ item.label }}</span>
+        <span class="menu-label text-[15px] transition-opacity" v-show="!isCollapsed">{{ item.label }}</span>
       </div>
     </div>
 
@@ -157,7 +157,7 @@ const handleMenuClick = (path: string) => {
   }
 
   .menu-label {
-    font-size: 13px;
+    font-size: 14px;
   }
 }
 </style>
