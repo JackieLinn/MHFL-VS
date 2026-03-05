@@ -109,7 +109,10 @@
   },
   "sidebar": {
     "dashboard": "仪表盘",
-    "monitor": "实时监控",
+    "taskManage": "任务管理",
+    "myTasks": "我的任务",
+    "recommendedShow": "推荐展示",
+    "smartAssistant": "智能助手",
     "admin": "系统管理"
   },
   "pages": {
@@ -137,7 +140,7 @@
       "actionRecommendedShow": "推荐展示",
       "createTask": "创建任务",
       "taskList": "任务列表",
-      "monitor": "实时监控",
+      "task": "任务管理",
       "platformOverview": "平台概览",
       "totalUsers": "用户总数",
       "totalTasks": "全平台任务数",
@@ -163,10 +166,20 @@
       "healthStatusLabel": "状态",
       "healthHealthy": "健康"
     },
-    "monitor": {
-      "title": "实时监控",
-      "desc": "实时监控联邦学习训练过程",
-      "developing": "实时监控功能开发中..."
+    "task": {
+      "title": "任务管理",
+      "desc": "管理并监控联邦学习训练任务",
+      "developing": "任务管理功能开发中..."
+    },
+    "recommended": {
+      "title": "推荐展示",
+      "desc": "查看平台推荐的成功案例与配置",
+      "developing": "推荐展示功能开发中..."
+    },
+    "assistant": {
+      "title": "智能助手",
+      "desc": "智能辅助配置与训练建议",
+      "developing": "智能助手功能开发中..."
     },
     "admin": {
       "title": "系统管理",

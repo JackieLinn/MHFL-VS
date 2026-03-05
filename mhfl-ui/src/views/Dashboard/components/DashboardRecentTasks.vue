@@ -49,7 +49,7 @@ const goTo = (path: string) => router.push(path)
         {{ $t('pages.dashboard.recentTasks') }}</h3>
       <span
           class="card-link text-[13px] text-[var(--home-text-muted)] cursor-pointer transition-colors hover:text-[var(--home-text-secondary)]"
-          @click="goTo('/home/monitor')">{{ $t('pages.dashboard.viewAll') }}</span>
+          @click="goTo('/home/task')">{{ $t('pages.dashboard.viewAll') }}</span>
     </div>
     <transition-group name="recent-list-fade" tag="ul"
                       class="recent-list flex flex-col gap-1.5 flex-1 overflow-y-auto list-none p-0 m-0" appear>
@@ -58,7 +58,7 @@ const goTo = (path: string) => router.push(path)
           :key="task.id"
           class="recent-item flex items-center justify-between gap-3 py-2.5 px-3 rounded-lg cursor-pointer transition-all duration-200 recent-item-theme"
           :style="{ '--item-delay': `${index * 0.03}s` }"
-          @click="goTo(`/home/monitor?taskId=${task.id}`)"
+          @click="goTo(`/home/task?taskId=${task.id}`)"
       >
         <div
             class="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[13px] text-[var(--home-text-primary)]">

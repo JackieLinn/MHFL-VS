@@ -23,11 +23,11 @@ const quickActionItems = computed(() => isAdmin.value ? quickActionItemsAdmin : 
 
 const quickActionRouteMap: Record<string, string> = {
   dashboard: '/home/dashboard',
-  taskManage: '/home/monitor',
-  myTasks: '/home/monitor',
-  recommendedShow: '/home/monitor?recommended=1',
+  taskManage: '/home/task',
+  myTasks: '/home/task',
+  recommendedShow: '/home/recommended',
   systemAdmin: '/home/admin',
-  smartAssistant: '/home/monitor',
+  smartAssistant: '/home/assistant',
 }
 
 const goTo = (path: string) => router.push(path)

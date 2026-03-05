@@ -5,17 +5,17 @@ const {t} = useI18n()
 </script>
 
 <template>
-  <div class="monitor-page">
-    <h2 class="page-title">{{ $t('pages.monitor.title') }}</h2>
-    <p class="page-desc">{{ $t('pages.monitor.desc') }}</p>
+  <div class="task-page">
+    <h2 class="page-title">{{ $t('pages.task.title') }}</h2>
+    <p class="page-desc">{{ $t('pages.task.desc') }}</p>
     <div class="page-placeholder">
-      <p>{{ $t('pages.monitor.developing') }}</p>
+      <p>{{ $t('pages.task.developing') }}</p>
     </div>
   </div>
 </template>
 
 <style scoped>
-.monitor-page {
+.task-page {
   padding: 32px;
   height: 100%;
 }

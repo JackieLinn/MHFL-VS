@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {computed, ref, onMounted} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
-import {DataBoard, View, Setting, Fold, Expand} from '@element-plus/icons-vue'
+import {DataBoard, List, Star, MagicStick, Setting, Fold, Expand} from '@element-plus/icons-vue'
 import {useI18n} from 'vue-i18n'
 import {getUserInfo} from '@/api/user'
 
@@ -28,23 +28,29 @@ const toggleCollapse = () => {
   localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(isCollapsed.value))
 }
 
-// 仅 admin 角色显示「系统管理」
-type MenuItem = { key: string; label: string; icon: typeof DataBoard; path: string; adminOnly?: boolean }
-const allMenuItems = computed<MenuItem[]>(() => [
-  {key: 'dashboard', label: t('sidebar.dashboard'), icon: DataBoard, path: '/home/dashboard'},
-  {key: 'monitor', label: t('sidebar.monitor'), icon: View, path: '/home/monitor'},
-  {key: 'admin', label: t('sidebar.admin'), icon: Setting, path: '/home/admin', adminOnly: true}
-])
-const menuItems = computed(() => {
+// 导航项：管理员显示「任务管理」，普通用户显示「我的任务」；所有人有推荐展示、智能助手；仅 admin 显示「系统管理」
+type MenuItem = { key: string; label: string; icon: typeof DataBoard; path: string }
+const menuItems = computed<MenuItem[]>(() => {
   const isAdmin = getUserInfo()?.role === 'admin'
-  return allMenuItems.value.filter((item) => !item.adminOnly || isAdmin)
+  const items: MenuItem[] = [
+    {key: 'dashboard', label: t('sidebar.dashboard'), icon: DataBoard, path: '/home/dashboard'},
+    {key: 'task', label: isAdmin ? t('sidebar.taskManage') : t('sidebar.myTasks'), icon: List, path: '/home/task'},
+    {key: 'recommended', label: t('sidebar.recommendedShow'), icon: Star, path: '/home/recommended'},
+    {key: 'assistant', label: t('sidebar.smartAssistant'), icon: MagicStick, path: '/home/assistant'},
+  ]
+  if (isAdmin) {
+    items.push({key: 'admin', label: t('sidebar.admin'), icon: Setting, path: '/home/admin'})
+  }
+  return items
 })
 
 // 当前激活的菜单项
 const activeMenu = computed(() => {
   const path = route.path
   if (path.includes('/dashboard')) return 'dashboard'
-  if (path.includes('/monitor')) return 'monitor'
+  if (path.includes('/task')) return 'task'
+  if (path.includes('/recommended')) return 'recommended'
+  if (path.includes('/assistant')) return 'assistant'
   if (path.includes('/admin')) return 'admin'
   return 'dashboard'
 })

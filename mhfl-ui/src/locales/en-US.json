@@ -109,7 +109,10 @@
   },
   "sidebar": {
     "dashboard": "Dashboard",
-    "monitor": "Real-time Monitor",
+    "taskManage": "Task Management",
+    "myTasks": "My Tasks",
+    "recommendedShow": "Recommended",
+    "smartAssistant": "Smart Assistant",
     "admin": "System Admin"
   },
   "pages": {
@@ -137,7 +140,7 @@
       "actionRecommendedShow": "Recommended",
       "createTask": "Create Task",
       "taskList": "Task List",
-      "monitor": "Monitor",
+      "task": "Task Management",
       "platformOverview": "Platform Overview",
       "totalUsers": "Total Users",
       "totalTasks": "Platform Tasks",
@@ -163,10 +166,20 @@
       "healthStatusLabel": "Status",
       "healthHealthy": "Healthy"
     },
-    "monitor": {
-      "title": "Real-time Monitor",
-      "desc": "Monitor federated learning training process in real-time",
-      "developing": "Real-time monitor feature is under development..."
+    "task": {
+      "title": "Task Management",
+      "desc": "Manage and monitor federated learning tasks",
+      "developing": "Task management feature is under development..."
+    },
+    "recommended": {
+      "title": "Recommended",
+      "desc": "Browse recommended success cases and configs",
+      "developing": "Recommended show feature is under development..."
+    },
+    "assistant": {
+      "title": "Smart Assistant",
+      "desc": "Smart assistance for config and training suggestions",
+      "developing": "Smart assistant feature is under development..."
     },
     "admin": {
       "title": "System Admin",

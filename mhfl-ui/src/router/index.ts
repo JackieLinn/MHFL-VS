@@ -24,9 +24,21 @@ const router = createRouter({
                     meta: {requiresAuth: true},
                 },
                 {
-                    path: "monitor",
-                    name: "Monitor",
-                    component: () => import('@/views/Monitor/index.vue'),
+                    path: "task",
+                    name: "Task",
+                    component: () => import('@/views/Task/index.vue'),
+                    meta: {requiresAuth: true},
+                },
+                {
+                    path: "recommended",
+                    name: "Recommended",
+                    component: () => import('@/views/Recommended/index.vue'),
+                    meta: {requiresAuth: true},
+                },
+                {
+                    path: "assistant",
+                    name: "Assistant",
+                    component: () => import('@/views/Assistant/index.vue'),
                     meta: {requiresAuth: true},
                 },
                 {
