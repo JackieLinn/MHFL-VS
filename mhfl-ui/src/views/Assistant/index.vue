@@ -1,21 +1,22 @@
 <script setup lang="ts">
-import {ref, computed, nextTick} from 'vue'
+import {ref, computed, nextTick, watch} from 'vue'
 import {useI18n} from 'vue-i18n'
 
 const {t} = useI18n()
 
 // ===================== 输入框自动扩展 =====================
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
-// 14px * 1.6 line-height = 22.4px/行，3 行上限
 const MAX_INPUT_LINES = 3
 const LINE_HEIGHT_PX = Math.ceil(14 * 1.6) // 23px
 
 const autoResize = () => {
   const el = textareaRef.value
   if (!el) return
-  el.style.height = 'auto'
-  const maxH = LINE_HEIGHT_PX * MAX_INPUT_LINES + 4 // 4px 缓冲
-  el.style.height = Math.min(el.scrollHeight, maxH) + 'px'
+  // 先设为 1px，让浏览器重新计算 scrollHeight（确保清空后能正确收缩）
+  el.style.height = '1px'
+  const maxH = LINE_HEIGHT_PX * MAX_INPUT_LINES + 4
+  const newH = Math.max(LINE_HEIGHT_PX, Math.min(el.scrollHeight, maxH))
+  el.style.height = newH + 'px'
   el.style.overflowY = el.scrollHeight > maxH ? 'auto' : 'hidden'
 }
 
@@ -99,14 +100,24 @@ const conversations = ref<Conversation[]>([
     preview: '推荐 classes_per_node 设置为 5~10，low_prob 建议...',
     time: '今天 10:15',
     messages: [
-      {id: 1, role: 'user', content: '我想做一个 Non-IID 实验，classes_per_node 和 low_prob 应该怎么配置？', time: '10:13'},
+      {
+        id: 1,
+        role: 'user',
+        content: '我想做一个 Non-IID 实验，classes_per_node 和 low_prob 应该怎么配置？',
+        time: '10:13'
+      },
       {
         id: 2, role: 'assistant',
         content: '**`classes_per_node`（每节点类别数）**\n\n- `100`：近似 IID\n- `10`：中度 Non-IID（推荐入门）\n- `5`：高度 Non-IID\n- `2`：极端 Non-IID\n\n**`low_prob`（稀少类别采样概率）**\n\n- `0.0`：只有主要类别数据\n- `0.1`：推荐值，保留少量稀少类别\n- `0.5`：接近均匀\n\n| 场景 | classes_per_node | low_prob |\n|------|-----------------|----------|\n| 轻度 | 20 | 0.3 |\n| 中度 | 10 | 0.1 |\n| 重度 | 5 | 0.05 |',
         time: '10:14'
       },
       {id: 3, role: 'user', content: '谢谢，我先用中度配置跑一轮试试。', time: '10:15'},
-      {id: 4, role: 'assistant', content: '好的！中度配置是个不错的起点，祝实验顺利！\n\n跑完可以把训练曲线给我看，我帮你分析 loss/accuracy 趋势。', time: '10:15'}
+      {
+        id: 4,
+        role: 'assistant',
+        content: '好的！中度配置是个不错的起点，祝实验顺利！\n\n跑完可以把训练曲线给我看，我帮你分析 loss/accuracy 趋势。',
+        time: '10:15'
+      }
     ]
   },
   {
@@ -122,7 +133,12 @@ const conversations = ref<Conversation[]>([
         time: '16:42'
       },
       {id: 3, role: 'user', content: '好的，我用混合精度训练试试，谢谢！', time: '16:44'},
-      {id: 4, role: 'assistant', content: '混合精度是最推荐的方案，几乎无精度损失，显存和速度都有明显改善，好好试试！', time: '16:44'}
+      {
+        id: 4,
+        role: 'assistant',
+        content: '混合精度是最推荐的方案，几乎无精度损失，显存和速度都有明显改善，好好试试！',
+        time: '16:44'
+      }
     ]
   },
   {
@@ -162,8 +178,12 @@ const isSending = ref(false)
 const chatBodyRef = ref<HTMLElement | null>(null)
 const searchKeyword = ref('')
 const sidebarCollapsed = ref(false)
-// 正在流式输出的消息 id
 const streamingMsgId = ref<number | null>(null)
+
+// 监听 inputText，编程式清空时（如发送后）也能收缩
+watch(inputText, (val) => {
+  if (!val) nextTick(() => resetInputHeight())
+})
 
 const toggleSidebar = () => {
   sidebarCollapsed.value = !sidebarCollapsed.value
@@ -173,12 +193,12 @@ const filteredConversations = computed(() => {
   const kw = searchKeyword.value.trim().toLowerCase()
   if (!kw) return conversations.value
   return conversations.value.filter(c =>
-    c.title.toLowerCase().includes(kw) || c.preview.toLowerCase().includes(kw)
+      c.title.toLowerCase().includes(kw) || c.preview.toLowerCase().includes(kw)
   )
 })
 
 const activeConv = computed(() =>
-  conversations.value.find(c => c.id === activeConvId.value) ?? null
+    conversations.value.find(c => c.id === activeConvId.value) ?? null
 )
 
 const selectConv = (id: number) => {
@@ -189,78 +209,55 @@ const selectConv = (id: number) => {
 
 const newChat = () => {
   const id = Date.now()
-  conversations.value.unshift({
-    id,
-    title: '新对话',
-    preview: '',
-    time: '刚刚',
-    messages: []
-  })
+  conversations.value.unshift({id, title: '新对话', preview: '', time: '刚刚', messages: []})
   activeConvId.value = id
   inputText.value = ''
 }
 
 const scrollToBottom = () => {
-  if (chatBodyRef.value) {
-    chatBodyRef.value.scrollTop = chatBodyRef.value.scrollHeight
-  }
+  if (chatBodyRef.value) chatBodyRef.value.scrollTop = chatBodyRef.value.scrollHeight
 }
 
 // ===================== 流式输出 =====================
 const streamText = (convId: number, msgId: number, fullText: string) => {
   const conv = conversations.value.find(c => c.id === convId)
   if (!conv) return
-
-  // 找到占位消息
   const msg = conv.messages.find(m => m.id === msgId)
   if (!msg) return
 
   streamingMsgId.value = msgId
   let index = 0
-  // 每次追加 1~3 个字符，模拟不均匀的流式速度
-  const INTERVAL = 18
 
   const tick = () => {
     if (index >= fullText.length) {
       msg.streaming = false
       streamingMsgId.value = null
       isSending.value = false
-      // 更新侧边栏预览
       conv.preview = fullText.slice(0, 40)
       nextTick(() => scrollToBottom())
       return
     }
-    // 一次追加 1~3 个字符（让速度看起来更自然）
     const step = Math.min(Math.floor(Math.random() * 3) + 1, fullText.length - index)
     msg.content += fullText.slice(index, index + step)
     index += step
     nextTick(() => scrollToBottom())
-    setTimeout(tick, INTERVAL)
+    setTimeout(tick, 18)
   }
-
-  setTimeout(tick, INTERVAL)
+  setTimeout(tick, 18)
 }
 
 // ===================== 发送消息 =====================
 const sendMessage = () => {
   const text = inputText.value.trim()
   if (!text || isSending.value) return
-
-  // 若没有选中会话或选中的是空会话，新建一条
-  if (!activeConv.value) {
-    newChat()
-  }
+  if (!activeConv.value) newChat()
 
   const conv = conversations.value.find(c => c.id === activeConvId.value)
   if (!conv) return
 
-  // 添加用户消息
   conv.messages.push({id: ++msgIdCounter, role: 'user', content: text, time: nowTime()})
-
-  // 更新会话标题（仅首条消息时）
-  if (conv.title === '新对话' && conv.messages.filter(m => m.role === 'user').length === 1) {
+  if (conv.title === '新对话' && conv.messages.filter(m => m.role === 'user').length === 1)
     conv.title = text.length > 18 ? text.slice(0, 18) + '...' : text
-  }
   conv.preview = text
 
   inputText.value = ''
@@ -268,26 +265,15 @@ const sendMessage = () => {
   isSending.value = true
   nextTick(() => scrollToBottom())
 
-  // 先延迟一点，模拟"思考"，然后开始流式输出
   const convId = activeConvId.value!
   setTimeout(() => {
     const conv2 = conversations.value.find(c => c.id === convId)
     if (!conv2) return
-
     const fullReply = getAiReply(text)
     const aiMsgId = ++msgIdCounter
-
-    // 添加空占位消息，streaming=true
-    conv2.messages.push({
-      id: aiMsgId,
-      role: 'assistant',
-      content: '',
-      time: nowTime(),
-      streaming: true
-    })
-
+    conv2.messages.push({id: aiMsgId, role: 'assistant', content: '', time: nowTime(), streaming: true})
     nextTick(() => {
-      scrollToBottom()
+      scrollToBottom();
       streamText(convId, aiMsgId, fullReply)
     })
   }, 600)
@@ -295,7 +281,7 @@ const sendMessage = () => {
 
 const handleKeydown = (e: KeyboardEvent) => {
   if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault()
+    e.preventDefault();
     sendMessage()
   }
 }
@@ -303,17 +289,48 @@ const handleKeydown = (e: KeyboardEvent) => {
 // ===================== Markdown 简单渲染 =====================
 const formatContent = (raw: string): string => {
   return raw
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/`(.*?)`/g, '<code>$1</code>')
-    .replace(/\n\n/g, '</p><p>')
-    .replace(/\n/g, '<br>')
-    .replace(/^/, '<p>')
-    .replace(/$/, '</p>')
-    .replace(/---/g, '<hr>')
-    .replace(/\|(.+)\|/g, (match) => {
-      const cells = match.split('|').filter(c => c.trim() !== '')
-      return '<tr>' + cells.map(c => `<td>${c.trim()}</td>`).join('') + '</tr>'
-    })
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/`(.*?)`/g, '<code>$1</code>')
+      .replace(/\n\n/g, '</p><p>')
+      .replace(/\n/g, '<br>')
+      .replace(/^/, '<p>')
+      .replace(/$/, '</p>')
+      .replace(/---/g, '<hr>')
+      .replace(/\|(.+)\|/g, (match) => {
+        const cells = match.split('|').filter(c => c.trim() !== '')
+        return '<tr>' + cells.map(c => `<td>${c.trim()}</td>`).join('') + '</tr>'
+      })
+}
+
+// ===================== 消息操作 =====================
+const copiedMsgId = ref<number | null>(null)
+// 用 Record 存每条消息的反馈状态，方便响应式追踪
+const msgFeedback = ref<Record<number, 'liked' | 'disliked' | null>>({})
+
+const copyMessage = async (msgId: number, content: string) => {
+  try {
+    await navigator.clipboard.writeText(content)
+  } catch {
+    // Clipboard API 不可用时静默忽略
+  }
+  copiedMsgId.value = msgId
+  setTimeout(() => {
+    copiedMsgId.value = null
+  }, 1500)
+}
+
+const toggleLike = (msgId: number) => {
+  msgFeedback.value = {
+    ...msgFeedback.value,
+    [msgId]: msgFeedback.value[msgId] === 'liked' ? null : 'liked'
+  }
+}
+
+const toggleDislike = (msgId: number) => {
+  msgFeedback.value = {
+    ...msgFeedback.value,
+    [msgId]: msgFeedback.value[msgId] === 'disliked' ? null : 'disliked'
+  }
 }
 
 // ===================== 快捷提问 =====================
@@ -331,18 +348,22 @@ const askQuickQuestion = (text: string) => {
 </script>
 
 <template>
-  <div class="assistant-page">
+  <div class="assistant-page flex h-full overflow-hidden">
+
     <!-- ======= 左侧历史会话栏 ======= -->
-    <aside class="conv-sidebar" :class="{ 'conv-sidebar--collapsed': sidebarCollapsed }">
+    <aside class="conv-sidebar flex flex-col shrink-0 overflow-hidden"
+           :class="{ 'conv-sidebar--collapsed': sidebarCollapsed }">
 
       <!-- 展开状态 -->
       <template v-if="!sidebarCollapsed">
-        <div class="conv-sidebar-header">
-          <div class="conv-brand">
-            <span class="i-mdi-robot-outline conv-brand-icon"></span>
-            <span class="conv-brand-text">AI 助手</span>
+        <!-- 品牌头部 -->
+        <div class="conv-sidebar-header flex items-center justify-between shrink-0 px-3 py-3.5">
+          <div class="flex items-center gap-2">
+            <span class="i-mdi-robot-outline text-xl text-indigo-500 shrink-0"></span>
+            <span class="text-[15px] font-bold tracking-[0.02em] whitespace-nowrap"
+                  style="color: var(--home-text-primary)">AI 助手</span>
           </div>
-          <div class="conv-header-btns">
+          <div class="flex gap-1">
             <button class="icon-btn" @click="newChat" :title="t('assistant.newChat')">
               <span class="i-mdi-square-edit-outline"></span>
             </button>
@@ -352,48 +373,63 @@ const askQuickQuestion = (text: string) => {
           </div>
         </div>
 
-        <div class="conv-search">
-          <span class="i-mdi-magnify conv-search-icon"></span>
+        <!-- 搜索框 -->
+        <div class="conv-search relative shrink-0 px-2.5 py-2">
+          <span
+              class="conv-search-icon i-mdi-magnify absolute left-5 top-1/2 -translate-y-1/2 text-[14px] pointer-events-none flex"
+              style="color: var(--home-text-muted); line-height: 1;"></span>
           <input
-            v-model="searchKeyword"
-            class="conv-search-input"
-            :placeholder="t('assistant.searchPlaceholder')"
+              v-model="searchKeyword"
+              class="conv-search-input w-full text-[13px] rounded-lg outline-none"
+              :placeholder="t('assistant.searchPlaceholder')"
           />
         </div>
 
-        <div class="conv-list">
-          <div class="conv-list-label">{{ t('assistant.recentChats') }}</div>
+        <!-- 会话列表 -->
+        <div class="flex-1 overflow-y-auto px-1.5 py-1">
+          <div class="text-[11px] font-semibold uppercase tracking-[0.08em] px-2 pt-2 pb-1.5"
+               style="color: var(--home-text-muted)">
+            {{ t('assistant.recentChats') }}
+          </div>
           <div
-            v-for="conv in filteredConversations"
-            :key="conv.id"
-            class="conv-item"
-            :class="{ 'conv-item--active': activeConvId === conv.id }"
-            @click="selectConv(conv.id)"
+              v-for="conv in filteredConversations"
+              :key="conv.id"
+              class="conv-item flex items-start gap-2.5 p-2.5 rounded-[9px] cursor-pointer mb-0.5"
+              :class="{ 'conv-item--active': activeConvId === conv.id }"
+              @click="selectConv(conv.id)"
           >
-            <div class="conv-item-icon">
+            <div
+                class="conv-item-icon flex shrink-0 items-center justify-center w-[30px] h-[30px] rounded-[7px] text-[15px] mt-px text-indigo-500">
               <span class="i-mdi-chat-outline"></span>
             </div>
-            <div class="conv-item-body">
-              <div class="conv-item-title">{{ conv.title }}</div>
-              <div class="conv-item-preview">{{ conv.preview }}</div>
-              <div class="conv-item-time">{{ conv.time }}</div>
+            <div class="flex-1 min-w-0">
+              <div class="text-[13px] font-semibold truncate" style="color: var(--home-text-primary)">{{
+                  conv.title
+                }}
+              </div>
+              <div class="text-[12px] truncate mt-0.5" style="color: var(--home-text-muted)">{{ conv.preview }}</div>
+              <div class="text-[11px] mt-0.5 opacity-65" style="color: var(--home-text-muted)">{{ conv.time }}</div>
             </div>
           </div>
-          <div v-if="filteredConversations.length === 0" class="conv-empty">
-            <span class="i-mdi-chat-sleep-outline conv-empty-icon"></span>
+
+          <div v-if="filteredConversations.length === 0" class="flex flex-col items-center gap-2 py-8 px-4 text-[13px]"
+               style="color: var(--home-text-muted)">
+            <span class="i-mdi-chat-sleep-outline text-[26px] opacity-45"></span>
             <span>{{ t('assistant.noConvFound') }}</span>
           </div>
         </div>
 
-        <div class="conv-sidebar-footer">
-          <span class="i-mdi-information-outline"></span>
-          <span>{{ t('assistant.footerTip') }}</span>
+        <!-- 底部提示 -->
+        <div class="conv-sidebar-footer flex items-center gap-1.5 shrink-0 px-3.5 py-2.5 text-[11px]"
+             style="color: var(--home-text-muted); line-height: 1;">
+          <span class="i-mdi-information-outline text-[13px] shrink-0 flex items-center" style="line-height: 1;"></span>
+          <span class="flex items-center" style="line-height: 1;">{{ t('assistant.footerTip') }}</span>
         </div>
       </template>
 
       <!-- 收起状态：只显示展开 + 新建 -->
       <template v-else>
-        <div class="collapsed-btns">
+        <div class="flex flex-col items-center gap-1 py-3">
           <button class="icon-btn icon-btn--collapsed" @click="toggleSidebar" :title="t('assistant.expandSidebar')">
             <span class="i-mdi-chevron-double-right"></span>
           </button>
@@ -406,96 +442,121 @@ const askQuickQuestion = (text: string) => {
     </aside>
 
     <!-- ======= 右侧主体 ======= -->
-    <main class="chat-main">
-      <!-- 顶部简洁标题栏 -->
-      <div class="chat-topbar">
-        <div class="chat-topbar-left">
-          <span class="i-mdi-robot-outline chat-topbar-icon"></span>
+    <main class="flex flex-col flex-1 overflow-hidden min-w-0">
+
+      <!-- 顶部标题栏 -->
+      <div class="chat-topbar flex items-center justify-between shrink-0 px-6 py-3.5">
+        <div class="flex items-center gap-3">
+          <span class="i-mdi-robot-outline text-2xl text-indigo-500 shrink-0"></span>
           <div>
-            <div class="chat-topbar-title">
+            <div class="text-[15px] font-bold leading-[1.3]" style="color: var(--home-text-primary)">
               {{ activeConv ? activeConv.title : t('pages.assistant.title') }}
             </div>
-            <div class="chat-topbar-sub">
-              {{ activeConv
-                ? t('assistant.msgCount', {count: activeConv.messages.length})
-                : t('pages.assistant.desc') }}
+            <div class="text-[12px] mt-px" style="color: var(--home-text-muted)">
+              {{
+                activeConv ? t('assistant.msgCount', {count: activeConv.messages.length}) : t('pages.assistant.desc')
+              }}
             </div>
           </div>
         </div>
-        <div class="chat-topbar-badge">
-          <span class="chat-topbar-badge-dot"></span>
+        <div
+            class="chat-topbar-badge flex items-center gap-1.5 text-xs font-semibold tracking-[0.04em] px-2.5 py-1 rounded-full">
+          <span class="chat-topbar-badge-dot w-1.5 h-1.5 rounded-full"></span>
           MHFL-VS
         </div>
       </div>
 
       <!-- 欢迎屏 -->
-      <div v-if="!activeConv || activeConv.messages.length === 0" class="chat-welcome">
-        <div class="welcome-avatar">
-          <span class="i-mdi-robot-excited-outline welcome-avatar-icon"></span>
+      <div v-if="!activeConv || activeConv.messages.length === 0"
+           class="flex-1 flex flex-col items-center justify-center gap-3 px-8 py-10">
+        <div class="welcome-avatar flex items-center justify-center w-[68px] h-[68px] rounded-[20px] mb-1.5">
+          <span class="i-mdi-robot-excited-outline text-[32px] text-indigo-500"></span>
         </div>
-        <h2 class="welcome-title">{{ t('assistant.welcomeTitle') }}</h2>
-        <p class="welcome-sub">{{ t('assistant.welcomeSub') }}</p>
-        <div class="quick-grid">
+        <h2 class="text-[21px] font-bold text-center" style="color: var(--home-text-primary)">
+          {{ t('assistant.welcomeTitle') }}</h2>
+        <p class="text-sm text-center max-w-[440px] leading-[1.7]" style="color: var(--home-text-muted)">
+          {{ t('assistant.welcomeSub') }}</p>
+        <div class="grid grid-cols-2 gap-2.5 mt-5 max-w-[540px] w-full">
           <button
-            v-for="q in quickQuestions"
-            :key="q.text"
-            class="quick-card"
-            @click="askQuickQuestion(q.text)"
+              v-for="q in quickQuestions"
+              :key="q.text"
+              class="quick-card flex items-center gap-2.5 px-4 py-3.5 rounded-[11px] text-[13px] text-left cursor-pointer"
+              @click="askQuickQuestion(q.text)"
           >
-            <span :class="[q.icon, 'quick-card-icon']"></span>
-            <span class="quick-card-text">{{ q.text }}</span>
+            <span :class="[q.icon]" class="text-[19px] text-indigo-500 opacity-80 shrink-0"></span>
+            <span class="leading-[1.4]">{{ q.text }}</span>
           </button>
         </div>
       </div>
 
       <!-- 聊天消息区 -->
-      <div v-else ref="chatBodyRef" class="chat-body">
+      <div v-else ref="chatBodyRef" class="flex-1 overflow-y-auto flex flex-col gap-[18px] px-6 py-5">
         <template v-for="msg in activeConv.messages" :key="msg.id">
 
           <!-- 用户消息 -->
-          <div v-if="msg.role === 'user'" class="msg-row msg-row--user">
-            <div class="msg-bubble msg-bubble--user">
-              <p>{{ msg.content }}</p>
-              <span class="msg-time-user">{{ msg.time }}</span>
-            </div>
-            <div class="msg-avatar msg-avatar--user">
+          <div v-if="msg.role === 'user'" class="flex items-start gap-2.5 flex-row-reverse">
+            <div
+                class="msg-avatar msg-avatar--user flex items-center justify-center w-[34px] h-[34px] rounded-[9px] text-[17px] shrink-0 mt-0.5">
               <span class="i-mdi-account"></span>
+            </div>
+            <div
+                class="msg-bubble msg-bubble--user max-w-[66%] rounded-[14px] rounded-br-[4px] px-4 py-3 text-sm leading-[1.75]">
+              <p>{{ msg.content }}</p>
+              <span class="block text-[11px] mt-1 text-right opacity-65">{{ msg.time }}</span>
             </div>
           </div>
 
           <!-- AI 消息 -->
-          <div v-else class="msg-row msg-row--ai">
-            <div class="msg-avatar msg-avatar--ai">
+          <div v-else class="flex items-start gap-2.5">
+            <div
+                class="msg-avatar msg-avatar--ai flex items-center justify-center w-[34px] h-[34px] rounded-[9px] text-[17px] shrink-0 mt-0.5">
               <span class="i-mdi-robot-outline"></span>
             </div>
-            <div class="msg-bubble msg-bubble--ai">
-              <div class="msg-ai-header">
-                <span class="msg-ai-name">MHFL 助手</span>
-                <span class="msg-time">{{ msg.time }}</span>
-                <!-- 流式输出中的状态提示 -->
-                <span v-if="streamingMsgId === msg.id" class="streaming-badge">
-                  <span class="streaming-dot"></span>
+            <div
+                class="msg-bubble msg-bubble--ai max-w-[66%] rounded-[14px] rounded-bl-[4px] px-4 py-3 text-sm leading-[1.75]">
+              <!-- 消息头 -->
+              <div class="flex items-center gap-2 mb-1.5">
+                <span class="text-xs font-bold text-indigo-500">MHFL 助手</span>
+                <span class="text-[11px]" style="color: var(--home-text-muted)">{{ msg.time }}</span>
+                <span v-if="streamingMsgId === msg.id"
+                      class="streaming-badge flex items-center gap-1 text-[11px] font-medium px-1.5 py-px rounded-[10px]">
+                  <span class="streaming-dot w-[5px] h-[5px] rounded-full"></span>
                   正在输出
                 </span>
               </div>
-
-              <!-- 有内容就渲染，还没内容就显示光标占位 -->
+              <!-- 内容 -->
               <div v-if="msg.content" class="msg-content" v-html="formatContent(msg.content)"></div>
               <span v-else class="stream-cursor-only"></span>
-
-              <!-- 流式光标（输出中尾部追加） -->
               <span v-if="streamingMsgId === msg.id" class="stream-cursor"></span>
-
-              <!-- 操作按钮（输出完成后才显示） -->
-              <div v-if="!msg.streaming" class="msg-actions">
-                <button class="msg-action-btn" :title="t('assistant.copyMsg')">
-                  <span class="i-mdi-content-copy"></span>
+              <!-- 操作按钮 -->
+              <div v-if="!msg.streaming" class="msg-actions flex gap-1 mt-2">
+                <!-- 复制 -->
+                <button
+                    class="msg-action-btn flex items-center justify-center w-[25px] h-[25px] rounded-[6px] text-[13px] cursor-pointer"
+                    :class="{ 'msg-action-btn--copied': copiedMsgId === msg.id }"
+                    :title="t('assistant.copyMsg')"
+                    @click="copyMessage(msg.id, msg.content)"
+                >
+                  <span :class="copiedMsgId === msg.id ? 'i-mdi-check' : 'i-mdi-content-copy'"></span>
                 </button>
-                <button class="msg-action-btn" :title="t('assistant.likeMsg')">
-                  <span class="i-mdi-thumb-up-outline"></span>
+                <!-- 点赞 -->
+                <button
+                    class="msg-action-btn flex items-center justify-center w-[25px] h-[25px] rounded-[6px] text-[13px] cursor-pointer"
+                    :class="{ 'msg-action-btn--liked': msgFeedback[msg.id] === 'liked' }"
+                    :title="t('assistant.likeMsg')"
+                    @click="toggleLike(msg.id)"
+                >
+                  <span :class="msgFeedback[msg.id] === 'liked' ? 'i-mdi-thumb-up' : 'i-mdi-thumb-up-outline'"></span>
                 </button>
-                <button class="msg-action-btn" :title="t('assistant.dislikeMsg')">
-                  <span class="i-mdi-thumb-down-outline"></span>
+                <!-- 踩 -->
+                <button
+                    class="msg-action-btn flex items-center justify-center w-[25px] h-[25px] rounded-[6px] text-[13px] cursor-pointer"
+                    :class="{ 'msg-action-btn--disliked': msgFeedback[msg.id] === 'disliked' }"
+                    :title="t('assistant.dislikeMsg')"
+                    @click="toggleDislike(msg.id)"
+                >
+                  <span
+                      :class="msgFeedback[msg.id] === 'disliked' ? 'i-mdi-thumb-down' : 'i-mdi-thumb-down-outline'"></span>
                 </button>
               </div>
             </div>
@@ -503,12 +564,13 @@ const askQuickQuestion = (text: string) => {
 
         </template>
 
-        <!-- 思考中动画（600ms 延迟期） -->
-        <div v-if="isSending && streamingMsgId === null" class="msg-row msg-row--ai">
-          <div class="msg-avatar msg-avatar--ai">
+        <!-- 思考中动画 -->
+        <div v-if="isSending && streamingMsgId === null" class="flex items-start gap-2.5">
+          <div
+              class="msg-avatar msg-avatar--ai flex items-center justify-center w-[34px] h-[34px] rounded-[9px] text-[17px] shrink-0 mt-0.5">
             <span class="i-mdi-robot-outline"></span>
           </div>
-          <div class="msg-bubble msg-bubble--ai msg-bubble--typing">
+          <div class="msg-bubble msg-bubble--ai rounded-[14px] rounded-bl-[4px] flex items-center gap-1.5 px-4 py-3.5">
             <span class="typing-dot"></span>
             <span class="typing-dot"></span>
             <span class="typing-dot"></span>
@@ -517,112 +579,75 @@ const askQuickQuestion = (text: string) => {
       </div>
 
       <!-- 底部输入区 -->
-      <div class="chat-input-area">
-        <div class="chat-input-wrap">
+      <div class="chat-input-area shrink-0 px-6 pt-3.5 pb-4.5">
+        <div class="chat-input-wrap flex items-end gap-2 px-4 py-2.5 rounded-[14px]">
           <textarea
-            ref="textareaRef"
-            v-model="inputText"
-            class="chat-input"
-            :placeholder="t('assistant.inputPlaceholder')"
-            :disabled="isSending"
-            @keydown="handleKeydown"
-            @input="autoResize"
+              ref="textareaRef"
+              v-model="inputText"
+              class="chat-input flex-1 text-sm leading-[1.6] resize-none overflow-y-hidden font-inherit p-0 border-none outline-none bg-transparent"
+              :placeholder="t('assistant.inputPlaceholder')"
+              :disabled="isSending"
+              @keydown="handleKeydown"
+              @input="autoResize"
           ></textarea>
           <button
-            class="input-send-btn"
-            :class="{ 'input-send-btn--active': inputText.trim() && !isSending }"
-            :disabled="!inputText.trim() || isSending"
-            @click="sendMessage"
-            :title="t('assistant.send')"
+              class="input-send-btn flex items-center justify-center w-[34px] h-[34px] rounded-[9px] text-[16px] shrink-0 transition-all"
+              :class="{ 'input-send-btn--active': inputText.trim() && !isSending }"
+              :disabled="!inputText.trim() || isSending"
+              @click="sendMessage"
+              :title="t('assistant.send')"
           >
             <span v-if="!isSending" class="i-mdi-send"></span>
             <span v-else class="i-mdi-loading spin"></span>
           </button>
         </div>
-        <p class="chat-input-hint">{{ t('assistant.inputHint') }}</p>
+        <p class="text-[11px] text-center mt-1.5 opacity-75" style="color: var(--home-text-muted)">
+          {{ t('assistant.inputHint') }}</p>
       </div>
     </main>
   </div>
 </template>
 
 <style scoped>
-/* ===================== 布局 ===================== */
-.assistant-page {
-  display: flex;
-  height: 100%;
-  overflow: hidden;
-  background: var(--home-bg);
-}
-
-/* ===================== 左侧历史侧边栏 ===================== */
+/* ===== 侧边栏宽度过渡（不能用原子类）===== */
 .conv-sidebar {
   width: 272px;
-  min-width: 272px;
-  display: flex;
-  flex-direction: column;
   background: var(--home-card-bg);
   border-right: 1px solid var(--home-border);
-  overflow: hidden;
-  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-              min-width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .conv-sidebar--collapsed {
   width: 52px;
-  min-width: 52px;
 }
 
-/* 收起状态按钮列 */
-.collapsed-btns {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 12px 0;
-}
-
-.collapsed-divider {
-  width: 28px;
-  height: 1px;
-  background: var(--home-border);
-  margin: 6px 0;
-}
-
+/* ===== 侧边栏分区边框（主题变量）===== */
 .conv-sidebar-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 12px 12px;
   border-bottom: 1px solid var(--home-border);
-  flex-shrink: 0;
 }
 
-.conv-brand {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.conv-sidebar-footer {
+  border-top: 1px solid var(--home-border);
 }
 
-.conv-brand-icon {
-  font-size: 20px;
-  color: #6366f1;
-  flex-shrink: 0;
-}
-
-.conv-brand-text {
-  font-size: 15px;
-  font-weight: 700;
+/* ===== 搜索输入框（伪类 + 主题）===== */
+.conv-search-input {
+  padding: 6px 10px 6px 32px;
+  border: 1px solid var(--home-border);
+  background: var(--home-bg);
   color: var(--home-text-primary);
-  letter-spacing: 0.02em;
-  white-space: nowrap;
+  transition: border-color 0.2s;
 }
 
-.conv-header-btns {
-  display: flex;
-  gap: 4px;
+.conv-search-input::placeholder {
+  color: var(--home-text-muted);
 }
 
-/* 通用图标按钮 */
+.conv-search-input:focus {
+  border-color: rgba(99, 102, 241, 0.5);
+}
+
+/* ===== 通用图标按钮（hover + 主题）===== */
 .icon-btn {
   display: flex;
   align-items: center;
@@ -652,76 +677,15 @@ const askQuickQuestion = (text: string) => {
   font-size: 17px;
 }
 
-.icon-btn--active {
-  background: rgba(99, 102, 241, 0.12);
-  border-color: rgba(99, 102, 241, 0.3);
-  color: #6366f1;
-}
-
-/* 搜索框 */
-.conv-search {
-  padding: 8px 10px;
-  flex-shrink: 0;
-  position: relative;
-}
-
-.conv-search-icon {
-  position: absolute;
-  /* left: 10px(padding) + 10px(input padding-left)/2 = 18px，让图标在 input 的左内边距中居中 */
-  left: 20px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 14px;
-  color: var(--home-text-muted);
-  pointer-events: none;
-  line-height: 1;
-  display: flex;
-}
-
-.conv-search-input {
-  width: 100%;
-  padding: 6px 10px 6px 32px;
-  border: 1px solid var(--home-border);
-  border-radius: 8px;
-  background: var(--home-bg);
-  color: var(--home-text-primary);
-  font-size: 13px;
-  outline: none;
-  transition: border-color 0.2s;
-}
-
-.conv-search-input::placeholder {color: var(--home-text-muted);}
-.conv-search-input:focus {border-color: rgba(99, 102, 241, 0.5);}
-
-/* 会话列表 */
-.conv-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 4px 6px;
-}
-
-.conv-list-label {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--home-text-muted);
-  padding: 8px 8px 5px;
-}
-
+/* ===== 会话条目（hover + active 主题色）===== */
 .conv-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 9px;
-  padding: 9px;
-  border-radius: 9px;
-  cursor: pointer;
-  transition: background 0.16s;
-  margin-bottom: 2px;
   border: 1px solid transparent;
+  transition: background 0.16s;
 }
 
-.conv-item:hover {background: var(--home-hover-bg);}
+.conv-item:hover {
+  background: var(--home-hover-bg);
+}
 
 .conv-item--active {
   background: rgba(99, 102, 241, 0.08);
@@ -729,216 +693,51 @@ const askQuickQuestion = (text: string) => {
 }
 
 .conv-item-icon {
-  flex-shrink: 0;
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 7px;
   background: rgba(99, 102, 241, 0.08);
-  color: #6366f1;
-  font-size: 15px;
-  margin-top: 1px;
 }
 
-.conv-item--active .conv-item-icon {background: rgba(99, 102, 241, 0.18);}
-
-.conv-item-body {flex: 1; min-width: 0;}
-
-.conv-item-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--home-text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.conv-item--active .conv-item-icon {
+  background: rgba(99, 102, 241, 0.18);
 }
 
-.conv-item-preview {
-  font-size: 12px;
-  color: var(--home-text-muted);
-  margin-top: 2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.conv-item-time {
-  font-size: 11px;
-  color: var(--home-text-muted);
-  margin-top: 3px;
-  opacity: 0.65;
-}
-
-.conv-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: 32px 16px;
-  color: var(--home-text-muted);
-  font-size: 13px;
-}
-
-.conv-empty-icon {font-size: 26px; opacity: 0.45;}
-
-.conv-sidebar-footer {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 11px 14px;
-  border-top: 1px solid var(--home-border);
-  font-size: 11px;
-  color: var(--home-text-muted);
-  flex-shrink: 0;
-  line-height: 1;
-}
-
-.conv-sidebar-footer > span {
-  display: flex;
-  align-items: center;
-  line-height: 1;
-}
-
-.conv-sidebar-footer > span:first-child {
-  font-size: 13px;
-  flex-shrink: 0;
-}
-
-/* ===================== 右侧主体 ===================== */
-.chat-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  min-width: 0;
-}
-
-/* 顶部标题栏 */
+/* ===== 顶部栏（主题背景 + 边框）===== */
 .chat-topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 24px;
-  border-bottom: 1px solid var(--home-border);
   background: var(--home-bg);
-  flex-shrink: 0;
+  border-bottom: 1px solid var(--home-border);
 }
 
-.chat-topbar-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.chat-topbar-icon {
-  font-size: 24px;
-  color: #6366f1;
-  flex-shrink: 0;
-}
-
-.chat-topbar-title {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--home-text-primary);
-  line-height: 1.3;
-}
-
-.chat-topbar-sub {
-  font-size: 12px;
-  color: var(--home-text-muted);
-  margin-top: 1px;
-}
-
+/* ===== 顶部徽章（主题色）===== */
 .chat-topbar-badge {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 600;
   color: #6366f1;
   background: rgba(99, 102, 241, 0.08);
   border: 1px solid rgba(99, 102, 241, 0.18);
-  padding: 4px 10px;
-  border-radius: 20px;
-  letter-spacing: 0.04em;
 }
 
 .chat-topbar-badge-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
   background: #6366f1;
   animation: badgePulse 2s ease-in-out infinite;
 }
 
 @keyframes badgePulse {
-  0%, 100% {opacity: 1;}
-  50% {opacity: 0.35;}
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
 }
 
-/* ===================== 欢迎屏 ===================== */
-.chat-welcome {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 32px;
-  gap: 12px;
-}
-
+/* ===== 欢迎头像（渐变背景）===== */
 .welcome-avatar {
-  width: 68px;
-  height: 68px;
-  border-radius: 20px;
   background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(139, 92, 246, 0.12));
   border: 1px solid rgba(99, 102, 241, 0.22);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 6px;
 }
 
-.welcome-avatar-icon {font-size: 32px; color: #6366f1;}
-
-.welcome-title {
-  font-size: 21px;
-  font-weight: 700;
-  color: var(--home-text-primary);
-  text-align: center;
-}
-
-.welcome-sub {
-  font-size: 14px;
-  color: var(--home-text-muted);
-  text-align: center;
-  max-width: 440px;
-  line-height: 1.7;
-}
-
-.quick-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-  margin-top: 20px;
-  max-width: 540px;
-  width: 100%;
-}
-
+/* ===== 快捷问题卡片（hover）===== */
 .quick-card {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 13px 15px;
   border: 1px solid var(--home-card-border);
-  border-radius: 11px;
   background: var(--home-card-bg);
   color: var(--home-text-secondary);
-  font-size: 13px;
-  text-align: left;
-  cursor: pointer;
   transition: all 0.2s;
 }
 
@@ -950,40 +749,7 @@ const askQuickQuestion = (text: string) => {
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
 }
 
-.quick-card-icon {font-size: 19px; flex-shrink: 0; color: #6366f1; opacity: 0.8;}
-.quick-card-text {line-height: 1.4;}
-
-/* ===================== 消息区 ===================== */
-.chat-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.msg-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-}
-
-.msg-row--user {flex-direction: row-reverse;}
-
-/* 头像 */
-.msg-avatar {
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 17px;
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
+/* ===== 消息头像 ===== */
 .msg-avatar--ai {
   background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(139, 92, 246, 0.18));
   border: 1px solid rgba(99, 102, 241, 0.22);
@@ -996,20 +762,10 @@ const askQuickQuestion = (text: string) => {
   color: #10b981;
 }
 
-/* 气泡 */
-.msg-bubble {
-  max-width: 66%;
-  border-radius: 14px;
-  padding: 11px 15px;
-  font-size: 14px;
-  line-height: 1.75;
-  position: relative;
-}
-
+/* ===== 消息气泡 ===== */
 .msg-bubble--user {
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
   color: #fff;
-  border-bottom-right-radius: 4px;
   box-shadow: 0 2px 10px rgba(99, 102, 241, 0.28);
 }
 
@@ -1017,88 +773,69 @@ const askQuickQuestion = (text: string) => {
   background: var(--home-card-bg);
   border: 1px solid var(--home-card-border);
   color: var(--home-text-primary);
-  border-bottom-left-radius: 4px;
   box-shadow: 0 2px 6px var(--home-card-shadow);
 }
 
-/* 用户消息时间 */
-.msg-time-user {
-  display: block;
-  font-size: 11px;
-  margin-top: 4px;
-  opacity: 0.65;
-  text-align: right;
-}
-
-/* AI 消息头部 */
-.msg-ai-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 6px;
-}
-
-.msg-ai-name {font-size: 12px; font-weight: 700; color: #6366f1;}
-.msg-time {font-size: 11px; color: var(--home-text-muted);}
-
-/* 流式输出状态徽章 */
+/* ===== 流式状态徽章 ===== */
 .streaming-badge {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
   color: #10b981;
   background: rgba(16, 185, 129, 0.08);
   border: 1px solid rgba(16, 185, 129, 0.2);
-  padding: 1px 7px;
-  border-radius: 10px;
-  font-weight: 500;
 }
 
 .streaming-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
   background: #10b981;
   animation: streamDotPulse 1s ease-in-out infinite;
 }
 
 @keyframes streamDotPulse {
-  0%, 100% {opacity: 1; transform: scale(1);}
-  50% {opacity: 0.4; transform: scale(0.7);}
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.7);
+  }
 }
 
-/* 流式光标 */
+/* ===== 流式光标 ===== */
+.stream-cursor, .stream-cursor-only {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: #6366f1;
+  vertical-align: text-bottom;
+  border-radius: 1px;
+  animation: cursorBlink 0.7s step-end infinite;
+}
+
 .stream-cursor {
-  display: inline-block;
-  width: 2px;
-  height: 1em;
-  background: #6366f1;
   margin-left: 1px;
-  vertical-align: text-bottom;
-  border-radius: 1px;
-  animation: cursorBlink 0.7s step-end infinite;
-}
-
-.stream-cursor-only {
-  display: inline-block;
-  width: 2px;
-  height: 1em;
-  background: #6366f1;
-  vertical-align: text-bottom;
-  border-radius: 1px;
-  animation: cursorBlink 0.7s step-end infinite;
 }
 
 @keyframes cursorBlink {
-  0%, 100% {opacity: 1;}
-  50% {opacity: 0;}
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
 }
 
-/* 消息内容 */
-.msg-content :deep(p) {margin-bottom: 8px;}
-.msg-content :deep(p:last-child) {margin-bottom: 0;}
-.msg-content :deep(strong) {color: var(--home-text-primary); font-weight: 700;}
+/* ===== 消息内容 :deep ===== */
+.msg-content :deep(p) {
+  margin-bottom: 8px;
+}
+
+.msg-content :deep(p:last-child) {
+  margin-bottom: 0;
+}
+
+.msg-content :deep(strong) {
+  color: var(--home-text-primary);
+  font-weight: 700;
+}
 
 .msg-content :deep(code) {
   background: rgba(99, 102, 241, 0.1);
@@ -1122,7 +859,9 @@ const askQuickQuestion = (text: string) => {
   font-size: 13px;
 }
 
-.msg-content :deep(tr) {border-bottom: 1px solid var(--home-border);}
+.msg-content :deep(tr) {
+  border-bottom: 1px solid var(--home-border);
+}
 
 .msg-content :deep(td) {
   padding: 5px 9px;
@@ -1135,29 +874,20 @@ const askQuickQuestion = (text: string) => {
   background: rgba(99, 102, 241, 0.04);
 }
 
-/* 消息操作按钮 */
+/* ===== 消息操作按钮（hover）===== */
 .msg-actions {
-  display: flex;
-  gap: 4px;
-  margin-top: 8px;
   opacity: 0;
   transition: opacity 0.2s;
 }
 
-.msg-bubble:hover .msg-actions {opacity: 1;}
+.msg-bubble--ai:hover .msg-actions {
+  opacity: 1;
+}
 
 .msg-action-btn {
-  width: 25px;
-  height: 25px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   border: 1px solid var(--home-border);
-  border-radius: 6px;
   background: transparent;
   color: var(--home-text-muted);
-  font-size: 13px;
-  cursor: pointer;
   transition: all 0.15s;
 }
 
@@ -1167,14 +897,28 @@ const askQuickQuestion = (text: string) => {
   background: rgba(99, 102, 241, 0.06);
 }
 
-/* 思考中打字动画 */
-.msg-bubble--typing {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 14px 16px;
+/* 复制成功：绿色 */
+.msg-action-btn--copied {
+  border-color: rgba(16, 185, 129, 0.4) !important;
+  color: #10b981 !important;
+  background: rgba(16, 185, 129, 0.08) !important;
 }
 
+/* 点赞激活：蓝紫色 */
+.msg-action-btn--liked {
+  border-color: rgba(99, 102, 241, 0.45) !important;
+  color: #6366f1 !important;
+  background: rgba(99, 102, 241, 0.1) !important;
+}
+
+/* 踩激活：琥珀橙色 */
+.msg-action-btn--disliked {
+  border-color: rgba(245, 158, 11, 0.45) !important;
+  color: #f59e0b !important;
+  background: rgba(245, 158, 11, 0.08) !important;
+}
+
+/* ===== 打字动画 ===== */
 .typing-dot {
   width: 7px;
   height: 7px;
@@ -1184,29 +928,33 @@ const askQuickQuestion = (text: string) => {
   animation: typingBounce 1.2s infinite;
 }
 
-.typing-dot:nth-child(2) {animation-delay: 0.2s;}
-.typing-dot:nth-child(3) {animation-delay: 0.4s;}
-
-@keyframes typingBounce {
-  0%, 60%, 100% {transform: translateY(0); opacity: 0.35;}
-  30% {transform: translateY(-6px); opacity: 1;}
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
 }
 
-/* ===================== 底部输入区 ===================== */
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typingBounce {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+  30% {
+    transform: translateY(-6px);
+    opacity: 1;
+  }
+}
+
+/* ===== 输入区（主题 + 伪类）===== */
 .chat-input-area {
-  padding: 14px 24px 18px;
-  border-top: 1px solid var(--home-border);
   background: var(--home-bg);
-  flex-shrink: 0;
+  border-top: 1px solid var(--home-border);
 }
 
 .chat-input-wrap {
-  display: flex;
-  align-items: flex-end;
-  gap: 8px;
-  padding: 9px 10px 9px 15px;
   border: 1px solid var(--home-border);
-  border-radius: 14px;
   background: var(--home-card-bg);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
@@ -1217,22 +965,9 @@ const askQuickQuestion = (text: string) => {
 }
 
 .chat-input {
-  flex: 1;
-  border: none;
-  outline: none;
-  background: transparent;
   color: var(--home-text-primary);
-  font-size: 14px;
-  line-height: 1.6;
-  resize: none;
-  overflow-y: hidden;
-  font-family: inherit;
-  /* 初始高度 = 1行，由 JS autoResize 动态扩展，最多 3 行 */
   height: 23px;
   min-height: 23px;
-  /* 垂直方向不加 padding，由外层 wrap 的 padding 负责视觉居中 */
-  padding: 0;
-  /* 对齐到 flex 容器底部，多行时自然向上扩展 */
   align-self: center;
 }
 
@@ -1241,20 +976,12 @@ const askQuickQuestion = (text: string) => {
   line-height: 1.6;
 }
 
+/* ===== 发送按钮 ===== */
 .input-send-btn {
-  width: 34px;
-  height: 34px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   border: none;
-  border-radius: 9px;
   background: rgba(99, 102, 241, 0.15);
   color: rgba(99, 102, 241, 0.5);
-  font-size: 16px;
   cursor: not-allowed;
-  transition: all 0.18s;
-  flex-shrink: 0;
 }
 
 .input-send-btn--active {
@@ -1269,19 +996,17 @@ const askQuickQuestion = (text: string) => {
   box-shadow: 0 4px 14px rgba(99, 102, 241, 0.42);
 }
 
-.chat-input-hint {
-  margin-top: 7px;
-  font-size: 11px;
-  color: var(--home-text-muted);
-  text-align: center;
-  opacity: 0.75;
+/* ===== 旋转动画 ===== */
+.spin {
+  animation: spin 1s linear infinite;
 }
 
-/* 旋转动画 */
-.spin {animation: spin 1s linear infinite;}
-
 @keyframes spin {
-  from {transform: rotate(0deg);}
-  to {transform: rotate(360deg);}
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>
