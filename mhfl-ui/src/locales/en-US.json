@@ -260,6 +260,8 @@
     "attachFile": "Attach file",
     "send": "Send",
     "collapseSidebar": "Collapse sidebar",
-    "expandSidebar": "Expand sidebar"
+    "expandSidebar": "Expand sidebar",
+    "thinking": "Thinking...",
+    "streaming": "Outputting..."
   }
 }

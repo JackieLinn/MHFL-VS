@@ -260,6 +260,8 @@
     "attachFile": "上传文件",
     "send": "发送",
     "collapseSidebar": "收起侧边栏",
-    "expandSidebar": "展开侧边栏"
+    "expandSidebar": "展开侧边栏",
+    "thinking": "思考中",
+    "streaming": "正在输出"
   }
 }
