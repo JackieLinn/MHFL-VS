@@ -33,7 +33,12 @@ const menuItems = computed<MenuItem[]>(() => {
   const isAdmin = getUserInfo()?.role === 'admin'
   const items: MenuItem[] = [
     {key: 'dashboard', label: t('sidebar.dashboard'), icon: 'i-mdi-view-dashboard-outline', path: '/home/dashboard'},
-    {key: 'task', label: isAdmin ? t('sidebar.taskManage') : t('sidebar.myTasks'), icon: 'i-mdi-clipboard-list-outline', path: '/home/task'},
+    {
+      key: 'task',
+      label: isAdmin ? t('sidebar.taskManage') : t('sidebar.myTasks'),
+      icon: 'i-mdi-clipboard-list-outline',
+      path: '/home/task'
+    },
     {key: 'recommended', label: t('sidebar.recommendedShow'), icon: 'i-mdi-trophy-outline', path: '/home/recommended'},
     {key: 'assistant', label: t('sidebar.smartAssistant'), icon: 'i-mdi-robot-outline', path: '/home/assistant'},
   ]
@@ -79,7 +84,8 @@ const handleMenuClick = (path: string) => {
     <!-- 收缩/展开按钮 -->
     <div class="collapse-btn p-3 cursor-pointer flex items-center justify-center transition-all border-t"
          @click="toggleCollapse">
-      <span :class="isCollapsed ? 'i-mdi-chevron-right' : 'i-mdi-chevron-left'" class="text-lg transition-transform"></span>
+      <span :class="isCollapsed ? 'i-mdi-menu-open' : 'i-mdi-menu-close'"
+            class="text-xl transition-transform"></span>
     </div>
   </aside>
 </template>
