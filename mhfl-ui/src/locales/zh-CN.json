@@ -240,5 +240,24 @@
     "system": "跟随系统",
     "light": "浅色模式",
     "dark": "深色模式"
+  },
+  "assistant": {
+    "newChat": "新建对话",
+    "searchPlaceholder": "搜索历史对话...",
+    "recentChats": "历史对话",
+    "noConvFound": "未找到相关对话",
+    "footerTip": "由大模型提供支持",
+    "welcomeTitle": "你好，我是 MHFL 智能助手",
+    "welcomeSub": "我可以帮你解答联邦学习相关问题、推荐算法配置、分析训练结果，快来试试吧！",
+    "msgCount": "共 {count} 条消息",
+    "clearChat": "清空对话",
+    "exportChat": "导出对话",
+    "copyMsg": "复制",
+    "likeMsg": "有用",
+    "dislikeMsg": "无用",
+    "inputPlaceholder": "输入你的问题，按 Enter 发送（Shift+Enter 换行）",
+    "inputHint": "AI 助手可能出现错误，建议核实重要信息",
+    "attachFile": "上传文件",
+    "send": "发送"
   }
 }

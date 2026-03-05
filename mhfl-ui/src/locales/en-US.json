@@ -240,5 +240,24 @@
     "system": "Follow System",
     "light": "Light Mode",
     "dark": "Dark Mode"
+  },
+  "assistant": {
+    "newChat": "New Chat",
+    "searchPlaceholder": "Search conversations...",
+    "recentChats": "Recent Chats",
+    "noConvFound": "No conversations found",
+    "footerTip": "Powered by LLM",
+    "welcomeTitle": "Hi, I'm MHFL Smart Assistant",
+    "welcomeSub": "I can help you with federated learning questions, algorithm recommendations, and training result analysis. Let's get started!",
+    "msgCount": "{count} messages",
+    "clearChat": "Clear Chat",
+    "exportChat": "Export Chat",
+    "copyMsg": "Copy",
+    "likeMsg": "Helpful",
+    "dislikeMsg": "Not helpful",
+    "inputPlaceholder": "Ask a question, press Enter to send (Shift+Enter for newline)",
+    "inputHint": "AI may make mistakes. Please verify important information.",
+    "attachFile": "Attach file",
+    "send": "Send"
   }
 }
