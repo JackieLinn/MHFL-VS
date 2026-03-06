@@ -13,7 +13,7 @@ const setDataset = (ds: DatasetType) => {
 </script>
 
 <template>
-  <div class="recommended-page p-8 pb-4 h-full flex flex-col min-h-0">
+  <div class="recommended-page p-8 pb-4 min-h-full flex flex-col">
     <PageHeader
         class="mb-5"
         :title="$t('pages.recommended.title')"
@@ -42,8 +42,8 @@ const setDataset = (ds: DatasetType) => {
       </div>
     </div>
 
-    <!-- 内容区：根据切换显示不同占位 -->
-    <div class="flex-1 min-h-0 flex flex-col">
+    <!-- 内容区：完整展开，由外层 content-area 滚动 -->
+    <div class="flex-1 flex flex-col min-w-0">
       <RecommendedContent :dataset="activeDataset"/>
     </div>
   </div>

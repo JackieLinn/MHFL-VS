@@ -193,7 +193,14 @@
       "metricAccuracy": "Accuracy",
       "metricPrecision": "Precision",
       "metricRecall": "Recall",
-      "metricF1": "F1 Score"
+      "metricF1": "F1 Score",
+      "expMetricsCompare": "Algorithm Comparison",
+      "algoStandalone": "Standalone",
+      "algoFedProto": "FedProto",
+      "algoFedAvg": "FedAvg",
+      "algoFedSSA": "FedSSA",
+      "algoLGFedAvg": "LG-FedAvg",
+      "algoOurs": "Ours"
     },
     "assistant": {
       "title": "Smart Assistant",
