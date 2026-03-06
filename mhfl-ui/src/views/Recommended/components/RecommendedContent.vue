@@ -167,11 +167,11 @@ const metricKeys = [
                 }}</span>
             </td>
             <td
-                v-for="(_, idx) in algorithmKeys"
-                :key="idx"
+                v-for="(algo, idx) in algorithmKeys"
+                :key="algo.key"
                 class="recommended-td-value py-3 px-4 text-center text-lg font-bold tabular-nums text-[var(--home-text-primary)]"
             >
-              {{ m.format(algorithmMetrics[idx][m.val]) }}
+              {{ m.format(algorithmMetrics[idx]?.[m.val] ?? 0) }}
             </td>
           </tr>
           </tbody>
