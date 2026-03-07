@@ -9,10 +9,10 @@ const props = defineProps<{
 
 // 6 个算法 key，用于 i18n 和数据结构
 const algorithmKeys = [
-  {key: 'algoStandalone', color: 'indigo'},
+  {key: 'algoStandalone', color: 'blue'},
   {key: 'algoFedProto', color: 'green'},
   {key: 'algoFedAvg', color: 'teal'},
-  {key: 'algoFedSSA', color: 'purple'},
+  {key: 'algoFedSSA', color: 'fuchsia'},
   {key: 'algoLGFedAvg', color: 'amber'},
   {key: 'algoOurs', color: 'rose'}
 ] as const
@@ -360,10 +360,10 @@ html.dark .recommended-setting-icon {
   transform: translateY(-1px);
 }
 
-.recommended-algo-badge-indigo {
-  color: #6366f1;
-  background: rgba(99, 102, 241, 0.12);
-  border: 1px solid rgba(99, 102, 241, 0.25);
+.recommended-algo-badge-blue {
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.25);
 }
 
 .recommended-algo-badge-green {
@@ -378,10 +378,10 @@ html.dark .recommended-setting-icon {
   border: 1px solid rgba(13, 148, 136, 0.25);
 }
 
-.recommended-algo-badge-purple {
-  color: #8b5cf6;
-  background: rgba(139, 92, 246, 0.12);
-  border: 1px solid rgba(139, 92, 246, 0.25);
+.recommended-algo-badge-fuchsia {
+  color: #d946ef;
+  background: rgba(217, 70, 239, 0.12);
+  border: 1px solid rgba(217, 70, 239, 0.25);
 }
 
 .recommended-algo-badge-amber {
@@ -396,10 +396,10 @@ html.dark .recommended-setting-icon {
   border: 1px solid rgba(244, 63, 94, 0.25);
 }
 
-html.dark .recommended-algo-badge-indigo {
-  color: #a5b4fc;
-  background: rgba(99, 102, 241, 0.18);
-  border-color: rgba(99, 102, 241, 0.35);
+html.dark .recommended-algo-badge-blue {
+  color: #60a5fa;
+  background: rgba(59, 130, 246, 0.18);
+  border-color: rgba(59, 130, 246, 0.35);
 }
 
 html.dark .recommended-algo-badge-green {
@@ -414,10 +414,10 @@ html.dark .recommended-algo-badge-teal {
   border-color: rgba(14, 165, 164, 0.35);
 }
 
-html.dark .recommended-algo-badge-purple {
-  color: #c4b5fd;
-  background: rgba(139, 92, 246, 0.18);
-  border-color: rgba(139, 92, 246, 0.35);
+html.dark .recommended-algo-badge-fuchsia {
+  color: #e879f9;
+  background: rgba(217, 70, 239, 0.18);
+  border-color: rgba(217, 70, 239, 0.35);
 }
 
 html.dark .recommended-algo-badge-amber {
@@ -448,8 +448,8 @@ html.dark .recommended-algo-badge-rose {
   min-width: 90px;
 }
 
-.recommended-th-indigo {
-  color: #6366f1;
+.recommended-th-blue {
+  color: #3b82f6;
 }
 
 .recommended-th-green {
@@ -460,8 +460,8 @@ html.dark .recommended-algo-badge-rose {
   color: #0d9488;
 }
 
-.recommended-th-purple {
-  color: #8b5cf6;
+.recommended-th-fuchsia {
+  color: #d946ef;
 }
 
 .recommended-th-amber {
@@ -472,8 +472,8 @@ html.dark .recommended-algo-badge-rose {
   color: #f43f5e;
 }
 
-html.dark .recommended-th-indigo {
-  color: #a5b4fc;
+html.dark .recommended-th-blue {
+  color: #60a5fa;
 }
 
 html.dark .recommended-th-green {
@@ -484,8 +484,8 @@ html.dark .recommended-th-teal {
   color: #5eead4;
 }
 
-html.dark .recommended-th-purple {
-  color: #c4b5fd;
+html.dark .recommended-th-fuchsia {
+  color: #e879f9;
 }
 
 html.dark .recommended-th-amber {
