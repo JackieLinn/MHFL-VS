@@ -218,7 +218,9 @@
       "clientModelCnn2": "CNN2",
       "clientModelCnn3": "CNN3",
       "clientModelCnn4": "CNN4",
-      "clientModelCnn5": "CNN5"
+      "clientModelCnn5": "CNN5",
+      "clientDetailBtn": "View Details",
+      "clientDetailTitle": "Client Training Details"
     },
     "assistant": {
       "title": "Smart Assistant",

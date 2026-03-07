@@ -77,27 +77,186 @@ const clientMetricOptions = [
 
 const selectedClientMetric = ref<'accuracy' | 'precision' | 'recall' | 'f1'>('accuracy')
 
+const clientDetailVisible = ref(false)
+const selectedClientId = ref(0)
+
+const openClientDetail = (clientIndex: number) => {
+  selectedClientId.value = clientIndex
+  selectedClientDetailMetric.value = selectedClientMetric.value
+  clientDetailVisible.value = true
+}
+
+const selectedClientDetailMetric = ref<'accuracy' | 'precision' | 'recall' | 'f1'>('accuracy')
+
+const clientDetailChartRef = ref<HTMLElement | null>(null)
+let clientDetailChartInst: echarts.ECharts | null = null
+
+const closeClientDetail = () => {
+  clientDetailVisible.value = false
+  clientDetailChartInst?.dispose()
+  clientDetailChartInst = null
+}
+
+const onClientDetailClosed = () => {
+  clientDetailChartInst?.dispose()
+  clientDetailChartInst = null
+}
+
+const initClientDetailChart = () => {
+  nextTick(() => {
+    if (!clientDetailChartRef.value || !clientDetailVisible.value) return
+    clientDetailChartInst?.dispose()
+    clientDetailChartInst = echarts.init(clientDetailChartRef.value)
+    updateClientDetailChart()
+  })
+}
+
+const updateClientDetailChart = () => {
+  if (!clientDetailChartInst || !clientDetailVisible.value) return
+  const data = clientDetailChartData.value
+  const metric = selectedClientDetailMetric.value
+  if (!data?.[metric]) return
+  const textColor = chartTextColor()
+  const mutedColor = chartMutedColor()
+  const isDark = document.documentElement.classList.contains('dark')
+  const rounds = Array.from({length: numRounds.value}, (_, i) => i + 1)
+  const option = {
+    backgroundColor: 'transparent',
+    tooltip: {
+      trigger: 'axis',
+      textStyle: {fontSize: 12, color: textColor},
+      axisPointer: {
+        type: 'line',
+        lineStyle: {color: isDark ? 'rgba(99,102,241,0.5)' : 'rgba(99,102,241,0.3)', type: 'dashed'}
+      },
+      backgroundColor: chartTooltipBg(),
+      borderColor: chartTooltipBorder(),
+      borderWidth: 1,
+      padding: [8, 12],
+      formatter: (params: { axisValue?: number; data?: number }[]) => {
+        const round = params[0]?.axisValue ?? 0
+        const lines = (params ?? []).map((p, i) => {
+          const name = algorithmKeys[i] ? t(`pages.recommended.${algorithmKeys[i].key}`) : ''
+          const val = typeof p?.data === 'number' ? (p.data * 100).toFixed(2) + '%' : '-'
+          return `${name}: ${val}`
+        })
+        return `Round ${round}<br/>${lines.join('<br/>')}`
+      }
+    },
+    legend: {
+      type: 'scroll',
+      bottom: 0,
+      left: 'center',
+      textStyle: {color: textColor, fontSize: 12},
+      itemWidth: 20,
+      itemHeight: 10,
+      itemGap: 14,
+      padding: [2, 0, 0, 0],
+      data: algorithmKeys.map((a) => t(`pages.recommended.${a.key}`))
+    },
+    grid: {left: 52, right: 20, top: 24, bottom: 72},
+    xAxis: {
+      type: 'category',
+      data: rounds,
+      name: t('pages.recommended.chartXAxis'),
+      nameLocation: 'middle',
+      nameGap: 36,
+      nameTextStyle: {color: textColor, fontSize: 12, fontWeight: 500},
+      axisLine: {lineStyle: {color: mutedColor}},
+      axisLabel: {
+        color: textColor,
+        fontSize: 11,
+        margin: 8,
+        interval: (idx: number) => idx === 0 || idx % 50 === 49 || idx === numRounds.value - 1
+      }
+    },
+    yAxis: {
+      type: 'value',
+      scale: true,
+      axisLabel: {
+        color: textColor,
+        fontSize: 11,
+        formatter: (v: number) => (v * 100).toFixed(1) + '%'
+      },
+      splitLine: {lineStyle: {color: mutedColor, type: 'dashed', opacity: 0.25}},
+      axisLine: {show: false},
+      axisTick: {show: false}
+    },
+    series: algorithmKeys.map((algo, idx) => ({
+      name: t(`pages.recommended.${algo.key}`),
+      type: 'line',
+      data: data[metric]?.[idx] ?? [],
+      smooth: 0.25,
+      symbol: 'none',
+      lineStyle: {width: 2.5, color: chartColors[idx]},
+      itemStyle: {color: chartColors[idx]},
+      emphasis: {focus: 'series', lineStyle: {width: 3.5}}
+    }))
+  }
+  clientDetailChartInst.setOption(option, {notMerge: true})
+}
+
 // 客户端 i 对应模型：1-5 循环
 const getClientModel = (i: number) => ((i - 1) % 5) + 1
 
 const cnnColors = ['#3b82f6', '#22c55e', '#0d9488', '#d946ef', '#f59e0b'] as const
 
+// 100 客户端 × 6 算法 × 4 指标；基于 algorithmMetrics 加 per-client 噪声
 const clientMetrics = computed(() => {
-  const bases = props.dataset === 'cifar100'
-      ? {accuracy: 0.6479, precision: 0.638, recall: 0.634, f1: 0.636}
-      : {accuracy: 0.4633, precision: 0.454, recall: 0.449, f1: 0.451}
-  const spread = props.dataset === 'cifar100' ? 0.12 : 0.10
-  return Array.from({length: 100}, (_, i) => {
-    const noise = (Math.sin(i * 0.5) * 0.5 + Math.cos(i * 0.3) * 0.5) * spread
-    const offset = noise - spread / 2
+  const bases = algorithmMetrics.value
+  const spread = props.dataset === 'cifar100' ? 0.08 : 0.06
+  return Array.from({length: 100}, (_, clientIdx) => {
+    const noise = (Math.sin(clientIdx * 0.5) * 0.5 + Math.cos(clientIdx * 0.3) * 0.5) * spread
     return {
-      accuracy: Math.max(0.2, Math.min(0.85, bases.accuracy + offset)),
-      precision: Math.max(0.2, Math.min(0.85, bases.precision + offset * 0.95)),
-      recall: Math.max(0.2, Math.min(0.85, bases.recall + offset * 1.02)),
-      f1: Math.max(0.2, Math.min(0.85, bases.f1 + offset * 0.98))
+      accuracy: bases.map((row) => Math.max(0.2, Math.min(0.85, (row.accuracy ?? 0) + noise))),
+      precision: bases.map((row) => Math.max(0.2, Math.min(0.85, (row.precision ?? 0) + noise * 0.98))),
+      recall: bases.map((row) => Math.max(0.2, Math.min(0.85, (row.recall ?? 0) + noise * 1.02))),
+      f1: bases.map((row) => Math.max(0.2, Math.min(0.85, (row.f1 ?? 0) + noise)))
     }
   })
 })
+
+// 客户端 clientIndex 在 round r 是否被选中（每轮 10 个：r%10, 10+r%10, ..., 90+r%10）
+const isClientTrainedInRound = (clientIndex: number, round: number) =>
+    clientIndex % 10 === round % 10
+
+// 生成客户端详情曲线：500 轮，被训练则更新，否则沿用上一值
+const clientDetailChartData = computed(() => {
+  const clientIdx = selectedClientId.value - 1
+  if (clientIdx < 0) return null
+  const metrics = clientMetrics.value[clientIdx]
+  if (!metrics) return null
+  const rounds = numRounds.value
+  const result: Record<string, number[][]> = {}
+  for (const m of chartMetricKeys) {
+    result[m.val] = algorithmKeys.map((_, ai) => {
+      const finalVal = metrics[m.val]?.[ai] ?? 0
+      const init = finalVal * 0.18
+      const points: number[] = []
+      let last = init
+      for (let r = 0; r < rounds; r++) {
+        if (isClientTrainedInRound(clientIdx, r)) {
+          const t = r / Math.max(rounds - 1, 1)
+          const progress = 1 - Math.exp(-3.2 * t)
+          last = init + (finalVal - init) * progress + (Math.random() - 0.5) * 0.02
+        }
+        points.push(Math.max(0.01, Math.min(0.99, last)))
+      }
+      points[points.length - 1] = finalVal
+      return points
+    })
+  }
+  return result
+})
+
+watch(clientDetailVisible, (visible) => {
+  if (visible) {
+    nextTick(() => setTimeout(initClientDetailChart, 50))
+  }
+})
+watch([selectedClientId, selectedClientDetailMetric, clientDetailChartData], () => {
+  if (clientDetailVisible.value) updateClientDetailChart()
+}, {deep: true})
 
 // 6 个实验设置（不含数据集，顶部已有数据集切换）
 const settingKeys = [
@@ -492,12 +651,13 @@ onBeforeUnmount(() => {
           </button>
         </div>
       </div>
-      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 relative z-[1]">
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-4 relative z-[1]">
         <div
             v-for="i in 100"
             :key="i"
             class="recommended-client-cell"
             :class="`recommended-client-cell-cnn${getClientModel(i)}`"
+            @click="openClientDetail(i)"
         >
           <div class="recommended-client-header">
             <span class="recommended-client-label">{{ $t('pages.recommended.clientLabel') }} {{ i }}</span>
@@ -508,26 +668,79 @@ onBeforeUnmount(() => {
               {{ $t(`pages.recommended.clientModelCnn${getClientModel(i)}`) }}
             </span>
           </div>
-          <div class="recommended-client-ring-wrap">
-            <svg class="recommended-client-ring" viewBox="0 0 36 36">
-              <circle class="recommended-client-ring-bg" cx="18" cy="18" r="15.9"/>
-              <circle
-                  class="recommended-client-ring-fill"
-                  cx="18"
-                  cy="18"
-                  r="15.9"
-                  :stroke-dasharray="100"
-                  :stroke-dashoffset="100 - (clientMetrics[i - 1]?.[selectedClientMetric] ?? 0) * 100"
-                  :style="{stroke: cnnColors[getClientModel(i) - 1]}"
-              />
-            </svg>
-            <span class="recommended-client-ring-value tabular-nums">
-              {{ ((clientMetrics[i - 1]?.[selectedClientMetric] ?? 0) * 100).toFixed(1) }}%
-            </span>
+          <div class="recommended-client-rings-grid">
+            <div
+                v-for="(algo, ai) in algorithmKeys"
+                :key="algo.key"
+                class="recommended-client-mini-ring"
+                :title="`${$t('pages.recommended.' + algo.key)}: ${((clientMetrics[i - 1]?.[selectedClientMetric]?.[ai] ?? 0) * 100).toFixed(2)}%`"
+            >
+              <div class="recommended-client-mini-ring-wrap">
+                <svg viewBox="0 0 36 36" class="recommended-client-mini-svg">
+                  <circle class="recommended-client-ring-bg" cx="18" cy="18" r="15.9"/>
+                  <circle
+                      class="recommended-client-ring-fill"
+                      cx="18"
+                      cy="18"
+                      r="15.9"
+                      :stroke-dasharray="100"
+                      :stroke-dashoffset="100 - (clientMetrics[i - 1]?.[selectedClientMetric]?.[ai] ?? 0) * 100"
+                      :style="{stroke: chartColors[ai]}"
+                  />
+                </svg>
+                <span class="recommended-client-mini-value tabular-nums">
+                  {{ ((clientMetrics[i - 1]?.[selectedClientMetric]?.[ai] ?? 0) * 100).toFixed(2) }}%
+                </span>
+              </div>
+            </div>
           </div>
+          <button
+              type="button"
+              class="recommended-client-detail-btn"
+              @click.stop="openClientDetail(i)"
+          >
+            {{ $t('pages.recommended.clientDetailBtn') }}
+          </button>
         </div>
       </div>
     </section>
+
+    <!-- 客户端详情弹窗 -->
+    <el-dialog
+        v-model="clientDetailVisible"
+        :title="$t('pages.recommended.clientDetailTitle')"
+        width="640px"
+        append-to-body
+        align-center
+        destroy-on-close
+        modal-class="client-detail-dialog"
+        @closed="onClientDetailClosed"
+    >
+      <div v-if="selectedClientId > 0" class="client-detail-content">
+        <div class="client-detail-info mb-4">
+          <span class="client-detail-label">{{ $t('pages.recommended.clientLabel') }} {{ selectedClientId }}</span>
+          <span class="client-detail-model">{{
+              $t('pages.recommended.clientModelLabel')
+            }}: {{ $t(`pages.recommended.clientModelCnn${getClientModel(selectedClientId)}`) }}</span>
+        </div>
+        <div class="flex flex-wrap gap-2 mb-4">
+          <button
+              v-for="opt in clientMetricOptions"
+              :key="opt.val"
+              type="button"
+              class="client-detail-metric-btn px-3 py-1.5 text-xs rounded"
+              :class="selectedClientDetailMetric === opt.val ? 'client-detail-metric-active' : ''"
+              @click="selectedClientDetailMetric = opt.val"
+          >
+            {{ $t(`pages.recommended.${opt.key}`) }}
+          </button>
+        </div>
+        <div
+            class="client-detail-chart-wrap rounded-xl border border-[var(--home-card-border)] bg-[var(--home-hover-bg)] p-4">
+          <div ref="clientDetailChartRef" class="w-full h-[340px]"></div>
+        </div>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -671,12 +884,13 @@ html.dark .recommended-client-metric-btn-active {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 12px 8px;
+  padding: 16px 12px;
   border-radius: 12px;
   background: var(--home-hover-bg);
   border: 1px solid transparent;
   border-left: 3px solid var(--client-accent, var(--home-card-border));
   transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  cursor: pointer;
 }
 
 .recommended-client-cell:hover {
@@ -684,6 +898,104 @@ html.dark .recommended-client-metric-btn-active {
   background: var(--home-card-bg);
   box-shadow: 0 4px 16px rgba(99, 102, 241, 0.12);
   transform: translateY(-2px);
+}
+
+.recommended-client-rings-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  margin-bottom: 10px;
+  width: 100%;
+  min-height: 64px;
+}
+
+.recommended-client-mini-ring {
+  min-width: 0;
+}
+
+.recommended-client-mini-ring-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+}
+
+.recommended-client-mini-svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.recommended-client-mini-value {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--home-text-primary);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.recommended-client-detail-btn {
+  font-size: 11px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--home-card-border);
+  background: transparent;
+  color: var(--home-text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.recommended-client-detail-btn:hover {
+  border-color: #6366f1;
+  color: #6366f1;
+  background: rgba(99, 102, 241, 0.08);
+}
+
+.client-detail-info {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.client-detail-label {
+  font-weight: 600;
+  color: var(--home-text-primary);
+}
+
+.client-detail-model {
+  font-size: 13px;
+  color: var(--home-text-muted);
+}
+
+.client-detail-metric-btn {
+  border: 1px solid var(--home-card-border);
+  background: var(--home-hover-bg);
+  color: var(--home-text-muted);
+  transition: all 0.2s ease;
+}
+
+.client-detail-metric-btn:hover {
+  border-color: rgba(99, 102, 241, 0.4);
+  color: #6366f1;
+}
+
+.client-detail-metric-active {
+  border-color: #6366f1;
+  background: rgba(99, 102, 241, 0.12);
+  color: #6366f1;
+}
+
+.client-detail-chart-wrap {
+  transition: border-color 0.2s ease;
+}
+
+.client-detail-chart-wrap:hover {
+  border-color: rgba(99, 102, 241, 0.3);
 }
 
 html.dark .recommended-client-cell:hover {
@@ -700,15 +1012,15 @@ html.dark .recommended-client-cell:hover {
 }
 
 .recommended-client-label {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--home-text-muted);
   white-space: nowrap;
 }
 
 .recommended-client-model-badge {
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 600;
-  padding: 2px 6px;
+  padding: 2px 8px;
   border-radius: 6px;
   border: 1px solid;
   background: transparent;
@@ -1060,5 +1372,14 @@ html.dark .recommended-td-best {
   .recommended-algo-badge:hover {
     transform: none;
   }
+}
+</style>
+
+<style>
+/* 客户端详情弹窗：modal-class 使 overlay 居中，确保弹窗在页面中央可见 */
+.client-detail-dialog.el-overlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>

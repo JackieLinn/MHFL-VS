@@ -218,7 +218,9 @@
       "clientModelCnn2": "CNN2",
       "clientModelCnn3": "CNN3",
       "clientModelCnn4": "CNN4",
-      "clientModelCnn5": "CNN5"
+      "clientModelCnn5": "CNN5",
+      "clientDetailBtn": "查看详情",
+      "clientDetailTitle": "客户端训练详情"
     },
     "assistant": {
       "title": "智能助手",
