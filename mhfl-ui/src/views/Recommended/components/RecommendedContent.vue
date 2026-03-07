@@ -651,7 +651,7 @@ onBeforeUnmount(() => {
           </button>
         </div>
       </div>
-      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-4 relative z-[1]">
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 relative z-[1]">
         <div
             v-for="i in 100"
             :key="i"
@@ -884,7 +884,7 @@ html.dark .recommended-client-metric-btn-active {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 16px 12px;
+  padding: 14px 10px;
   border-radius: 12px;
   background: var(--home-hover-bg);
   border: 1px solid transparent;
@@ -902,11 +902,10 @@ html.dark .recommended-client-metric-btn-active {
 
 .recommended-client-rings-grid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px 8px;
   margin-bottom: 6px;
   width: 100%;
-  min-height: 64px;
 }
 
 .recommended-client-mini-ring {
@@ -931,7 +930,7 @@ html.dark .recommended-client-metric-btn-active {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--home-text-primary);
   font-variant-numeric: tabular-nums;
@@ -941,7 +940,7 @@ html.dark .recommended-client-metric-btn-active {
 
 .recommended-client-detail-btn {
   font-size: 11px;
-  padding: 6px 12px;
+  padding: 5px 10px;
   border-radius: 6px;
   border: 1px solid var(--home-card-border);
   background: transparent;
@@ -1007,8 +1006,8 @@ html.dark .recommended-client-cell:hover {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  margin-bottom: 14px;
+  gap: 3px;
+  margin-bottom: 10px;
 }
 
 .recommended-client-label {
@@ -1020,7 +1019,7 @@ html.dark .recommended-client-cell:hover {
 .recommended-client-model-badge {
   font-size: 10px;
   font-weight: 600;
-  padding: 2px 8px;
+  padding: 2px 6px;
   border-radius: 6px;
   border: 1px solid;
   background: transparent;
