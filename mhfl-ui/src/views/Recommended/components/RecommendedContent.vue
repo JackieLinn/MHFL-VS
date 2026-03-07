@@ -67,6 +67,38 @@ const algorithmMetrics = computed(() => {
   ]
 })
 
+// 100 个客户端四个指标：占位数据，后续由接口获取
+const clientMetricOptions = [
+  {val: 'accuracy', key: 'clientMetricAccuracy'},
+  {val: 'precision', key: 'clientMetricPrecision'},
+  {val: 'recall', key: 'clientMetricRecall'},
+  {val: 'f1', key: 'clientMetricF1'}
+] as const
+
+const selectedClientMetric = ref<'accuracy' | 'precision' | 'recall' | 'f1'>('accuracy')
+
+// 客户端 i 对应模型：1-5 循环
+const getClientModel = (i: number) => ((i - 1) % 5) + 1
+
+const cnnColors = ['#3b82f6', '#22c55e', '#0d9488', '#d946ef', '#f59e0b'] as const
+
+const clientMetrics = computed(() => {
+  const bases = props.dataset === 'cifar100'
+      ? {accuracy: 0.6479, precision: 0.638, recall: 0.634, f1: 0.636}
+      : {accuracy: 0.4633, precision: 0.454, recall: 0.449, f1: 0.451}
+  const spread = props.dataset === 'cifar100' ? 0.12 : 0.10
+  return Array.from({length: 100}, (_, i) => {
+    const noise = (Math.sin(i * 0.5) * 0.5 + Math.cos(i * 0.3) * 0.5) * spread
+    const offset = noise - spread / 2
+    return {
+      accuracy: Math.max(0.2, Math.min(0.85, bases.accuracy + offset)),
+      precision: Math.max(0.2, Math.min(0.85, bases.precision + offset * 0.95)),
+      recall: Math.max(0.2, Math.min(0.85, bases.recall + offset * 1.02)),
+      f1: Math.max(0.2, Math.min(0.85, bases.f1 + offset * 0.98))
+    }
+  })
+})
+
 // 6 个实验设置（不含数据集，顶部已有数据集切换）
 const settingKeys = [
   {key: 'settingNumNodes', val: 'numNodes', icon: 'i-mdi-account-group-outline'},
@@ -437,6 +469,65 @@ onBeforeUnmount(() => {
         </div>
       </div>
     </section>
+
+    <!-- 各客户端指标：100 个客户端，5 列 20 行，圆形进度环 + 指标切换 -->
+    <section class="recommended-section recommended-tech-card relative overflow-hidden rounded-xl py-5 px-6 shrink-0">
+      <div class="recommended-card-glow"></div>
+      <div class="recommended-card-scanline"></div>
+      <div class="flex flex-wrap items-center justify-between gap-4 mb-4 relative z-[1]">
+        <h3 class="recommended-section-title m-0 text-[15px] font-semibold flex items-center gap-2">
+          <span class="i-mdi-account-multiple-outline recommended-section-icon text-xl"></span>
+          {{ $t('pages.recommended.clientAccuracyTitle') }}
+        </h3>
+        <div class="flex rounded-lg overflow-hidden border border-[var(--home-card-border)]">
+          <button
+              v-for="opt in clientMetricOptions"
+              :key="opt.val"
+              type="button"
+              class="recommended-client-metric-btn px-3 py-1.5 text-xs font-medium transition-colors"
+              :class="selectedClientMetric === opt.val ? 'recommended-client-metric-btn-active' : 'recommended-client-metric-btn-inactive'"
+              @click="selectedClientMetric = opt.val"
+          >
+            {{ $t(`pages.recommended.${opt.key}`) }}
+          </button>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 relative z-[1]">
+        <div
+            v-for="i in 100"
+            :key="i"
+            class="recommended-client-cell"
+            :class="`recommended-client-cell-cnn${getClientModel(i)}`"
+        >
+          <div class="recommended-client-header">
+            <span class="recommended-client-label">{{ $t('pages.recommended.clientLabel') }} {{ i }}</span>
+            <span
+                class="recommended-client-model-badge"
+                :style="{borderColor: cnnColors[getClientModel(i) - 1], color: cnnColors[getClientModel(i) - 1]}"
+            >
+              {{ $t(`pages.recommended.clientModelCnn${getClientModel(i)}`) }}
+            </span>
+          </div>
+          <div class="recommended-client-ring-wrap">
+            <svg class="recommended-client-ring" viewBox="0 0 36 36">
+              <circle class="recommended-client-ring-bg" cx="18" cy="18" r="15.9"/>
+              <circle
+                  class="recommended-client-ring-fill"
+                  cx="18"
+                  cy="18"
+                  r="15.9"
+                  :stroke-dasharray="100"
+                  :stroke-dashoffset="100 - (clientMetrics[i - 1]?.[selectedClientMetric] ?? 0) * 100"
+                  :style="{stroke: cnnColors[getClientModel(i) - 1]}"
+              />
+            </svg>
+            <span class="recommended-client-ring-value tabular-nums">
+              {{ ((clientMetrics[i - 1]?.[selectedClientMetric] ?? 0) * 100).toFixed(1) }}%
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
 </template>
 
@@ -554,6 +645,136 @@ html.dark .recommended-chart-card:hover {
 
 .recommended-chart-inner {
   min-height: 0;
+}
+
+.recommended-client-metric-btn-inactive {
+  color: var(--home-text-muted);
+  background: transparent;
+}
+
+.recommended-client-metric-btn-inactive:hover {
+  color: var(--home-text-primary);
+  background: var(--home-hover-bg);
+}
+
+.recommended-client-metric-btn-active {
+  color: #fff;
+  background: #6366f1;
+}
+
+html.dark .recommended-client-metric-btn-active {
+  background: #6366f1;
+}
+
+.recommended-client-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 8px;
+  border-radius: 12px;
+  background: var(--home-hover-bg);
+  border: 1px solid transparent;
+  border-left: 3px solid var(--client-accent, var(--home-card-border));
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.recommended-client-cell:hover {
+  border-color: rgba(99, 102, 241, 0.4);
+  background: var(--home-card-bg);
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.12);
+  transform: translateY(-2px);
+}
+
+html.dark .recommended-client-cell:hover {
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.15);
+}
+
+.recommended-client-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.recommended-client-label {
+  font-size: 11px;
+  color: var(--home-text-muted);
+  white-space: nowrap;
+}
+
+.recommended-client-model-badge {
+  font-size: 9px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 6px;
+  border: 1px solid;
+  background: transparent;
+  letter-spacing: 0.3px;
+}
+
+.recommended-client-cell-cnn1 {
+  --client-accent: #3b82f6;
+}
+
+.recommended-client-cell-cnn2 {
+  --client-accent: #22c55e;
+}
+
+.recommended-client-cell-cnn3 {
+  --client-accent: #0d9488;
+}
+
+.recommended-client-cell-cnn4 {
+  --client-accent: #d946ef;
+}
+
+.recommended-client-cell-cnn5 {
+  --client-accent: #f59e0b;
+}
+
+.recommended-client-ring-wrap {
+  position: relative;
+  width: 52px;
+  height: 52px;
+}
+
+.recommended-client-ring {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.recommended-client-ring-bg {
+  fill: none;
+  stroke: var(--home-card-border);
+  stroke-width: 3;
+}
+
+.recommended-client-ring-fill {
+  fill: none;
+  stroke: #6366f1;
+  stroke-width: 3;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.35s ease;
+}
+
+html.dark .recommended-client-ring-fill {
+  stroke: #818cf8;
+}
+
+.recommended-client-ring-value {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--home-text-primary);
+  font-variant-numeric: tabular-nums;
 }
 
 .recommended-setting-item {

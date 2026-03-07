@@ -206,7 +206,19 @@
       "chartPrecision": "精确率 (%)",
       "chartRecall": "召回率 (%)",
       "chartF1": "F1分数 (%)",
-      "chartXAxis": "通信轮次"
+      "chartXAxis": "通信轮次",
+      "clientAccuracyTitle": "各客户端指标",
+      "clientLabel": "客户端",
+      "clientMetricAccuracy": "准确率",
+      "clientMetricPrecision": "精确率",
+      "clientMetricRecall": "召回率",
+      "clientMetricF1": "F1分数",
+      "clientModelLabel": "模型",
+      "clientModelCnn1": "CNN1",
+      "clientModelCnn2": "CNN2",
+      "clientModelCnn3": "CNN3",
+      "clientModelCnn4": "CNN4",
+      "clientModelCnn5": "CNN5"
     },
     "assistant": {
       "title": "智能助手",
