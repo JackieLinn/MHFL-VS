@@ -200,7 +200,13 @@
       "algoFedAvg": "FedAvg",
       "algoFedSSA": "FedSSA",
       "algoLGFedAvg": "LG-FedAvg",
-      "algoOurs": "Ours"
+      "algoOurs": "Ours",
+      "chartSectionTitle": "Test Set Curves",
+      "chartAccuracy": "Accuracy (%)",
+      "chartPrecision": "Precision (%)",
+      "chartRecall": "Recall (%)",
+      "chartF1": "F1 Score (%)",
+      "chartXAxis": "Communication Rounds"
     },
     "assistant": {
       "title": "Smart Assistant",

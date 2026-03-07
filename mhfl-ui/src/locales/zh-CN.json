@@ -200,7 +200,13 @@
       "algoFedAvg": "FedAvg",
       "algoFedSSA": "FedSSA",
       "algoLGFedAvg": "LG-FedAvg",
-      "algoOurs": "Ours"
+      "algoOurs": "Ours",
+      "chartSectionTitle": "测试集曲线",
+      "chartAccuracy": "准确率 (%)",
+      "chartPrecision": "精确率 (%)",
+      "chartRecall": "召回率 (%)",
+      "chartF1": "F1分数 (%)",
+      "chartXAxis": "通信轮次"
     },
     "assistant": {
       "title": "智能助手",

@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import {computed} from 'vue'
+import {computed, ref, watch, onMounted, onBeforeUnmount, nextTick} from 'vue'
 import {useI18n} from 'vue-i18n'
+import {useTheme} from '@/stores/theme'
+import * as echarts from 'echarts'
 
-const {t} = useI18n()
+const {t, locale} = useI18n()
+const {actualTheme} = useTheme()
 const props = defineProps<{
   dataset: 'cifar100' | 'tiny-imagenet'
 }>()
@@ -16,6 +19,31 @@ const algorithmKeys = [
   {key: 'algoLGFedAvg', color: 'amber'},
   {key: 'algoOurs', color: 'rose'}
 ] as const
+
+// 6 个算法在折线图中的颜色（与徽章一致）
+const chartColors = ['#3b82f6', '#22c55e', '#0d9488', '#d946ef', '#f59e0b', '#f43f5e'] as const
+
+// 生成缓慢上升并收敛的曲线：带适当波折，finalValue 为收敛值
+const generateConvergenceCurve = (
+    finalValue: number,
+    numRounds: number,
+    initRatio = 0.18,
+    convergeSpeed = 3.2,
+    noiseScale = 0.018
+): number[] => {
+  const init = finalValue * initRatio
+  const points: number[] = []
+  for (let r = 0; r < numRounds; r++) {
+    const t = r / Math.max(numRounds - 1, 1)
+    const progress = 1 - Math.exp(-convergeSpeed * t)
+    const base = init + (finalValue - init) * progress
+    const decay = 1 - t * 0.6
+    const noise = (Math.random() - 0.5) * 2 * noiseScale * decay
+    points.push(Math.max(0.01, Math.min(0.99, base + noise)))
+  }
+  points[points.length - 1] = finalValue
+  return points
+}
 
 // 占位数据：后续由接口根据 dataset 参数获取。6 组数据，每组 5 个指标；Ours 均为最优
 const algorithmMetrics = computed(() => {
@@ -70,12 +98,12 @@ const settings = computed(() => {
   }
 })
 
-// 每行指标的最优值索引：loss 取最小，其余取最大
+// 每行指标的最优值索引：loss 不可比不标，其余取最大
 const getBestIndexForMetric = (val: string) => {
+  if (val === 'loss') return -1
   const data = algorithmMetrics.value
   if (!data?.length) return -1
   const values = data.map((d) => (d as Record<string, number>)[val] ?? 0)
-  if (val === 'loss') return values.indexOf(Math.min(...values))
   return values.indexOf(Math.max(...values))
 }
 
@@ -96,6 +124,203 @@ const metricKeys = [
   },
   {key: 'metricF1', val: 'f1', format: (v: number) => (v * 100).toFixed(2) + '%', icon: 'i-mdi-chart-bar'}
 ] as const
+
+// 折线图用到的 4 个指标（不含 loss）
+const chartMetricKeys = [
+  {key: 'chartAccuracy', val: 'accuracy'},
+  {key: 'chartPrecision', val: 'precision'},
+  {key: 'chartRecall', val: 'recall'},
+  {key: 'chartF1', val: 'f1'}
+] as const
+
+const numRounds = computed(() => (props.dataset === 'cifar100' ? 500 : 300))
+
+// 每个指标的 6 条曲线数据
+const chartSeriesData = computed(() => {
+  const metrics = algorithmMetrics.value
+  const rounds = numRounds.value
+  const result: Record<string, number[][]> = {}
+  for (const m of chartMetricKeys) {
+    result[m.val] = metrics.map((row) =>
+        generateConvergenceCurve((row as Record<string, number>)[m.val] ?? 0, rounds)
+    )
+  }
+  return result
+})
+
+const chartAccuracyRef = ref<HTMLElement | null>(null)
+const chartPrecisionRef = ref<HTMLElement | null>(null)
+const chartRecallRef = ref<HTMLElement | null>(null)
+const chartF1Ref = ref<HTMLElement | null>(null)
+let chartAccuracyInst: echarts.ECharts | null = null
+let chartPrecisionInst: echarts.ECharts | null = null
+let chartRecallInst: echarts.ECharts | null = null
+let chartF1Inst: echarts.ECharts | null = null
+
+const getChartColorVar = (name: string): string => {
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+  return v || (document.documentElement.classList.contains('dark') ? '#e2e8f0' : '#1e293b')
+}
+
+const chartTextColor = () => getChartColorVar('--home-text-primary')
+const chartMutedColor = () => getChartColorVar('--home-text-muted')
+const chartTooltipBg = () =>
+    document.documentElement.classList.contains('dark')
+        ? 'rgba(15, 23, 42, 0.92)'
+        : 'rgba(255, 255, 255, 0.96)'
+const chartTooltipBorder = () => getChartColorVar('--home-card-border')
+
+const makeChartOption = (metricVal: string, titleKey: string) => {
+  const textColor = chartTextColor()
+  const mutedColor = chartMutedColor()
+  const isDark = document.documentElement.classList.contains('dark')
+  const rounds = Array.from({length: numRounds.value}, (_, i) => i + 1)
+  const seriesData = chartSeriesData.value[metricVal] ?? []
+
+  return {
+    backgroundColor: 'transparent',
+    title: {
+      text: t(`pages.recommended.${titleKey}`),
+      left: 0,
+      top: 0,
+      textStyle: {color: textColor, fontSize: 14, fontWeight: 600}
+    },
+    tooltip: {
+      trigger: 'axis',
+      textStyle: {fontSize: 12, color: textColor},
+      axisPointer: {
+        type: 'line',
+        lineStyle: {color: isDark ? 'rgba(99,102,241,0.5)' : 'rgba(99,102,241,0.3)', type: 'dashed'}
+      },
+      backgroundColor: chartTooltipBg(),
+      borderColor: chartTooltipBorder(),
+      borderWidth: 1,
+      padding: [8, 12],
+      formatter: (params: { axisValue?: number; data?: number }[]) => {
+        const round = params[0]?.axisValue ?? 0
+        const lines = (params ?? []).map((p, i) => {
+          const name = algorithmKeys[i] ? t(`pages.recommended.${algorithmKeys[i].key}`) : ''
+          const val = typeof p?.data === 'number' ? (p.data * 100).toFixed(2) + '%' : '-'
+          return `${name}: ${val}`
+        })
+        return `Round ${round}<br/>${lines.join('<br/>')}`
+      }
+    },
+    legend: {
+      type: 'scroll',
+      bottom: 0,
+      left: 'center',
+      textStyle: {color: textColor, fontSize: 11},
+      itemWidth: 14,
+      itemHeight: 8,
+      itemGap: 12,
+      padding: [6, 0, 0, 0],
+      data: algorithmKeys.map((a) => t(`pages.recommended.${a.key}`))
+    },
+    grid: {left: 52, right: 20, top: 36, bottom: 100},
+    xAxis: {
+      type: 'category',
+      data: rounds,
+      name: t('pages.recommended.chartXAxis'),
+      nameLocation: 'middle',
+      nameGap: 38,
+      nameTextStyle: {color: textColor, fontSize: 12, fontWeight: 500},
+      axisLine: {lineStyle: {color: mutedColor}},
+      axisLabel: {
+        color: textColor,
+        fontSize: 11,
+        margin: 8,
+        interval: (idx: number) => idx === 0 || idx % 50 === 49 || idx === numRounds.value - 1
+      }
+    },
+    yAxis: {
+      type: 'value',
+      scale: true,
+      axisLabel: {
+        color: textColor,
+        fontSize: 11,
+        formatter: (v: number) => (v * 100).toFixed(1) + '%'
+      },
+      splitLine: {lineStyle: {color: mutedColor, type: 'dashed', opacity: 0.25}},
+      axisLine: {show: false},
+      axisTick: {show: false}
+    },
+    series: algorithmKeys.map((algo, idx) => ({
+      name: t(`pages.recommended.${algo.key}`),
+      type: 'line',
+      data: seriesData[idx] ?? [],
+      smooth: 0.25,
+      symbol: 'none',
+      lineStyle: {width: 2.5, color: chartColors[idx]},
+      itemStyle: {color: chartColors[idx]},
+      emphasis: {focus: 'series', lineStyle: {width: 3.5}}
+    }))
+  }
+}
+
+const initCharts = () => {
+  nextTick(() => {
+    if (chartAccuracyRef.value && !chartAccuracyInst) {
+      chartAccuracyInst = echarts.init(chartAccuracyRef.value)
+      chartAccuracyInst.setOption(makeChartOption('accuracy', 'chartAccuracy'))
+    }
+    if (chartPrecisionRef.value && !chartPrecisionInst) {
+      chartPrecisionInst = echarts.init(chartPrecisionRef.value)
+      chartPrecisionInst.setOption(makeChartOption('precision', 'chartPrecision'))
+    }
+    if (chartRecallRef.value && !chartRecallInst) {
+      chartRecallInst = echarts.init(chartRecallRef.value)
+      chartRecallInst.setOption(makeChartOption('recall', 'chartRecall'))
+    }
+    if (chartF1Ref.value && !chartF1Inst) {
+      chartF1Inst = echarts.init(chartF1Ref.value)
+      chartF1Inst.setOption(makeChartOption('f1', 'chartF1'))
+    }
+    connectCharts()
+  })
+}
+
+const connectCharts = () => {
+  const charts = [chartAccuracyInst, chartPrecisionInst, chartRecallInst, chartF1Inst].filter(Boolean)
+  if (charts.length === 4) echarts.connect(charts as echarts.ECharts[])
+}
+
+const updateCharts = () => {
+  chartAccuracyInst?.setOption(makeChartOption('accuracy', 'chartAccuracy'), {notMerge: true})
+  chartPrecisionInst?.setOption(makeChartOption('precision', 'chartPrecision'), {notMerge: true})
+  chartRecallInst?.setOption(makeChartOption('recall', 'chartRecall'), {notMerge: true})
+  chartF1Inst?.setOption(makeChartOption('f1', 'chartF1'), {notMerge: true})
+}
+
+const resizeCharts = () => {
+  chartAccuracyInst?.resize()
+  chartPrecisionInst?.resize()
+  chartRecallInst?.resize()
+  chartF1Inst?.resize()
+}
+
+watch([() => props.dataset, actualTheme, locale], () => {
+  updateCharts()
+})
+
+let resizeObserver: ResizeObserver | null = null
+
+onMounted(() => {
+  initCharts()
+  resizeObserver = new ResizeObserver(() => resizeCharts())
+  const container = document.querySelector('.recommended-content')
+  if (container) resizeObserver.observe(container)
+  window.addEventListener('resize', resizeCharts)
+})
+
+onBeforeUnmount(() => {
+  resizeObserver?.disconnect()
+  window.removeEventListener('resize', resizeCharts)
+  chartAccuracyInst?.dispose()
+  chartPrecisionInst?.dispose()
+  chartRecallInst?.dispose()
+  chartF1Inst?.dispose()
+})
 </script>
 
 <template>
@@ -186,6 +411,30 @@ const metricKeys = [
           </tr>
           </tbody>
         </table>
+      </div>
+    </section>
+
+    <!-- 4 个指标折线图：轮次 vs 指标值，6 算法同色系 -->
+    <section class="recommended-section recommended-tech-card relative overflow-hidden rounded-xl py-5 px-6 shrink-0">
+      <div class="recommended-card-glow"></div>
+      <div class="recommended-card-scanline"></div>
+      <h3 class="recommended-section-title m-0 mb-4 text-[15px] font-semibold flex items-center gap-2 relative z-[1]">
+        <span class="i-mdi-chart-timeline-variant recommended-section-icon text-xl"></span>
+        {{ $t('pages.recommended.chartSectionTitle') }}
+      </h3>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 relative z-[1]">
+        <div class="recommended-chart-card">
+          <div ref="chartAccuracyRef" class="recommended-chart-inner w-full h-[360px]"></div>
+        </div>
+        <div class="recommended-chart-card">
+          <div ref="chartPrecisionRef" class="recommended-chart-inner w-full h-[360px]"></div>
+        </div>
+        <div class="recommended-chart-card">
+          <div ref="chartRecallRef" class="recommended-chart-inner w-full h-[360px]"></div>
+        </div>
+        <div class="recommended-chart-card">
+          <div ref="chartF1Ref" class="recommended-chart-inner w-full h-[360px]"></div>
+        </div>
       </div>
     </section>
   </div>
@@ -279,6 +528,32 @@ html.dark .recommended-card-scanline {
 
 html.dark .recommended-section-icon {
   color: #a5b4fc;
+}
+
+.recommended-chart-card {
+  background: var(--home-hover-bg);
+  border: 1px solid var(--home-card-border);
+  border-radius: 12px;
+  padding: 16px;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.recommended-chart-card:hover {
+  border-color: rgba(99, 102, 241, 0.3);
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.06);
+}
+
+html.dark .recommended-chart-card {
+  background: rgba(99, 102, 241, 0.03);
+}
+
+html.dark .recommended-chart-card:hover {
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.08);
+}
+
+.recommended-chart-inner {
+  min-height: 0;
 }
 
 .recommended-setting-item {
