@@ -904,7 +904,7 @@ html.dark .recommended-client-metric-btn-active {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: 8px;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
   width: 100%;
   min-height: 64px;
 }
@@ -1008,7 +1008,7 @@ html.dark .recommended-client-cell:hover {
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  margin-bottom: 6px;
+  margin-bottom: 14px;
 }
 
 .recommended-client-label {
