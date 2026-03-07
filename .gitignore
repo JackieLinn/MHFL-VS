@@ -24,6 +24,7 @@ mhfl-server/uploads
 mhfl-ui/mhfl-ui.iml
 mhfl-ui/.vscode
 mhfl-ui/node_modules
+mhfl-ui/dist
 
 ### development-documentation ###
 AGENTS.md
