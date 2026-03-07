@@ -17,25 +17,25 @@ const algorithmKeys = [
   {key: 'algoOurs', color: 'rose'}
 ] as const
 
-// 占位数据：后续由接口根据 dataset 参数获取。6 组数据，每组 5 个指标
+// 占位数据：后续由接口根据 dataset 参数获取。6 组数据，每组 5 个指标；Ours 均为最优
 const algorithmMetrics = computed(() => {
   if (props.dataset === 'cifar100') {
     return [
-      {loss: 0.892, accuracy: 0.684, precision: 0.672, recall: 0.658, f1: 0.665},
-      {loss: 0.915, accuracy: 0.658, precision: 0.645, recall: 0.632, f1: 0.638},
-      {loss: 0.878, accuracy: 0.698, precision: 0.685, recall: 0.672, f1: 0.678},
-      {loss: 0.865, accuracy: 0.712, precision: 0.698, recall: 0.688, f1: 0.693},
-      {loss: 0.901, accuracy: 0.668, precision: 0.655, recall: 0.642, f1: 0.648},
-      {loss: 0.888, accuracy: 0.675, precision: 0.662, recall: 0.652, f1: 0.657}
+      {loss: 0.952, accuracy: 0.5812, precision: 0.572, recall: 0.568, f1: 0.570},
+      {loss: 0.978, accuracy: 0.5618, precision: 0.552, recall: 0.548, f1: 0.550},
+      {loss: 0.918, accuracy: 0.6124, precision: 0.603, recall: 0.598, f1: 0.600},
+      {loss: 0.935, accuracy: 0.5987, precision: 0.589, recall: 0.585, f1: 0.587},
+      {loss: 0.941, accuracy: 0.5903, precision: 0.581, recall: 0.577, f1: 0.579},
+      {loss: 0.868, accuracy: 0.6479, precision: 0.638, recall: 0.634, f1: 0.636}
     ]
   }
   return [
-    {loss: 1.245, accuracy: 0.521, precision: 0.508, recall: 0.495, f1: 0.501},
-    {loss: 1.312, accuracy: 0.498, precision: 0.485, recall: 0.472, f1: 0.478},
-    {loss: 1.198, accuracy: 0.538, precision: 0.525, recall: 0.512, f1: 0.518},
-    {loss: 1.176, accuracy: 0.552, precision: 0.538, recall: 0.525, f1: 0.531},
-    {loss: 1.268, accuracy: 0.505, precision: 0.492, recall: 0.478, f1: 0.485},
-    {loss: 1.222, accuracy: 0.515, precision: 0.502, recall: 0.488, f1: 0.495}
+    {loss: 1.452, accuracy: 0.3821, precision: 0.372, recall: 0.368, f1: 0.370},
+    {loss: 1.488, accuracy: 0.3615, precision: 0.351, recall: 0.347, f1: 0.349},
+    {loss: 1.398, accuracy: 0.4128, precision: 0.403, recall: 0.398, f1: 0.400},
+    {loss: 1.418, accuracy: 0.4012, precision: 0.391, recall: 0.387, f1: 0.389},
+    {loss: 1.435, accuracy: 0.3906, precision: 0.381, recall: 0.376, f1: 0.378},
+    {loss: 1.328, accuracy: 0.4633, precision: 0.454, recall: 0.449, f1: 0.451}
   ]
 })
 
@@ -69,6 +69,15 @@ const settings = computed(() => {
     epochs: 8
   }
 })
+
+// 每行指标的最优值索引：loss 取最小，其余取最大
+const getBestIndexForMetric = (val: string) => {
+  const data = algorithmMetrics.value
+  if (!data?.length) return -1
+  const values = data.map((d) => (d as Record<string, number>)[val] ?? 0)
+  if (val === 'loss') return values.indexOf(Math.min(...values))
+  return values.indexOf(Math.max(...values))
+}
 
 const metricKeys = [
   {key: 'metricLoss', val: 'loss', format: (v: number) => v.toFixed(3), icon: 'i-mdi-chart-line'},
@@ -169,7 +178,8 @@ const metricKeys = [
             <td
                 v-for="(algo, idx) in algorithmKeys"
                 :key="algo.key"
-                class="recommended-td-value py-3 px-4 text-center text-lg font-bold tabular-nums text-[var(--home-text-primary)]"
+                class="recommended-td-value py-3 px-4 text-center text-lg font-bold tabular-nums"
+                :class="idx === getBestIndexForMetric(m.val) ? 'recommended-td-best' : 'text-[var(--home-text-primary)]'"
             >
               {{ m.format(algorithmMetrics[idx]?.[m.val] ?? 0) }}
             </td>
@@ -523,6 +533,16 @@ html.dark .recommended-metric-row-icon {
 
 .recommended-td-value {
   min-width: 90px;
+}
+
+.recommended-td-best {
+  color: #059669;
+  background: rgba(5, 150, 105, 0.12);
+}
+
+html.dark .recommended-td-best {
+  color: #34d399;
+  background: rgba(5, 150, 105, 0.18);
 }
 
 @media (prefers-reduced-motion: reduce) {
