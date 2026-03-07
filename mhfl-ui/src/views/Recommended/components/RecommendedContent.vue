@@ -210,14 +210,14 @@ const makeChartOption = (metricVal: string, titleKey: string) => {
       type: 'scroll',
       bottom: 0,
       left: 'center',
-      textStyle: {color: textColor, fontSize: 11},
-      itemWidth: 14,
-      itemHeight: 8,
+      textStyle: {color: textColor, fontSize: 13},
+      itemWidth: 16,
+      itemHeight: 10,
       itemGap: 12,
-      padding: [6, 0, 0, 0],
+      padding: [2, 0, 0, 0],
       data: algorithmKeys.map((a) => t(`pages.recommended.${a.key}`))
     },
-    grid: {left: 52, right: 20, top: 36, bottom: 100},
+    grid: {left: 52, right: 20, top: 36, bottom: 78},
     xAxis: {
       type: 'category',
       data: rounds,
@@ -375,13 +375,13 @@ onBeforeUnmount(() => {
         <table class="w-full min-w-[560px] border-collapse">
           <thead>
           <tr>
-            <th class="recommended-th-metric text-left py-3 px-4 text-xs font-semibold text-[var(--home-text-muted)]">
+            <th class="recommended-th-metric text-left py-3 px-4 text-sm font-semibold text-[var(--home-text-muted)]">
               {{ $t('pages.recommended.expMetrics') }}
             </th>
             <th
                 v-for="algo in algorithmKeys"
                 :key="algo.key"
-                class="recommended-th-algo py-3 px-4 text-center text-sm font-semibold"
+                class="recommended-th-algo py-3 px-4 text-center text-base font-semibold"
                 :class="`recommended-th-${algo.color}`"
             >
               {{ $t(`pages.recommended.${algo.key}`) }}
