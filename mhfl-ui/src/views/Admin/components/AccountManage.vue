@@ -370,6 +370,12 @@ const onPageSizeChange = () => {
   flex-direction: column;
   gap: 2px;
   min-width: 0;
+  align-items: center;
+  text-align: center;
+}
+
+.row-cell .cell-value {
+  width: 100%;
 }
 
 .cell-label {
@@ -388,6 +394,8 @@ const onPageSizeChange = () => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
+  width: 100%;
 }
 
 .role-badge {
