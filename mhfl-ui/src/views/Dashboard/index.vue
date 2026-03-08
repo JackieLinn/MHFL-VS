@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import PageHeader from '@/components/PageHeader.vue'
+import BackToTop from '@/components/BackToTop.vue'
 import DashboardRealtimeResource from './components/DashboardRealtimeResource.vue'
 import DashboardPlatformOverview from './components/DashboardPlatformOverview.vue'
 import DashboardStatCards from './components/DashboardStatCards.vue'
@@ -10,7 +11,7 @@ import DashboardQuickActions from './components/DashboardQuickActions.vue'
 </script>
 
 <template>
-  <div class="dashboard-page dashboard-shell p-8 h-full overflow-y-auto">
+  <div id="dashboard-scroll" class="dashboard-page dashboard-shell p-8 h-full overflow-y-auto">
     <!-- 科技感背景网格 -->
     <div class="tech-grid-bg"></div>
 
@@ -31,6 +32,8 @@ import DashboardQuickActions from './components/DashboardQuickActions.vue'
       <DashboardSystemHealth/>
       <DashboardQuickActions/>
     </div>
+
+    <BackToTop scroll-target="#dashboard-scroll"/>
   </div>
 </template>
 

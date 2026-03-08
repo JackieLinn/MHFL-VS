@@ -69,5 +69,6 @@ export default defineConfig({
         'i-mdi-eye-outline',
         'i-mdi-chart-line',
         'i-mdi-clock-outline',
+        'i-mdi-arrow-up',
     ],
 })

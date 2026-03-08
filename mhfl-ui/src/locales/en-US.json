@@ -2,6 +2,7 @@
   "common": {
     "user": "User",
     "logout": "Logout",
+    "backToTop": "Back to top",
     "viewSource": "View Source Code",
     "copyright": "© 2026 MHFL-VS Platform. All rights reserved."
   },
