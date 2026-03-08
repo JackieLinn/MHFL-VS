@@ -1,15 +1,19 @@
 <script setup lang="ts">
-import {ref} from 'vue'
+import {ref, computed} from 'vue'
+import {useI18n} from 'vue-i18n'
 import ThemeSwitch from '@/components/ThemeSwitch.vue'
 import LocaleSwitch from '@/components/LocaleSwitch.vue'
 import LoginForm from './components/LoginForm.vue'
 import RegisterForm from './components/RegisterForm.vue'
 import ResetPasswordForm from './components/ResetPasswordForm.vue'
-import {Connection, DataAnalysis, Monitor, TrendCharts} from "@element-plus/icons-vue";
+import {DataAnalysis} from "@element-plus/icons-vue";
 
 type PanelType = 'login' | 'register' | 'reset'
 
 const currentPanel = ref<PanelType>('login')
+const {locale} = useI18n()
+
+const isZh = computed(() => locale.value === 'zh-CN')
 
 const switchPanel = (panel: PanelType) => {
   currentPanel.value = panel
@@ -22,7 +26,7 @@ const openGitHub = () => {
 </script>
 
 <template>
-  <div class="login-page">
+  <div class="login-page" :class="{ 'locale-zh': isZh, 'locale-en': !isZh }">
     <!-- 动态背景 -->
     <div class="bg-layer">
       <div class="gradient-bg"></div>
@@ -96,13 +100,11 @@ const openGitHub = () => {
           <h2 class="brand-subtitle">{{ $t('login.brandSubtitle') }}</h2>
           <p class="brand-desc">{{ $t('login.brandDesc') }}</p>
 
-          <!-- 核心能力 -->
+          <!-- 核心能力 2x2 布局 -->
           <div class="capabilities">
             <div class="capability-item">
               <div class="capability-icon">
-                <el-icon :size="20">
-                  <Connection/>
-                </el-icon>
+                <span class="i-mdi-link-variant text-[20px]"/>
               </div>
               <div class="capability-text">
                 <span class="capability-title">{{ $t('login.capability1Title') }}</span>
@@ -111,9 +113,7 @@ const openGitHub = () => {
             </div>
             <div class="capability-item">
               <div class="capability-icon">
-                <el-icon :size="20">
-                  <Monitor/>
-                </el-icon>
+                <span class="i-mdi-eye-outline text-[20px]"/>
               </div>
               <div class="capability-text">
                 <span class="capability-title">{{ $t('login.capability2Title') }}</span>
@@ -122,13 +122,20 @@ const openGitHub = () => {
             </div>
             <div class="capability-item">
               <div class="capability-icon">
-                <el-icon :size="20">
-                  <TrendCharts/>
-                </el-icon>
+                <span class="i-mdi-chart-line text-[20px]"/>
               </div>
               <div class="capability-text">
                 <span class="capability-title">{{ $t('login.capability3Title') }}</span>
                 <span class="capability-desc">{{ $t('login.capability3Desc') }}</span>
+              </div>
+            </div>
+            <div class="capability-item">
+              <div class="capability-icon">
+                <span class="i-mdi-robot-outline text-[20px]"/>
+              </div>
+              <div class="capability-text">
+                <span class="capability-title">{{ $t('login.capability4Title') }}</span>
+                <span class="capability-desc">{{ $t('login.capability4Desc') }}</span>
               </div>
             </div>
           </div>
@@ -191,7 +198,7 @@ const openGitHub = () => {
 
 @keyframes gradientShift {
   0%, 100% {
-    background-position: 0% 50%;
+    background-position: 0 50%;
   }
   50% {
     background-position: 100% 50%;
@@ -606,7 +613,8 @@ const openGitHub = () => {
 }
 
 .brand-content {
-  max-width: 500px;
+  max-width: 620px;
+  text-align: center;
 }
 
 .brand-content > * {
@@ -649,7 +657,7 @@ const openGitHub = () => {
   position: relative;
   width: 100px;
   height: 100px;
-  margin-bottom: 32px;
+  margin: 0 auto 32px;
 }
 
 .logo-ring {
@@ -709,7 +717,7 @@ const openGitHub = () => {
   height: 3px;
   background: linear-gradient(90deg, #6366f1, #a855f7);
   border-radius: 2px;
-  margin: 24px 0;
+  margin: 24px auto;
 }
 
 .brand-subtitle {
@@ -717,6 +725,10 @@ const openGitHub = () => {
   font-weight: 600;
   color: var(--login-text-primary);
   margin-bottom: 8px;
+}
+
+/* 英文：红色框副标题单行显示 */
+.login-page.locale-en .brand-subtitle {
   white-space: nowrap;
 }
 
@@ -726,16 +738,17 @@ const openGitHub = () => {
   margin-bottom: 32px;
 }
 
-/* 核心能力 */
+/* 核心能力 2x2 布局 */
 .capabilities {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 16px;
 }
 
 .capability-item {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: flex-start;
   gap: 16px;
   padding: 16px;
   background: var(--login-capability-bg);
@@ -747,8 +760,12 @@ const openGitHub = () => {
 .capability-item:hover {
   background: var(--login-capability-hover-bg);
   border-color: var(--login-capability-hover-border);
-  transform: translateX(8px);
+  transform: translateY(-4px);
   box-shadow: 0 4px 16px rgba(99, 102, 241, 0.1);
+}
+
+html.dark .capability-item:hover {
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.15);
 }
 
 .capability-icon {
@@ -764,9 +781,14 @@ const openGitHub = () => {
 }
 
 .capability-text {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 4px;
+  text-align: center;
 }
 
 .capability-title {
@@ -778,6 +800,12 @@ const openGitHub = () => {
 .capability-desc {
   font-size: 13px;
   color: var(--login-text-muted);
+}
+
+/* 标题和描述均单行显示 */
+.capability-title,
+.capability-desc {
+  white-space: nowrap;
 }
 
 /* ============ 表单区域 ============ */
@@ -907,8 +935,9 @@ const openGitHub = () => {
   }
 
   .capabilities {
-    max-width: 400px;
+    max-width: 540px;
     margin: 0 auto;
+    grid-template-columns: 1fr;
   }
 
   .form-section {

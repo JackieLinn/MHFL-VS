@@ -64,5 +64,9 @@ export default defineConfig({
         'i-mdi-crosshairs-gps',
         'i-mdi-chart-areaspline',
         'i-mdi-chart-bar',
+        'i-mdi-robot-outline',
+        'i-mdi-link-variant',
+        'i-mdi-eye-outline',
+        'i-mdi-chart-line',
     ],
 })

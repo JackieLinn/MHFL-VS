@@ -26,6 +26,8 @@
     "capability2Desc": "训练过程实时监控与分析",
     "capability3Title": "仿真模拟",
     "capability3Desc": "多场景联邦学习实验环境",
+    "capability4Title": "智能助手",
+    "capability4Desc": "AI 大模型智能问答与配置建议",
     "validation": {
       "usernameRequired": "请输入用户名",
       "passwordRequired": "请输入密码",
