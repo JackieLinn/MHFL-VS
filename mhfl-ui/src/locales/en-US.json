@@ -213,6 +213,14 @@
       "viewDetail": "View Detail",
       "createTask": "Create Task"
     },
+    "taskDetail": {
+      "title": "Task Detail",
+      "desc": "Details for task #{id}",
+      "backToList": "Back to List",
+      "basicInfo": "Basic Info",
+      "invalidId": "Invalid task ID",
+      "loadFailed": "Failed to load"
+    },
     "recommended": {
       "title": "Recommended",
       "desc": "Browse recommended success cases and configs",

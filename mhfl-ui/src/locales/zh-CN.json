@@ -213,6 +213,14 @@
       "viewDetail": "查看详情",
       "createTask": "创建新任务"
     },
+    "taskDetail": {
+      "title": "任务详情",
+      "desc": "任务 #{id} 的详细信息",
+      "backToList": "返回列表",
+      "basicInfo": "基本信息",
+      "invalidId": "无效的任务 ID",
+      "loadFailed": "加载失败"
+    },
     "recommended": {
       "title": "推荐展示",
       "desc": "查看平台推荐的成功案例与配置",

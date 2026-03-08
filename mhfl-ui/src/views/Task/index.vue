@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import {ref, computed, onMounted, watch} from 'vue'
+import {useRouter} from 'vue-router'
 import {useI18n} from 'vue-i18n'
 import {Search, Plus, View} from '@element-plus/icons-vue'
 import PageHeader from '@/components/PageHeader.vue'
 import {listTasks, type TaskVO, type TaskStatusCode} from '@/api/task'
 
+const router = useRouter()
 const {t} = useI18n()
 
 /** 状态码转显示文案 */
@@ -140,9 +142,9 @@ const onPageSizeChange = () => {
 
 const isEmpty = computed(() => !loading.value && list.value.length === 0)
 
-/** 查看详情（占位，后续实现） */
-const handleViewDetail = (_task: TaskVO) => {
-  // TODO: 跳转详情页或打开详情抽屉
+/** 查看详情：跳转任务详情页 */
+const handleViewDetail = (task: TaskVO) => {
+  router.push({name: 'TaskDetail', params: {id: String(task.id)}})
 }
 
 /** 创建新任务（占位，后续实现） */

@@ -30,6 +30,12 @@ const router = createRouter({
                     meta: {requiresAuth: true},
                 },
                 {
+                    path: "task/:id",
+                    name: "TaskDetail",
+                    component: () => import('@/views/TaskDetail/index.vue'),
+                    meta: {requiresAuth: true},
+                },
+                {
                     path: "recommended",
                     name: "Recommended",
                     component: () => import('@/views/Recommended/index.vue'),

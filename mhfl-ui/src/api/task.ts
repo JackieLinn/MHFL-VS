@@ -64,3 +64,14 @@ export const listTasks = (
     const query = q.toString()
     get(`/api/task/list${query ? `?${query}` : ''}`, success, failure)
 }
+
+/**
+ * 获取任务详情
+ */
+export const getTaskDetail = (
+    id: number,
+    success: (data: TaskVO) => void,
+    failure?: (message: string, code: number, url: string) => void
+) => {
+    get(`/api/task/${id}`, success, failure)
+}
