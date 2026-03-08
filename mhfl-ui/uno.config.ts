@@ -68,5 +68,6 @@ export default defineConfig({
         'i-mdi-link-variant',
         'i-mdi-eye-outline',
         'i-mdi-chart-line',
+        'i-mdi-clock-outline',
     ],
 })

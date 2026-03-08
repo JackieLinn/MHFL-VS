@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import {ref, onMounted, onBeforeUnmount} from 'vue'
+import {ref, onMounted, onBeforeUnmount, watch} from 'vue'
+import {useI18n} from 'vue-i18n'
+import AnalogClock from './AnalogClock.vue'
+
+const {locale} = useI18n()
 
 withDefaults(defineProps<{
   title: string
@@ -13,7 +17,11 @@ withDefaults(defineProps<{
 
 const liveClock = ref('')
 const liveDate = ref('')
+const liveWeekday = ref('')
 let liveClockTimer: ReturnType<typeof window.setInterval> | null = null
+
+const WEEKDAY_ZH = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+const WEEKDAY_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 const updateLiveClock = () => {
   const now = new Date()
@@ -23,9 +31,15 @@ const updateLiveClock = () => {
   const yyyy = now.getFullYear()
   const month = String(now.getMonth() + 1).padStart(2, '0')
   const dd = String(now.getDate()).padStart(2, '0')
+  const dayOfWeek = now.getDay()
   liveClock.value = `${hh}:${mm}:${ss}`
   liveDate.value = `${yyyy}-${month}-${dd}`
+  liveWeekday.value = locale.value.startsWith('zh') ? WEEKDAY_ZH[dayOfWeek] : WEEKDAY_EN[dayOfWeek]
 }
+
+watch(locale, () => {
+  updateLiveClock()
+}, {immediate: false})
 
 onMounted(() => {
   updateLiveClock()
@@ -51,9 +65,41 @@ onBeforeUnmount(() => {
       <h2 class="ph-title">{{ title }}</h2>
       <p class="ph-desc">{{ desc }}</p>
     </div>
+    <div class="ph-center">
+      <div class="ph-clocks-row">
+        <AnalogClock
+            timezone="Asia/Shanghai"
+            :label="$t('pages.dashboard.clockBeijing')"
+            :size="96"
+            variant="roman"
+        />
+        <AnalogClock
+            timezone="Asia/Tokyo"
+            :label="$t('pages.dashboard.clockTokyo')"
+            :size="96"
+            variant="roman"
+        />
+        <AnalogClock
+            timezone="Europe/London"
+            :label="$t('pages.dashboard.clockLondon')"
+            :size="96"
+            variant="roman"
+        />
+        <AnalogClock
+            timezone="America/New_York"
+            :label="$t('pages.dashboard.clockNewYork')"
+            :size="96"
+            variant="roman"
+        />
+      </div>
+    </div>
     <div class="ph-side">
-      <div class="ph-clock">{{ liveClock }}</div>
-      <div class="ph-date">{{ liveDate }}</div>
+      <div class="ph-time-block">
+        <div class="ph-time-inner">
+          <div class="ph-clock">{{ liveClock }}</div>
+          <div class="ph-date">{{ liveDate }} {{ liveWeekday }}</div>
+        </div>
+      </div>
       <div class="ph-health-chip">
         <span class="ph-health-dot"></span>
         <span>{{ $t('pages.dashboard.healthHealthy') }}</span>
@@ -73,9 +119,9 @@ onBeforeUnmount(() => {
   border: 1px solid var(--home-card-border);
   border-radius: 16px;
   padding: 20px 24px;
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
   gap: 20px;
   background: radial-gradient(ellipse 60% 80% at 8% 50%, rgba(99, 102, 241, 0.1), transparent),
   var(--home-card-bg);
@@ -178,8 +224,8 @@ html.dark .ph-scanline {
 .ph-main {
   position: relative;
   z-index: 1;
-  flex: 1 1 0;
   min-width: 0;
+  justify-self: start;
 }
 
 .ph-badge {
@@ -243,7 +289,25 @@ html.dark .ph-badge-dot {
 }
 
 /* ========================================
-   右侧时钟 + 健康
+   中间国际时钟
+   ======================================== */
+.ph-center {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: center;
+}
+
+.ph-clocks-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+}
+
+/* ========================================
+   右侧数字时钟 + 健康
    ======================================== */
 .ph-side {
   position: relative;
@@ -253,7 +317,19 @@ html.dark .ph-badge-dot {
   align-items: flex-end;
   justify-content: center;
   gap: 6px;
-  flex-shrink: 0;
+  justify-self: end;
+}
+
+.ph-time-block {
+  display: flex;
+  align-items: center;
+}
+
+.ph-time-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
 }
 
 .ph-clock {
@@ -270,7 +346,7 @@ html.dark .ph-clock {
 }
 
 .ph-date {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--home-text-muted);
   letter-spacing: 0.5px;
   font-variant-numeric: tabular-nums;
@@ -322,15 +398,28 @@ html.dark .ph-health-dot {
    ======================================== */
 @media (max-width: 900px) {
   .ph-root {
-    flex-direction: column;
-    align-items: flex-start;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+  }
+
+  .ph-main {
+    order: 1;
+  }
+
+  .ph-center {
+    order: 2;
+    width: 100%;
+    justify-content: flex-start;
   }
 
   .ph-side {
+    order: 3;
     align-items: flex-start;
-    flex-direction: row;
+  }
+
+  .ph-clocks-row {
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 12px;
   }
 
   .ph-clock {

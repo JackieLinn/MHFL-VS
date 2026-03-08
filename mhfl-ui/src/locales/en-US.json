@@ -166,7 +166,11 @@
       "healthRabbitMQ": "RabbitMQ",
       "healthFastAPI": "FastAPI",
       "healthStatusLabel": "Status",
-      "healthHealthy": "Healthy"
+      "healthHealthy": "Healthy",
+      "clockBeijing": "Beijing",
+      "clockTokyo": "Tokyo",
+      "clockLondon": "London",
+      "clockNewYork": "New York"
     },
     "task": {
       "title": "Task Management",
