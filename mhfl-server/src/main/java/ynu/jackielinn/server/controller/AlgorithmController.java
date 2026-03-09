@@ -106,18 +106,18 @@ public class AlgorithmController extends BaseController {
     }
 
     /**
-     * 管理员查询算法列表（支持关键字模糊查询和时间范围查询，分页）
+     * 查询算法列表（支持关键字模糊查询和时间范围查询，分页；all=true 可获取全部）
+     * 管理员和已认证用户均可调用
      *
-     * @param ro 查询条件对象（关键字、分页参数、时间范围）
-     * @return 分页结果（AlgorithmVO，排除敏感信息）
+     * @param ro 查询条件对象（关键字、分页参数、时间范围、all）
+     * @return 分页结果（AlgorithmVO）
      */
-    @Operation(summary = "管理员查询算法列表接口", description = "管理员查询算法列表，支持关键字模糊查询（算法名字）和时间范围查询，分页查询")
+    @Operation(summary = "查询算法列表", description = "支持关键字模糊查询、时间范围、分页；all=true 获取全部")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "成功"),
-            @ApiResponse(responseCode = "401", description = "未登录或 token 过期"),
-            @ApiResponse(responseCode = "403", description = "非管理员无权限")
+            @ApiResponse(responseCode = "401", description = "未登录或 token 过期")
     })
-    @GetMapping("/admin/list")
+    @GetMapping("/list")
     public RestResponse<IPage<AlgorithmVO>> listAlgorithms(@Valid @ModelAttribute ListAlgorithmRO ro) {
         IPage<AlgorithmVO> result = algorithmService.listAlgorithms(ro);
         return RestResponse.success(result);
