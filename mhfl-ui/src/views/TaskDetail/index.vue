@@ -41,7 +41,7 @@ const statusBadgeClass = (code: TaskStatusCode): string => {
     2: 'status-success',
     3: 'status-primary',
     4: 'status-danger',
-    5: 'status-info'
+    5: 'status-cancelled'
   }
   return `status-badge ${map[code] ?? 'status-info'}`
 }
@@ -265,6 +265,16 @@ onMounted(() => {
 .status-info {
   background: rgba(100, 116, 139, 0.2);
   color: var(--user-badge-text);
+}
+
+.status-cancelled {
+  background: rgba(120, 113, 108, 0.25);
+  color: #78716c;
+}
+
+html.dark .status-cancelled {
+  background: rgba(120, 113, 108, 0.3);
+  color: #a8a29e;
 }
 
 .status-warning {

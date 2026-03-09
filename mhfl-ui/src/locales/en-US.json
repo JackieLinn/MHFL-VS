@@ -247,7 +247,7 @@
         "fractionLowProbRange": "Fraction and lowProb must be in (0, 1)",
         "cancel": "Cancel",
         "create": "Create",
-        "createAndStart": "Create and Start Training",
+        "createAndStart": "Create and Start",
         "createSuccess": "Created successfully",
         "copiedHint": "Copied from same-config success task, no need to train again",
         "recommendedSameConfigHint": "This config has a recommended example, see Recommended",

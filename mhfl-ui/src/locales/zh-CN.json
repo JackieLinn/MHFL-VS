@@ -247,7 +247,7 @@
         "fractionLowProbRange": "比例和 lowProb 须在 (0, 1) 开区间内",
         "cancel": "取消",
         "create": "创建",
-        "createAndStart": "创建并开启训练",
+        "createAndStart": "创建并启动",
         "createSuccess": "创建成功",
         "copiedHint": "已从同配置成功任务复制结果，无需再训练",
         "recommendedSameConfigHint": "该配置已有推荐示例，请到示例展示查看",

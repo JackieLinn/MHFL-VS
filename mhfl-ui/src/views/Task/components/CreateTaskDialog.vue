@@ -6,12 +6,7 @@ import {ElMessage} from 'element-plus'
 import type {FormInstance, FormRules} from 'element-plus'
 import {listDatasetsForSelect, type DatasetVO} from '@/api/dataset'
 import {listAlgorithmsForSelect, type AlgorithmVO} from '@/api/algorithm'
-import {
-  createTask,
-  startTask,
-  type CreateTaskRO,
-  type CreateTaskResultVO
-} from '@/api/task'
+import {createTask, type CreateTaskRO, type CreateTaskResultVO} from '@/api/task'
 
 const props = defineProps<{
   modelValue: boolean
@@ -184,15 +179,7 @@ const doCreate = (andStart: boolean) => {
             ElMessage.success(t('pages.task.create.createSuccess'))
           }
           if (andStart) {
-            startTask(
-                data.taskId,
-                () => {
-                  router.push({name: 'TaskDetail', params: {id: String(data.taskId)}})
-                },
-                () => {
-                  ElMessage.warning(t('pages.task.create.startFailed'))
-                }
-            )
+            router.push({name: 'TaskDetail', params: {id: String(data.taskId)}})
           }
         },
         () => {
