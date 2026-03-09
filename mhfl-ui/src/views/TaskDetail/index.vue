@@ -4,6 +4,7 @@ import {useRoute, useRouter} from 'vue-router'
 import {useI18n} from 'vue-i18n'
 import {ArrowLeft} from '@element-plus/icons-vue'
 import PageHeader from '@/components/PageHeader.vue'
+import BackToTop from '@/components/BackToTop.vue'
 import TaskDetailContent from './components/TaskDetailContent.vue'
 import {getTaskDetail, type TaskVO, type TaskStatusCode} from '@/api/task'
 
@@ -101,7 +102,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <div v-loading="loading" class="detail-content flex-1 flex flex-col min-w-0">
+    <div id="task-detail-scroll" v-loading="loading" class="detail-content flex-1 flex flex-col min-w-0">
       <div v-if="error" class="detail-error">
         <p>{{ error }}</p>
       </div>
@@ -110,6 +111,8 @@ onMounted(() => {
         <TaskDetailContent :task="task"/>
       </div>
     </div>
+
+    <BackToTop scroll-target="#task-detail-scroll"/>
   </div>
 </template>
 
