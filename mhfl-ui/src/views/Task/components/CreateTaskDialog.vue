@@ -57,7 +57,7 @@ const form = ref<Partial<CreateTaskRO>>({
 /** 整数校验：必须为整数，不能带小数 */
 const validateInteger = (min: number, requiredKey: string, minKey: string) =>
     (_rule: unknown, value: number | string | undefined, callback: (err?: Error) => void) => {
-      if (value === '' || value == null || value === undefined || (typeof value === 'number' && !Number.isFinite(value))) {
+      if (value === '' || value == null || (typeof value === 'number' && !Number.isFinite(value))) {
         callback(new Error(t(requiredKey)))
         return
       }
