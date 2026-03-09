@@ -260,7 +260,9 @@
       "backToList": "返回列表",
       "basicInfo": "基本信息",
       "invalidId": "无效的任务 ID",
-      "loadFailed": "加载失败"
+      "loadFailed": "加载失败",
+      "metricsTitle": "训练指标",
+      "clientMetricsTitle": "各客户端准确率"
     },
     "recommended": {
       "title": "推荐展示",

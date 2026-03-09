@@ -256,6 +256,8 @@
     },
     "taskDetail": {
       "title": "Task Detail",
+      "metricsTitle": "Training Metrics",
+      "clientMetricsTitle": "Client Accuracy",
       "desc": "Details for task #{id}",
       "backToList": "Back to List",
       "basicInfo": "Basic Info",

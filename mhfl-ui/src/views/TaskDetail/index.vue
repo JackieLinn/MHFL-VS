@@ -4,6 +4,7 @@ import {useRoute, useRouter} from 'vue-router'
 import {useI18n} from 'vue-i18n'
 import {ArrowLeft} from '@element-plus/icons-vue'
 import PageHeader from '@/components/PageHeader.vue'
+import TaskDetailContent from './components/TaskDetailContent.vue'
 import {getTaskDetail, type TaskVO, type TaskStatusCode} from '@/api/task'
 
 const route = useRoute()
@@ -20,7 +21,6 @@ const task = ref<TaskVO | null>(null)
 const loading = ref(false)
 const error = ref('')
 
-/** 状态码转显示文案 */
 const statusLabel = (code: TaskStatusCode): string => {
   const map: Record<TaskStatusCode, string> = {
     0: t('pages.dashboard.statusNotStarted'),
@@ -33,7 +33,6 @@ const statusLabel = (code: TaskStatusCode): string => {
   return map[code] ?? '—'
 }
 
-/** 状态徽章样式类 */
 const statusBadgeClass = (code: TaskStatusCode): string => {
   const map: Record<TaskStatusCode, string> = {
     0: 'status-info',
@@ -44,18 +43,6 @@ const statusBadgeClass = (code: TaskStatusCode): string => {
     5: 'status-cancelled'
   }
   return `status-badge ${map[code] ?? 'status-info'}`
-}
-
-/** 百分数展示；-1 表示占位，显示 — */
-const formatPercent = (v: number | null | undefined): string => {
-  if (v == null || v === -1) return '—'
-  return Number.isFinite(v) ? `${(v * 100).toFixed(2)}%` : '—'
-}
-
-/** Loss 展示；-1 表示占位，显示 — */
-const formatLoss = (v: number | null | undefined): string => {
-  if (v == null || v === -1) return '—'
-  return Number.isFinite(v) ? v.toFixed(4) : '—'
 }
 
 const fetchDetail = () => {
@@ -89,103 +76,38 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="task-detail-page">
+  <div class="task-detail-page p-8 pb-4 min-h-full flex flex-col">
     <PageHeader
         class="mb-5"
         :title="$t('pages.taskDetail.title')"
         :desc="$t('pages.taskDetail.desc', {id: taskId})"
     />
 
-    <div class="detail-actions mb-5">
+    <div class="detail-actions mb-5 flex items-center gap-4">
       <el-button :icon="ArrowLeft" @click="goBack">{{ $t('pages.taskDetail.backToList') }}</el-button>
+      <div v-if="task" class="detail-meta flex items-center gap-4 text-sm">
+        <span class="detail-meta-item">
+          <span class="detail-meta-label">{{ $t('pages.task.status') }}</span>
+          <span :class="statusBadgeClass(task.status)">{{ statusLabel(task.status) }}</span>
+        </span>
+        <span class="detail-meta-item">
+          <span class="detail-meta-label">{{ $t('pages.task.algorithmName') }}</span>
+          <span class="detail-meta-value">{{ task.algorithmName }}</span>
+        </span>
+        <span class="detail-meta-item">
+          <span class="detail-meta-label">{{ $t('pages.task.dataName') }}</span>
+          <span class="detail-meta-value">{{ task.dataName }}</span>
+        </span>
+      </div>
     </div>
 
-    <div v-loading="loading" class="detail-content">
+    <div v-loading="loading" class="detail-content flex-1 flex flex-col min-w-0">
       <div v-if="error" class="detail-error">
         <p>{{ error }}</p>
       </div>
 
-      <div v-else-if="task" class="detail-card">
-        <h3 class="detail-section-title">{{ $t('pages.taskDetail.basicInfo') }}</h3>
-        <div class="detail-grid">
-          <div class="detail-item">
-            <span class="detail-label">{{ $t('pages.task.id') }}</span>
-            <span class="detail-value">{{ task.id }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">{{ $t('pages.task.dataName') }}</span>
-            <span class="detail-value">{{ task.dataName }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">{{ $t('pages.task.algorithmName') }}</span>
-            <span class="detail-value">{{ task.algorithmName }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">{{ $t('pages.task.username') }}</span>
-            <span class="detail-value">{{
-                $t('pages.task.creatorWithUid', {
-                  uid: task.uid,
-                  username: task.username || '—'
-                })
-              }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">{{ $t('pages.task.status') }}</span>
-            <span :class="statusBadgeClass(task.status)">{{ statusLabel(task.status) }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">{{ $t('pages.task.numNodes') }}</span>
-            <span class="detail-value">{{ task.numNodes }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">{{ $t('pages.task.fraction') }}</span>
-            <span class="detail-value">{{ task.fraction }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">{{ $t('pages.task.classesPerNode') }}</span>
-            <span class="detail-value">{{ task.classesPerNode }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">{{ $t('pages.task.lowProb') }}</span>
-            <span class="detail-value">{{ task.lowProb }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">{{ $t('pages.task.numSteps') }}</span>
-            <span class="detail-value">{{ task.numSteps }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">{{ $t('pages.task.epochs') }}</span>
-            <span class="detail-value">{{ task.epochs }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">{{ $t('pages.task.loss') }}</span>
-            <span class="detail-value">{{ formatLoss(task.loss) }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">{{ $t('pages.task.accuracy') }}</span>
-            <span class="detail-value">{{ formatPercent(task.accuracy) }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">{{ $t('pages.task.precision') }}</span>
-            <span class="detail-value">{{ formatPercent(task.precision) }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">{{ $t('pages.task.recall') }}</span>
-            <span class="detail-value">{{ formatPercent(task.recall) }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">{{ $t('pages.task.f1Score') }}</span>
-            <span class="detail-value">{{ formatPercent(task.f1Score) }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">{{ $t('pages.task.createTime') }}</span>
-            <span class="detail-value">{{ task.createTime || '—' }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">{{ $t('pages.task.updateTime') }}</span>
-            <span class="detail-value">{{ task.updateTime || '—' }}</span>
-          </div>
-        </div>
+      <div v-else-if="task" class="flex-1 flex flex-col min-w-0">
+        <TaskDetailContent :task="task"/>
       </div>
     </div>
   </div>
@@ -193,7 +115,6 @@ onMounted(() => {
 
 <style scoped>
 .task-detail-page {
-  padding: 32px 24px 16px 24px;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -201,9 +122,28 @@ onMounted(() => {
 }
 
 .detail-content {
-  flex: 1;
   overflow-y: auto;
   min-height: 0;
+}
+
+.detail-meta {
+  color: var(--home-text-secondary);
+}
+
+.detail-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.detail-meta-label {
+  font-size: 12px;
+  color: var(--home-text-muted);
+}
+
+.detail-meta-value {
+  font-weight: 500;
+  color: var(--home-text-primary);
 }
 
 .detail-error {
@@ -212,45 +152,6 @@ onMounted(() => {
   border: 1px solid var(--user-role-border);
   border-radius: 12px;
   color: var(--home-text-secondary);
-}
-
-.detail-card {
-  padding: 24px;
-  background: var(--user-role-bg);
-  border: 1px solid var(--user-role-border);
-  border-radius: 14px;
-}
-
-.detail-section-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--home-text-primary);
-  margin: 0 0 20px 0;
-}
-
-.detail-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 16px 32px;
-}
-
-.detail-item {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.detail-label {
-  font-size: 11px;
-  color: var(--home-text-muted);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.detail-value {
-  font-size: 14px;
-  color: var(--home-text-primary);
 }
 
 .status-badge {
@@ -312,3 +213,5 @@ html.dark .status-danger {
   color: #f87171;
 }
 </style>
+
+<style src="./taskDetail.css"></style>
