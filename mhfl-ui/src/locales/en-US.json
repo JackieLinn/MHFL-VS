@@ -257,7 +257,13 @@
     "taskDetail": {
       "title": "Task Detail",
       "metricsTitle": "Training Metrics",
-      "clientMetricsTitle": "Client Accuracy",
+      "clientMetricsTitle": "Client Metrics",
+      "metricFull": {
+        "accuracy": "Accuracy",
+        "precision": "Precision",
+        "recall": "Recall",
+        "f1": "F1 Score"
+      },
       "desc": "Details for task #{id}",
       "backToList": "Back to List",
       "basicInfo": "Basic Info",

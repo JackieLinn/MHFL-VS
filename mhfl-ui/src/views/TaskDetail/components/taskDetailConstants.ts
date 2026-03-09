@@ -52,3 +52,14 @@ export const chartMetricKeys = [
 export const getClientModel = (i: number) => ((i - 1) % 5) + 1
 
 export const cnnColors = ['#3b82f6', '#22c55e', '#0d9488', '#d946ef', '#f59e0b'] as const
+
+/** 客户端指标选项（准确率、精确率、召回率、F1） */
+export const clientMetricOptions = [
+  {val: 'accuracy' as const, key: 'clientMetricAccuracy'},
+  {val: 'precision' as const, key: 'clientMetricPrecision'},
+  {val: 'recall' as const, key: 'clientMetricRecall'},
+  {val: 'f1' as const, key: 'clientMetricF1'}
+] as const
+
+/** 4 个指标的展示颜色（用于客户端卡片小环） */
+export const clientMetricColors = ['#6366f1', '#22c55e', '#0d9488', '#f59e0b'] as const

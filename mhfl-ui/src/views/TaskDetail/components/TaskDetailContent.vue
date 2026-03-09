@@ -67,12 +67,20 @@ const chartSeriesData = computed(() => {
 })
 
 const clientMetrics = computed(() => {
-  const base = props.task.accuracy ?? 0.5
+  const bases = {
+    accuracy: props.task.accuracy ?? 0.5,
+    precision: props.task.precision ?? 0.5,
+    recall: props.task.recall ?? 0.5,
+    f1: props.task.f1Score ?? 0.5
+  }
   const spread = 0.08
   return Array.from({length: 100}, (_, clientIdx) => {
     const noise = (Math.sin(clientIdx * 0.5) * 0.5 + Math.cos(clientIdx * 0.3) * 0.5) * spread
     return {
-      accuracy: Math.max(0.2, Math.min(0.85, base + noise))
+      accuracy: Math.max(0.2, Math.min(0.85, bases.accuracy + noise)),
+      precision: Math.max(0.2, Math.min(0.85, bases.precision + noise * 0.98)),
+      recall: Math.max(0.2, Math.min(0.85, bases.recall + noise * 1.02)),
+      f1: Math.max(0.2, Math.min(0.85, bases.f1 + noise))
     }
   })
 })
