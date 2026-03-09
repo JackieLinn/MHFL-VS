@@ -4,6 +4,7 @@ import {useRouter} from 'vue-router'
 import {useI18n} from 'vue-i18n'
 import {Search, Plus, View} from '@element-plus/icons-vue'
 import PageHeader from '@/components/PageHeader.vue'
+import CreateTaskDialog from './components/CreateTaskDialog.vue'
 import {listTasks, type TaskVO, type TaskStatusCode} from '@/api/task'
 
 const router = useRouter()
@@ -35,15 +36,15 @@ const statusBadgeClass = (code: TaskStatusCode): string => {
   return `status-badge ${map[code] ?? 'status-info'}`
 }
 
-/** Loss 展示：4 位小数 */
+/** Loss 展示：4 位小数；-1 表示占位，显示 — */
 const formatLoss = (v: number | null | undefined): string => {
-  if (v == null) return '—'
+  if (v == null || v === -1) return '—'
   return Number.isFinite(v) ? v.toFixed(4) : '—'
 }
 
-/** 百分数展示：accuracy/precision/recall/f1Score，保留 2 位小数 */
+/** 百分数展示：accuracy/precision/recall/f1Score，保留 2 位小数；-1 表示占位，显示 — */
 const formatPercent = (v: number | null | undefined): string => {
-  if (v == null) return '—'
+  if (v == null || v === -1) return '—'
   return Number.isFinite(v) ? `${(v * 100).toFixed(2)}%` : '—'
 }
 
@@ -147,9 +148,14 @@ const handleViewDetail = (task: TaskVO) => {
   router.push({name: 'TaskDetail', params: {id: String(task.id)}})
 }
 
-/** 创建新任务（占位，后续实现） */
+const createDialogVisible = ref(false)
+
 const handleCreateTask = () => {
-  // TODO: 打开创建任务弹窗或跳转创建页
+  createDialogVisible.value = true
+}
+
+const onTaskCreated = () => {
+  fetchList()
 }
 </script>
 
@@ -270,6 +276,8 @@ const handleCreateTask = () => {
         />
       </div>
     </div>
+
+    <CreateTaskDialog v-model="createDialogVisible" @created="onTaskCreated"/>
   </div>
 </template>
 

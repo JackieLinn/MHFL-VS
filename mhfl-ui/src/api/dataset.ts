@@ -15,6 +15,7 @@ export interface ListDatasetRO {
     keyword?: string
     current?: number
     size?: number
+    all?: boolean
     startTime?: string // yyyy-MM-dd
     endTime?: string // yyyy-MM-dd
 }
@@ -40,10 +41,21 @@ export const listDatasetsAdmin = (
     if (params.keyword != null && params.keyword !== '') q.set('keyword', params.keyword)
     if (params.current != null) q.set('current', String(params.current))
     if (params.size != null) q.set('size', String(params.size))
+    if (params.all != null) q.set('all', String(params.all))
     if (params.startTime != null) q.set('startTime', params.startTime)
     if (params.endTime != null) q.set('endTime', params.endTime)
     const query = q.toString()
-    get(`/api/dataset/admin/list${query ? `?${query}` : ''}`, success, failure)
+    get(`/api/dataset/list${query ? `?${query}` : ''}`, success, failure)
+}
+
+/**
+ * 用户获取全部数据集列表（用于创建任务时下拉选择）
+ */
+export const listDatasetsForSelect = (
+    success: (data: IPage<DatasetVO>) => void,
+    failure?: (message: string, code: number, url: string) => void
+) => {
+    get('/api/dataset/list?all=true&current=1&size=100', success, failure)
 }
 
 /**

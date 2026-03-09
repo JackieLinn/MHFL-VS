@@ -2,7 +2,7 @@
  * 任务相关 API
  * 任务列表、详情、创建、启动、停止等
  */
-import {get} from '@/utils'
+import {get, post} from '@/utils'
 
 /** 任务状态：后端 @JsonValue 序列化为 code 0-5 */
 export type TaskStatusCode = 0 | 1 | 2 | 3 | 4 | 5
@@ -74,4 +74,45 @@ export const getTaskDetail = (
     failure?: (message: string, code: number, url: string) => void
 ) => {
     get(`/api/task/${id}`, success, failure)
+}
+
+/** 创建任务请求对象（与后端 CreateTaskRO 一致） */
+export interface CreateTaskRO {
+    did: number
+    aid: number
+    numNodes: number
+    fraction: number
+    classesPerNode: number
+    lowProb: number
+    numSteps: number
+    epochs: number
+}
+
+/** 创建任务结果 */
+export interface CreateTaskResultVO {
+    taskId: number
+    copied: boolean
+    recommendedSameConfig: boolean
+}
+
+/**
+ * 创建任务
+ */
+export const createTask = (
+    ro: CreateTaskRO,
+    success: (data: CreateTaskResultVO) => void,
+    failure?: (message: string, code: number, url: string) => void
+) => {
+    post('/api/task', ro, success, failure)
+}
+
+/**
+ * 启动训练
+ */
+export const startTask = (
+    id: number,
+    success: () => void,
+    failure?: (message: string, code: number, url: string) => void
+) => {
+    post(`/api/task/${id}/start`, null, success, failure)
 }

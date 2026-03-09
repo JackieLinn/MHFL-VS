@@ -46,10 +46,16 @@ const statusBadgeClass = (code: TaskStatusCode): string => {
   return `status-badge ${map[code] ?? 'status-info'}`
 }
 
-/** 百分数展示 */
+/** 百分数展示；-1 表示占位，显示 — */
 const formatPercent = (v: number | null | undefined): string => {
-  if (v == null) return '—'
+  if (v == null || v === -1) return '—'
   return Number.isFinite(v) ? `${(v * 100).toFixed(2)}%` : '—'
+}
+
+/** Loss 展示；-1 表示占位，显示 — */
+const formatLoss = (v: number | null | undefined): string => {
+  if (v == null || v === -1) return '—'
+  return Number.isFinite(v) ? v.toFixed(4) : '—'
 }
 
 const fetchDetail = () => {
@@ -153,7 +159,7 @@ onMounted(() => {
           </div>
           <div class="detail-item">
             <span class="detail-label">{{ $t('pages.task.loss') }}</span>
-            <span class="detail-value">{{ task.loss != null ? task.loss.toFixed(4) : '—' }}</span>
+            <span class="detail-value">{{ formatLoss(task.loss) }}</span>
           </div>
           <div class="detail-item">
             <span class="detail-label">{{ $t('pages.task.accuracy') }}</span>
