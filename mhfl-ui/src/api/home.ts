@@ -2,7 +2,7 @@
  * Home 相关 API
  * 包含首页相关的接口调用
  */
-import {get, post} from '@/utils'
+import {get} from '@/utils'
 
 // 系统资源信息类型
 export interface SystemResources {
