@@ -34,7 +34,7 @@ const updateLiveClock = () => {
   const dayOfWeek = now.getDay()
   liveClock.value = `${hh}:${mm}:${ss}`
   liveDate.value = `${yyyy}-${month}-${dd}`
-  liveWeekday.value = locale.value.startsWith('zh') ? WEEKDAY_ZH[dayOfWeek] : WEEKDAY_EN[dayOfWeek]
+  liveWeekday.value = (locale.value?.startsWith('zh') ? WEEKDAY_ZH[dayOfWeek] : WEEKDAY_EN[dayOfWeek]) ?? ''
 }
 
 watch(locale, () => {
