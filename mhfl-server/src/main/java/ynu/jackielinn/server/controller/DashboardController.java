@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RestController;
 import ynu.jackielinn.server.service.DashboardService;
 
 @RestController
-@RequestMapping("/api/system")
+@RequestMapping("/api/dashboard")
 @Tag(name = "仪表盘 Dashboard 接口", description = "仪表盘 Dashboard 操作相关接口")
 public class DashboardController {
 
