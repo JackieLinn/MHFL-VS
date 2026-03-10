@@ -95,11 +95,11 @@ class FlowLimitingFilterTest {
     }
 
     @Test
-    void shouldBlockWhenCounterIncrementExceeds20() throws Exception {
+    void shouldBlockWhenCounterIncrementExceeds100() throws Exception {
         when(request.getRemoteAddr()).thenReturn(IP);
         when(template.hasKey(Const.FLOW_LIMIT_BLOCK + IP)).thenReturn(false);
         when(template.hasKey(Const.FLOW_LIMIT_COUNTER + IP)).thenReturn(true);
-        when(valueOperations.increment(Const.FLOW_LIMIT_COUNTER + IP)).thenReturn(21L);
+        when(valueOperations.increment(Const.FLOW_LIMIT_COUNTER + IP)).thenReturn(101L);
 
         StringWriter sw = new StringWriter();
         when(response.getWriter()).thenReturn(new PrintWriter(sw));
