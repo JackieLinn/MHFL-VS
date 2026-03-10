@@ -33,16 +33,16 @@ import java.io.PrintWriter;
 public class SecurityConfiguration {
 
     @Resource
-    JwtUtils jwtUtils;
+    private JwtUtils jwtUtils;
 
     @Resource
-    JwtAuthorizeFilter jwtAuthorizeFilter;
+    private JwtAuthorizeFilter jwtAuthorizeFilter;
 
     @Resource
-    CaptchaValidateFilter captchaValidateFilter;
+    private CaptchaValidateFilter captchaValidateFilter;
 
     @Resource
-    AccountService accountService;
+    private AccountService accountService;
 
     /**
      * 配置安全过滤链，定义了接口的权限控制规则、登录、登出逻辑以及会话管理策略

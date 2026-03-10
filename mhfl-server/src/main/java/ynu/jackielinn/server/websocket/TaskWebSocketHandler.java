@@ -33,19 +33,19 @@ public class TaskWebSocketHandler extends TextWebSocketHandler {
     private static final String AUTH_JSON_KEY_TOKEN = "token";
 
     @Resource
-    WebSocketSessionManager sessionManager;
+    private WebSocketSessionManager sessionManager;
 
     @Resource
-    RedisSubscriptionService subscriptionService;
+    private RedisSubscriptionService subscriptionService;
 
     @Resource
-    JwtUtils jwtUtils;
+    private JwtUtils jwtUtils;
 
     @Resource
-    TaskService taskService;
+    private TaskService taskService;
 
     @Resource
-    ObjectMapper objectMapper;
+    private ObjectMapper objectMapper;
 
     /**
      * 连接建立后从路径解析 taskId，写入 session 属性并标记未认证，等待前端首包携带 token。

@@ -23,7 +23,7 @@ import ynu.jackielinn.server.service.AlgorithmService;
 public class AlgorithmController extends BaseController {
 
     @Resource
-    AlgorithmService algorithmService;
+    private AlgorithmService algorithmService;
 
     /**
      * 管理员创建算法操作

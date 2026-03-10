@@ -21,10 +21,10 @@ import java.util.concurrent.ConcurrentHashMap;
 public class RedisSubscriptionServiceImpl implements RedisSubscriptionService {
 
     @Resource
-    RedisMessageListenerContainer redisMessageListenerContainer;
+    private RedisMessageListenerContainer redisMessageListenerContainer;
 
     @Resource
-    TrainingMessageListener messageListener;
+    private TrainingMessageListener messageListener;
 
     private final Set<Long> subscribedTasks = ConcurrentHashMap.newKeySet();
 

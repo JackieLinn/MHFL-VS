@@ -26,7 +26,7 @@ import ynu.jackielinn.server.service.AccountService;
 public class AuthorizeController extends BaseController {
 
     @Resource
-    AccountService accountService;
+    private AccountService accountService;
 
     /**
      * 请求邮件验证码

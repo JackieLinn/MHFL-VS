@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 public class CaptchaController extends BaseController {
 
     @Resource
-    StringRedisTemplate stringRedisTemplate;
+    private StringRedisTemplate stringRedisTemplate;
 
     private static final int LIMIT_PERIOD = 10;
     private static final int LIMIT_COUNT = 3;

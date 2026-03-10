@@ -24,7 +24,7 @@ import java.io.IOException;
 public class JwtAuthorizeFilter extends OncePerRequestFilter {
 
     @Resource
-    JwtUtils utils;
+    private JwtUtils utils;
 
     /**
      * 过滤器的核心方法，用于解析请求中的 JWT，并设置用户的认证信息

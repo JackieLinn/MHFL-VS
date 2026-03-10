@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 public class FlowLimitingFilter extends HttpFilter {
 
     @Resource
-    StringRedisTemplate template;
+    private StringRedisTemplate template;
 
     /**
      * 过滤器的核心方法，用于处理请求

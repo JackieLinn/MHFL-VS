@@ -32,16 +32,16 @@ import java.util.concurrent.ConcurrentHashMap;
 public class TrainingMessageHandlerImpl implements TrainingMessageHandler {
 
     @Resource
-    RoundService roundService;
+    private RoundService roundService;
 
     @Resource
-    ClientService clientService;
+    private ClientService clientService;
 
     @Resource
-    TaskService taskService;
+    private TaskService taskService;
 
     @Resource
-    WebSocketSessionManager sessionManager;
+    private WebSocketSessionManager sessionManager;
 
     @Resource
     private ApplicationContext applicationContext;

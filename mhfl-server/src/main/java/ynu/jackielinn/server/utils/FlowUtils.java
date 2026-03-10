@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit;
 public class FlowUtils {
 
     @Resource
-    StringRedisTemplate template;
+    private StringRedisTemplate template;
 
     /**
      * 针对于单次频率限制，请求成功后，在冷却时间内不得再次进行请求，比如3秒内不能再次发起请求，防刷接口

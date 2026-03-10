@@ -23,7 +23,7 @@ import ynu.jackielinn.server.service.DatasetService;
 public class DatasetController extends BaseController {
 
     @Resource
-    DatasetService datasetService;
+    private DatasetService datasetService;
 
     /**
      * 管理员创建数据集操作

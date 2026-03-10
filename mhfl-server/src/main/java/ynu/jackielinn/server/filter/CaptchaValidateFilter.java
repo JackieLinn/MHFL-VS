@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 public class CaptchaValidateFilter extends OncePerRequestFilter {
 
     @Resource
-    StringRedisTemplate stringRedisTemplate;
+    private StringRedisTemplate stringRedisTemplate;
 
     private static final String LOGIN_URL = "/auth/login";
 

@@ -24,7 +24,7 @@ import ynu.jackielinn.server.service.AccountService;
 public class AccountController extends BaseController {
 
     @Resource
-    AccountService accountService;
+    private AccountService accountService;
 
     /**
      * 管理员导入用户操作

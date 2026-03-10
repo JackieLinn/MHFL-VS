@@ -42,16 +42,16 @@ import java.util.concurrent.TimeUnit;
 public class AccountServiceImpl extends ServiceImpl<AccountMapper, Account> implements AccountService {
 
     @Resource
-    FlowUtils flowUtils;
+    private FlowUtils flowUtils;
 
     @Resource
-    AmqpTemplate amqpTemplate;
+    private AmqpTemplate amqpTemplate;
 
     @Resource
-    StringRedisTemplate stringRedisTemplate;
+    private StringRedisTemplate stringRedisTemplate;
 
     @Resource
-    PasswordEncoder encoder;
+    private PasswordEncoder encoder;
 
     /**
      * 从数据库中通过用户名或邮箱查找用户详细信息

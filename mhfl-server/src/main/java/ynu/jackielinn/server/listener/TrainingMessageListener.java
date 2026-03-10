@@ -25,13 +25,13 @@ import java.util.concurrent.Executor;
 public class TrainingMessageListener implements MessageListener {
 
     @Resource
-    TrainingMessageHandler messageHandler;
+    private TrainingMessageHandler messageHandler;
 
     @Resource(name = "trainingMessageExecutor")
-    Executor executor;
+    private Executor executor;
 
     @Resource
-    ObjectMapper objectMapper;
+    private ObjectMapper objectMapper;
 
     /**
      * 收到 Redis 订阅消息时根据 channel 前缀解析为 Round/Client/Status 消息，
