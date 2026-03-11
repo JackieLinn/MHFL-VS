@@ -1,10 +1,20 @@
 package ynu.jackielinn.server.service.impl;
 
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import jakarta.annotation.Resource;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 import ynu.jackielinn.server.dto.response.DashboardPlatformStatsVO;
 import ynu.jackielinn.server.dto.response.DashboardStatCardsVO;
+import ynu.jackielinn.server.dto.response.DashboardSystemHealthVO;
 import ynu.jackielinn.server.dto.response.DashboardTaskStatusStatsVO;
 import ynu.jackielinn.server.dto.response.DashboardTaskTrendVO;
 import ynu.jackielinn.server.dto.response.TaskVO;
@@ -13,12 +23,16 @@ import ynu.jackielinn.server.entity.Account;
 import ynu.jackielinn.server.entity.Algorithm;
 import ynu.jackielinn.server.entity.Dataset;
 import ynu.jackielinn.server.entity.Task;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import ynu.jackielinn.server.service.AccountService;
 import ynu.jackielinn.server.service.AlgorithmService;
 import ynu.jackielinn.server.service.DashboardService;
 import ynu.jackielinn.server.service.DatasetService;
 import ynu.jackielinn.server.service.TaskService;
 
+import javax.sql.DataSource;
+import java.sql.Connection;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -42,6 +56,21 @@ public class DashboardServiceImpl implements DashboardService {
 
     @Resource
     private AlgorithmService algorithmService;
+
+    @Resource
+    private DataSource dataSource;
+
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
+
+    @Resource
+    private ConnectionFactory rabbitConnectionFactory;
+
+    @Resource
+    private RestTemplate restTemplate;
+
+    @Value("${python.fastapi.url:http://localhost:8000}")
+    private String pythonFastApiUrl;
 
     /**
      * 获取平台概览统计。分别 count 各表，@TableLogic 自动排除已逻辑删除记录。
@@ -191,6 +220,71 @@ public class DashboardServiceImpl implements DashboardService {
                     vo.setUsername(usernameMap.get(task.getUid()));
                 }))
                 .toList();
+    }
+
+    /**
+     * 系统健康检查（MySQL、Redis、RabbitMQ、FastAPI）。
+     *
+     * @return DashboardSystemHealthVO
+     */
+    @Override
+    public DashboardSystemHealthVO getSystemHealth() {
+        boolean mysql = checkMysql();
+        boolean redis = checkRedis();
+        boolean rabbitmq = checkRabbitmq();
+        boolean fastapi = checkFastapi();
+        return DashboardSystemHealthVO.builder()
+                .mysql(mysql)
+                .redis(redis)
+                .rabbitmq(rabbitmq)
+                .fastapi(fastapi)
+                .build();
+    }
+
+    private boolean checkMysql() {
+        try (Connection conn = dataSource.getConnection()) {
+            return conn.isValid(3);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private boolean checkRedis() {
+        try {
+            assert stringRedisTemplate.getConnectionFactory() != null;
+            stringRedisTemplate.getConnectionFactory().getConnection().ping();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private boolean checkRabbitmq() {
+        try (org.springframework.amqp.rabbit.connection.Connection ignored = rabbitConnectionFactory.createConnection()) {
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private boolean checkFastapi() {
+        try {
+            String url = pythonFastApiUrl + "/api/health";
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(headers), String.class);
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                JSONObject json = JSON.parseObject(response.getBody());
+                Integer code = json.getInteger("code");
+                if (code != null && code == 200) {
+                    JSONObject data = json.getJSONObject("data");
+                    return data != null && "healthy".equals(data.getString("status"));
+                }
+            }
+            return false;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private LambdaQueryWrapper<Task> taskBaseWrapper(Long uid, boolean isAdmin) {

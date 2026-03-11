@@ -632,6 +632,28 @@ html.dark .health-status-badge {
     box-shadow: 0 0 6px rgba(34, 197, 94, 0.2);
 }
 
+.health-status-badge-unhealthy {
+    background: rgba(248, 113, 113, 0.15) !important;
+    border-color: rgba(248, 113, 113, 0.35) !important;
+    color: #f87171 !important;
+    animation: none;
+}
+
+html.dark .health-status-badge-unhealthy {
+    background: rgba(248, 113, 113, 0.2) !important;
+    border-color: rgba(248, 113, 113, 0.4) !important;
+    color: #fca5a5 !important;
+    box-shadow: none;
+}
+
+.health-status-unhealthy span:last-child {
+    color: #f87171 !important;
+}
+
+html.dark .health-status-unhealthy span:last-child {
+    color: #fca5a5 !important;
+}
+
 .health-status span:last-child {
     color: #16a34a;
 }

@@ -13,6 +13,7 @@ import ynu.jackielinn.server.common.RestResponse;
 import ynu.jackielinn.server.common.BaseController;
 import ynu.jackielinn.server.dto.response.DashboardPlatformStatsVO;
 import ynu.jackielinn.server.dto.response.DashboardStatCardsVO;
+import ynu.jackielinn.server.dto.response.DashboardSystemHealthVO;
 import ynu.jackielinn.server.dto.response.DashboardTaskStatusStatsVO;
 import ynu.jackielinn.server.dto.response.DashboardTaskTrendVO;
 import ynu.jackielinn.server.dto.response.TaskVO;
@@ -145,5 +146,21 @@ public class DashboardController extends BaseController {
         }
         List<TaskVO> tasks = dashboardService.getRecentTasks(uid, isAdmin());
         return RestResponse.success(tasks);
+    }
+
+    /**
+     * 系统健康检查（MySQL、Redis、RabbitMQ、FastAPI）。
+     *
+     * @return DashboardSystemHealthVO
+     */
+    @Operation(summary = "系统健康检查", description = "检查 MySQL、Redis、RabbitMQ、FastAPI 是否正常")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "401", description = "未登录或 token 过期")
+    })
+    @GetMapping("/system-health")
+    public RestResponse<DashboardSystemHealthVO> getSystemHealth() {
+        DashboardSystemHealthVO health = dashboardService.getSystemHealth();
+        return RestResponse.success(health);
     }
 }

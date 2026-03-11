@@ -169,6 +169,7 @@
       "healthFastAPI": "FastAPI",
       "healthStatusLabel": "状态",
       "healthHealthy": "健康",
+      "healthUnhealthy": "异常",
       "clockBeijing": "北京",
       "clockTokyo": "东京",
       "clockLondon": "伦敦",

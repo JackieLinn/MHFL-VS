@@ -123,3 +123,24 @@ export const getRecentTasks = (
 ) => {
     get('/api/dashboard/recent-tasks', success, failure)
 }
+
+/** 系统健康检查（与后端 DashboardSystemHealthVO 一致） */
+export interface DashboardSystemHealthVO {
+    mysql: boolean
+    redis: boolean
+    rabbitmq: boolean
+    fastapi: boolean
+}
+
+/**
+ * 获取系统健康检查（MySQL、Redis、RabbitMQ、FastAPI）。
+ *
+ * @param success 成功回调
+ * @param failure 失败回调（可选）
+ */
+export const getSystemHealth = (
+    success: (data: DashboardSystemHealthVO) => void,
+    failure?: (message: string, code: number, url: string) => void
+) => {
+    get('/api/dashboard/system-health', success, failure)
+}

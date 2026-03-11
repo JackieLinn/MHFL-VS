@@ -2,6 +2,7 @@ package ynu.jackielinn.server.service;
 
 import ynu.jackielinn.server.dto.response.DashboardPlatformStatsVO;
 import ynu.jackielinn.server.dto.response.DashboardStatCardsVO;
+import ynu.jackielinn.server.dto.response.DashboardSystemHealthVO;
 import ynu.jackielinn.server.dto.response.DashboardTaskStatusStatsVO;
 import ynu.jackielinn.server.dto.response.DashboardTaskTrendVO;
 import ynu.jackielinn.server.dto.response.TaskVO;
@@ -64,4 +65,11 @@ public interface DashboardService {
      * @return TaskVO 列表
      */
     List<TaskVO> getRecentTasks(Long uid, boolean isAdmin);
+
+    /**
+     * 系统健康检查（MySQL、Redis、RabbitMQ、FastAPI）。
+     *
+     * @return DashboardSystemHealthVO
+     */
+    DashboardSystemHealthVO getSystemHealth();
 }
