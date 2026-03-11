@@ -898,6 +898,18 @@ html.dark .recent-status.status-recommended {
     border-color: rgba(139, 92, 246, 0.35);
 }
 
+.recent-status.status-cancelled {
+    background: rgba(120, 113, 108, 0.15);
+    color: #78716c;
+    border-color: rgba(120, 113, 108, 0.25);
+}
+
+html.dark .recent-status.status-cancelled {
+    background: rgba(120, 113, 108, 0.2);
+    color: #a8a29e;
+    border-color: rgba(120, 113, 108, 0.3);
+}
+
 /* ========================================
    动画
    ======================================== */

@@ -101,3 +101,25 @@ export const getStatCards = (
 ) => {
     get('/api/dashboard/stat-cards', success, failure)
 }
+
+/** 最近任务项（与后端 TaskVO 精简字段一致） */
+export interface DashboardRecentTaskVO {
+    id: number
+    algorithmName: string
+    dataName: string
+    status: number // 0-5
+    createTime: string
+}
+
+/**
+ * 获取最近任务（按 create_time 降序取前 8 条）。管理员全平台，普通用户本人。
+ *
+ * @param success 成功回调
+ * @param failure 失败回调（可选）
+ */
+export const getRecentTasks = (
+    success: (data: DashboardRecentTaskVO[]) => void,
+    failure?: (message: string, code: number, url: string) => void
+) => {
+    get('/api/dashboard/recent-tasks', success, failure)
+}

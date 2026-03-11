@@ -4,11 +4,14 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 import ynu.jackielinn.server.dto.response.DashboardPlatformStatsVO;
-import ynu.jackielinn.server.dto.response.DashboardTaskStatusStatsVO;
 import ynu.jackielinn.server.dto.response.DashboardStatCardsVO;
+import ynu.jackielinn.server.dto.response.DashboardTaskStatusStatsVO;
 import ynu.jackielinn.server.dto.response.DashboardTaskTrendVO;
+import ynu.jackielinn.server.dto.response.TaskVO;
 import ynu.jackielinn.server.common.Status;
+import ynu.jackielinn.server.entity.Account;
 import ynu.jackielinn.server.entity.Algorithm;
+import ynu.jackielinn.server.entity.Dataset;
 import ynu.jackielinn.server.entity.Task;
 import ynu.jackielinn.server.service.AccountService;
 import ynu.jackielinn.server.service.AlgorithmService;
@@ -22,6 +25,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class DashboardServiceImpl implements DashboardService {
@@ -140,6 +145,52 @@ public class DashboardServiceImpl implements DashboardService {
                 .success(success)
                 .today(todayCount)
                 .build();
+    }
+
+    /**
+     * 最近任务列表，按 create_time 降序取前 8 条。管理员全平台，普通用户仅本人。
+     *
+     * @param uid     当前用户 id
+     * @param isAdmin 是否为管理员
+     * @return TaskVO 列表
+     */
+    @Override
+    public List<TaskVO> getRecentTasks(Long uid, boolean isAdmin) {
+        LambdaQueryWrapper<Task> wrapper = taskBaseWrapper(uid, isAdmin)
+                .orderByDesc(Task::getCreateTime)
+                .last("limit 8");
+        List<Task> records = taskService.list(wrapper);
+        return toTaskVOList(records);
+    }
+
+    /**
+     * 将 Task 列表转为 TaskVO 列表，并填充 dataName、algorithmName、username。
+     *
+     * @param records 任务实体列表
+     * @return TaskVO 列表
+     */
+    private List<TaskVO> toTaskVOList(List<Task> records) {
+        if (records == null || records.isEmpty()) {
+            return List.of();
+        }
+        Set<Long> dids = records.stream().map(Task::getDid).collect(Collectors.toSet());
+        Set<Long> aids = records.stream().map(Task::getAid).collect(Collectors.toSet());
+        Set<Long> uids = records.stream().map(Task::getUid).collect(Collectors.toSet());
+
+        Map<Long, String> dataNameMap = datasetService.listByIds(dids).stream()
+                .collect(Collectors.toMap(Dataset::getId, Dataset::getDataName));
+        Map<Long, String> algorithmNameMap = algorithmService.listByIds(aids).stream()
+                .collect(Collectors.toMap(Algorithm::getId, Algorithm::getAlgorithmName));
+        Map<Long, String> usernameMap = accountService.listByIds(uids).stream()
+                .collect(Collectors.toMap(Account::getId, Account::getUsername));
+
+        return records.stream()
+                .map(task -> task.asViewObject(TaskVO.class, vo -> {
+                    vo.setDataName(dataNameMap.get(task.getDid()));
+                    vo.setAlgorithmName(algorithmNameMap.get(task.getAid()));
+                    vo.setUsername(usernameMap.get(task.getUid()));
+                }))
+                .toList();
     }
 
     private LambdaQueryWrapper<Task> taskBaseWrapper(Long uid, boolean isAdmin) {

@@ -12,11 +12,13 @@ import org.springframework.web.bind.annotation.RestController;
 import ynu.jackielinn.server.common.RestResponse;
 import ynu.jackielinn.server.common.BaseController;
 import ynu.jackielinn.server.dto.response.DashboardPlatformStatsVO;
-import ynu.jackielinn.server.dto.response.DashboardTaskStatusStatsVO;
 import ynu.jackielinn.server.dto.response.DashboardStatCardsVO;
+import ynu.jackielinn.server.dto.response.DashboardTaskStatusStatsVO;
 import ynu.jackielinn.server.dto.response.DashboardTaskTrendVO;
+import ynu.jackielinn.server.dto.response.TaskVO;
 import ynu.jackielinn.server.service.DashboardService;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -122,5 +124,26 @@ public class DashboardController extends BaseController {
         }
         DashboardStatCardsVO stats = dashboardService.getStatCards(uid, isAdmin());
         return RestResponse.success(stats);
+    }
+
+    /**
+     * 最近任务列表，按 create_time 降序取前 8 条。管理员全平台，普通用户仅本人。
+     *
+     * @param request 用于获取当前用户 id
+     * @return List&lt;TaskVO&gt;
+     */
+    @Operation(summary = "获取最近任务", description = "按 create_time 降序取前 8 条；管理员全平台，普通用户本人")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "401", description = "未登录或 token 过期")
+    })
+    @GetMapping("/recent-tasks")
+    public RestResponse<List<TaskVO>> getRecentTasks(HttpServletRequest request) {
+        Long uid = (Long) request.getAttribute("id");
+        if (uid == null) {
+            return RestResponse.failure(401, "未登录或登录已过期");
+        }
+        List<TaskVO> tasks = dashboardService.getRecentTasks(uid, isAdmin());
+        return RestResponse.success(tasks);
     }
 }

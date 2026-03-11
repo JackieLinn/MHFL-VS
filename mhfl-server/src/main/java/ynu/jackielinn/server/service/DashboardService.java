@@ -4,7 +4,9 @@ import ynu.jackielinn.server.dto.response.DashboardPlatformStatsVO;
 import ynu.jackielinn.server.dto.response.DashboardStatCardsVO;
 import ynu.jackielinn.server.dto.response.DashboardTaskStatusStatsVO;
 import ynu.jackielinn.server.dto.response.DashboardTaskTrendVO;
+import ynu.jackielinn.server.dto.response.TaskVO;
 
+import java.util.List;
 import java.util.Map;
 
 public interface DashboardService {
@@ -53,4 +55,13 @@ public interface DashboardService {
      * @return DashboardStatCardsVO
      */
     DashboardStatCardsVO getStatCards(Long uid, boolean isAdmin);
+
+    /**
+     * 最近任务列表，按 create_time 降序取前 8 条。管理员全平台，普通用户仅本人。
+     *
+     * @param uid     当前用户 id
+     * @param isAdmin 是否为管理员
+     * @return TaskVO 列表
+     */
+    List<TaskVO> getRecentTasks(Long uid, boolean isAdmin);
 }

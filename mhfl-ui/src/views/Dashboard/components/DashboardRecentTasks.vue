@@ -1,44 +1,58 @@
 <script setup lang="ts">
+import {ref, onMounted} from 'vue'
 import {useRouter} from 'vue-router'
 import {useI18n} from 'vue-i18n'
+import {getRecentTasks, type DashboardRecentTaskVO} from '@/api/dashboard'
 
 const router = useRouter()
 const {t} = useI18n()
 
-const recentTasks = [
-  {id: 101, algorithmName: 'FedAvg', dataName: 'CIFAR-100', status: 'IN_PROGRESS', createTime: '2026-03-01 10:20'},
-  {id: 102, algorithmName: 'FedProto', dataName: 'Tiny-ImageNet', status: 'SUCCESS', createTime: '2026-03-01 09:15'},
-  {id: 103, algorithmName: 'LG-FedAvg', dataName: 'CIFAR-100', status: 'NOT_STARTED', createTime: '2026-02-28 16:00'},
-  {id: 104, algorithmName: 'FedSSA', dataName: 'CIFAR-100', status: 'SUCCESS', createTime: '2026-02-28 14:30'},
-  {id: 105, algorithmName: 'Standalone', dataName: 'Tiny-ImageNet', status: 'SUCCESS', createTime: '2026-02-28 11:00'},
-  {id: 106, algorithmName: 'FedAvg', dataName: 'Tiny-ImageNet', status: 'FAILED', createTime: '2026-02-27 17:45'},
-  {id: 107, algorithmName: 'FedProto', dataName: 'CIFAR-100', status: 'SUCCESS', createTime: '2026-02-27 15:20'},
-  {
-    id: 108,
-    algorithmName: 'LG-FedAvg',
-    dataName: 'Tiny-ImageNet',
-    status: 'NOT_STARTED',
-    createTime: '2026-02-27 10:10'
-  },
-  {id: 109, algorithmName: 'FedSSA', dataName: 'Tiny-ImageNet', status: 'SUCCESS', createTime: '2026-02-26 16:00'},
-  {id: 110, algorithmName: 'FedAvg', dataName: 'CIFAR-100', status: 'RECOMMENDED', createTime: '2026-02-26 09:00'}
-].slice(0, 8)
+const SLOT_COUNT = 8
+const recentTasks = ref<DashboardRecentTaskVO[]>([])
+const loading = ref(true)
 
-const statusKey = (s: string) => {
-  const map: Record<string, string> = {
-    NOT_STARTED: 'statusNotStarted',
-    IN_PROGRESS: 'statusInProgress',
-    SUCCESS: 'statusSuccess',
-    FAILED: 'statusFailed',
-    CANCELLED: 'statusCancelled',
-    RECOMMENDED: 'statusRecommended'
-  }
-  return map[s] || s
+/** 状态码 0-5 对应 i18n key */
+const statusCodeToKey: Record<number, string> = {
+  0: 'statusNotStarted',
+  1: 'statusInProgress',
+  2: 'statusSuccess',
+  3: 'statusRecommended',
+  4: 'statusFailed',
+  5: 'statusCancelled'
 }
 
-const statusLabel = (s: string) => t(`pages.dashboard.${statusKey(s)}`)
+/** 状态码 0-5 对应 CSS class 后缀 */
+const statusCodeToClass: Record<number, string> = {
+  0: 'not_started',
+  1: 'in_progress',
+  2: 'success',
+  3: 'recommended',
+  4: 'failed',
+  5: 'cancelled'
+}
+
+const statusLabel = (code: number) => t(`pages.dashboard.${statusCodeToKey[code] ?? 'statusNotStarted'}`)
+const statusClass = (code: number) => `status-${statusCodeToClass[code] ?? 'not_started'}`
+
+/** 8 个槽位：有数据则填任务，无则 null */
+const displaySlots = () => {
+  const arr: (DashboardRecentTaskVO | null)[] = []
+  for (let i = 0; i < SLOT_COUNT; i++) {
+    arr.push(recentTasks.value[i] ?? null)
+  }
+  return arr
+}
 
 const goTo = (path: string) => router.push(path)
+
+onMounted(() => {
+  getRecentTasks((data) => {
+    recentTasks.value = data
+    loading.value = false
+  }, () => {
+    loading.value = false
+  })
+})
 </script>
 
 <template>
@@ -54,23 +68,32 @@ const goTo = (path: string) => router.push(path)
     <transition-group name="recent-list-fade" tag="ul"
                       class="recent-list flex flex-col gap-1.5 flex-1 overflow-y-auto list-none p-0 m-0" appear>
       <li
-          v-for="(task, index) in recentTasks"
-          :key="task.id"
-          class="recent-item flex items-center justify-between gap-3 py-2.5 px-3 rounded-lg cursor-pointer transition-all duration-200 recent-item-theme"
+          v-for="(slot, index) in displaySlots()"
+          :key="slot ? slot.id : `empty-${index}`"
+          class="recent-item flex items-center justify-between gap-3 py-2.5 px-3 rounded-lg transition-all duration-200 recent-item-theme"
+          :class="{ 'cursor-pointer': !!slot }"
           :style="{ '--item-delay': `${index * 0.03}s` }"
-          @click="goTo(`/home/task?taskId=${task.id}`)"
+          @click="slot && goTo(`/home/task?taskId=${slot.id}`)"
       >
-        <div
-            class="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[13px] text-[var(--home-text-primary)]">
-          <span class="font-medium">{{ task.algorithmName }}</span>
-          <span class="text-[var(--home-text-muted)]"> / {{ task.dataName }}</span>
-        </div>
-        <span class="recent-status text-xs py-0.5 px-2 rounded-md flex-shrink-0"
-              :class="'status-' + task.status.toLowerCase()">{{ statusLabel(task.status) }}</span>
-        <span class="text-[11px] text-[var(--home-text-muted)] flex-shrink-0">{{ task.createTime }}</span>
+        <template v-if="slot">
+          <div
+              class="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[13px] text-[var(--home-text-primary)]">
+            <span class="font-medium">{{ slot.algorithmName }}</span>
+            <span class="text-[var(--home-text-muted)]"> / {{ slot.dataName }}</span>
+          </div>
+          <span class="recent-status text-xs py-0.5 px-2 rounded-md flex-shrink-0"
+                :class="statusClass(slot.status)">{{ statusLabel(slot.status) }}</span>
+          <span class="text-[11px] text-[var(--home-text-muted)] flex-shrink-0">{{ slot.createTime }}</span>
+        </template>
+        <template v-else>
+          <div class="flex-1 min-h-[20px]"></div>
+        </template>
       </li>
     </transition-group>
-    <p v-if="!recentTasks.length" class="text-[13px] text-[var(--home-text-muted)] mt-4 mb-0 p-0">
+    <p v-if="!loading && recentTasks.length === 0" class="text-[13px] text-[var(--home-text-muted)] mt-4 mb-0 p-0">
       {{ $t('pages.dashboard.noRecentTasks') }}</p>
+    <p v-else-if="!loading && recentTasks.length > 0 && recentTasks.length < SLOT_COUNT"
+       class="text-[12px] text-[var(--home-text-muted)] mt-2 mb-0 p-0">
+      {{ $t('pages.dashboard.noMoreTasks') }}</p>
   </div>
 </template>

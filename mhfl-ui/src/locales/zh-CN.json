@@ -130,6 +130,7 @@
       "recentTasks": "最近任务",
       "viewAll": "查看全部",
       "noRecentTasks": "暂无最近任务",
+      "noMoreTasks": "暂无更多任务",
       "resourceTitle": "资源概览",
       "cpu": "CPU",
       "memory": "内存",
