@@ -1,18 +1,14 @@
 <script setup lang="ts">
 import {ref, computed, watch, onMounted, onBeforeUnmount, nextTick} from 'vue'
 import {getUserInfo} from '@/api/user'
+import {getPlatformStats} from '@/api/dashboard'
 import {useTheme} from '@/stores/theme'
 import * as echarts from 'echarts'
 
 const {actualTheme} = useTheme()
 const isAdmin = computed(() => getUserInfo()?.role === 'admin')
 
-const platformStats = {
-  totalUsers: 28,
-  totalTasks: 156,
-  totalDatasets: 6,
-  totalAlgorithms: 5
-}
+const platformStats = ref({totalUsers: 0, totalTasks: 0, totalDatasets: 0, totalAlgorithms: 0})
 
 const algorithmBarData = [
   {name: 'FedAvg', value: 45},
@@ -107,6 +103,9 @@ let resizeObserver: ResizeObserver | null = null
 
 onMounted(() => {
   if (!isAdmin.value) return
+  getPlatformStats((data) => {
+    platformStats.value = data
+  })
   nextTick(() => {
     if (chartAlgorithmRef.value) {
       chartAlgorithm = echarts.init(chartAlgorithmRef.value)
