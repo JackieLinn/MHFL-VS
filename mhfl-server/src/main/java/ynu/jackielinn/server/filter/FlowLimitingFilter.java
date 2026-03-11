@@ -92,7 +92,8 @@ public class FlowLimitingFilter extends HttpFilter {
     }
 
     /**
-     * 检查指定 IP 地址的请求是否在限制周期内
+     * 检查指定 IP 地址的请求是否在限制周期内。
+     * 使用 setIfAbsent(key, "1", 10, SECONDS) 原子创建 counter，避免 set+expire 竞态导致 TTL 丢失。
      *
      * @param ip 请求的 IP 地址
      * @return 如果请求未超过限制，返回 true；否则返回 false
@@ -108,8 +109,16 @@ public class FlowLimitingFilter extends HttpFilter {
                 return false;
             }
         } else {
-            template.opsForValue().set(counterKey, "1");
-            template.expire(counterKey, 10, TimeUnit.SECONDS);
+            Boolean created = template.opsForValue().setIfAbsent(counterKey, "1", 10, TimeUnit.SECONDS);
+            if (!Boolean.TRUE.equals(created)) {
+                // 竞态：另一请求已创建 key，需 INCR（该 key 由 setIfAbsent 创建，已带 TTL）
+                long increment = Optional.ofNullable(template.opsForValue().increment(counterKey)).orElse(0L);
+                if (increment > 100) {
+                    template.opsForValue().set(blockKey, "");
+                    template.expire(blockKey, 10, TimeUnit.SECONDS);
+                    return false;
+                }
+            }
         }
         return true;
     }

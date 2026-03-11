@@ -70,15 +70,16 @@ class FlowLimitingFilterTest {
     }
 
     @Test
-    void shouldPassWhenNoCounterKeyAndSetCounter() throws Exception {
+    void shouldPassWhenNoCounterKeyAndSetIfAbsentSucceeds() throws Exception {
         when(request.getRemoteAddr()).thenReturn(IP);
         when(template.hasKey(Const.FLOW_LIMIT_BLOCK + IP)).thenReturn(false);
         when(template.hasKey(Const.FLOW_LIMIT_COUNTER + IP)).thenReturn(false);
+        when(valueOperations.setIfAbsent(eq(Const.FLOW_LIMIT_COUNTER + IP), eq("1"), eq(10L), eq(TimeUnit.SECONDS)))
+                .thenReturn(true);
 
         filter.doFilter(request, response, chain);
 
-        verify(valueOperations).set(eq(Const.FLOW_LIMIT_COUNTER + IP), eq("1"));
-        verify(template).expire(eq(Const.FLOW_LIMIT_COUNTER + IP), eq(10L), eq(TimeUnit.SECONDS));
+        verify(valueOperations).setIfAbsent(eq(Const.FLOW_LIMIT_COUNTER + IP), eq("1"), eq(10L), eq(TimeUnit.SECONDS));
         verify(chain).doFilter(request, response);
     }
 
@@ -119,11 +120,12 @@ class FlowLimitingFilterTest {
         when(request.getRemoteAddr()).thenReturn("0:0:0:0:0:0:0:1");
         when(template.hasKey(Const.FLOW_LIMIT_BLOCK + "127.0.0.1")).thenReturn(false);
         when(template.hasKey(Const.FLOW_LIMIT_COUNTER + "127.0.0.1")).thenReturn(false);
+        when(valueOperations.setIfAbsent(eq(Const.FLOW_LIMIT_COUNTER + "127.0.0.1"), eq("1"), eq(10L), eq(TimeUnit.SECONDS)))
+                .thenReturn(true);
 
         filter.doFilter(request, response, chain);
 
-        verify(valueOperations).set(eq(Const.FLOW_LIMIT_COUNTER + "127.0.0.1"), eq("1"));
-        verify(template).expire(eq(Const.FLOW_LIMIT_COUNTER + "127.0.0.1"), eq(10L), eq(TimeUnit.SECONDS));
+        verify(valueOperations).setIfAbsent(eq(Const.FLOW_LIMIT_COUNTER + "127.0.0.1"), eq("1"), eq(10L), eq(TimeUnit.SECONDS));
         verify(chain).doFilter(request, response);
     }
 
@@ -132,11 +134,28 @@ class FlowLimitingFilterTest {
         when(request.getRemoteAddr()).thenReturn("::1");
         when(template.hasKey(Const.FLOW_LIMIT_BLOCK + "127.0.0.1")).thenReturn(false);
         when(template.hasKey(Const.FLOW_LIMIT_COUNTER + "127.0.0.1")).thenReturn(false);
+        when(valueOperations.setIfAbsent(eq(Const.FLOW_LIMIT_COUNTER + "127.0.0.1"), eq("1"), eq(10L), eq(TimeUnit.SECONDS)))
+                .thenReturn(true);
 
         filter.doFilter(request, response, chain);
 
-        verify(valueOperations).set(eq(Const.FLOW_LIMIT_COUNTER + "127.0.0.1"), eq("1"));
-        verify(template).expire(eq(Const.FLOW_LIMIT_COUNTER + "127.0.0.1"), eq(10L), eq(TimeUnit.SECONDS));
+        verify(valueOperations).setIfAbsent(eq(Const.FLOW_LIMIT_COUNTER + "127.0.0.1"), eq("1"), eq(10L), eq(TimeUnit.SECONDS));
+        verify(chain).doFilter(request, response);
+    }
+
+    @Test
+    void shouldIncrWhenSetIfAbsentFailsDueToRace() throws Exception {
+        when(request.getRemoteAddr()).thenReturn(IP);
+        when(template.hasKey(Const.FLOW_LIMIT_BLOCK + IP)).thenReturn(false);
+        when(template.hasKey(Const.FLOW_LIMIT_COUNTER + IP)).thenReturn(false);
+        when(valueOperations.setIfAbsent(eq(Const.FLOW_LIMIT_COUNTER + IP), eq("1"), eq(10L), eq(TimeUnit.SECONDS)))
+                .thenReturn(false);
+        when(valueOperations.increment(Const.FLOW_LIMIT_COUNTER + IP)).thenReturn(2L);
+
+        filter.doFilter(request, response, chain);
+
+        verify(valueOperations).setIfAbsent(eq(Const.FLOW_LIMIT_COUNTER + IP), eq("1"), eq(10L), eq(TimeUnit.SECONDS));
+        verify(valueOperations).increment(Const.FLOW_LIMIT_COUNTER + IP);
         verify(chain).doFilter(request, response);
     }
 }
