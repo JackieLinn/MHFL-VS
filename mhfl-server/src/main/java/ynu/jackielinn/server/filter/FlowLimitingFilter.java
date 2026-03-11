@@ -83,15 +83,18 @@ public class FlowLimitingFilter extends HttpFilter {
      * @return 如果请求未超过限制，返回 true；否则返回 false
      */
     private boolean limitPeriodCheck(String ip) {
-        if (template.hasKey(Const.FLOW_LIMIT_COUNTER + ip)) {
-            long increment = Optional.ofNullable(
-                    template.opsForValue().increment(Const.FLOW_LIMIT_COUNTER + ip)).orElse(0L);
+        String counterKey = Const.FLOW_LIMIT_COUNTER + ip;
+        String blockKey = Const.FLOW_LIMIT_BLOCK + ip;
+        if (template.hasKey(counterKey)) {
+            long increment = Optional.ofNullable(template.opsForValue().increment(counterKey)).orElse(0L);
             if (increment > 100) {
-                template.opsForValue().set(Const.FLOW_LIMIT_BLOCK + ip, "", 10, TimeUnit.SECONDS);
+                template.opsForValue().set(blockKey, "");
+                template.expire(blockKey, 10, TimeUnit.SECONDS);
                 return false;
             }
         } else {
-            template.opsForValue().set(Const.FLOW_LIMIT_COUNTER + ip, "1", 10, TimeUnit.SECONDS);
+            template.opsForValue().set(counterKey, "1");
+            template.expire(counterKey, 10, TimeUnit.SECONDS);
         }
         return true;
     }

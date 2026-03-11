@@ -77,7 +77,8 @@ class FlowLimitingFilterTest {
 
         filter.doFilter(request, response, chain);
 
-        verify(valueOperations).set(eq(Const.FLOW_LIMIT_COUNTER + IP), eq("1"), eq(10L), eq(TimeUnit.SECONDS));
+        verify(valueOperations).set(eq(Const.FLOW_LIMIT_COUNTER + IP), eq("1"));
+        verify(template).expire(eq(Const.FLOW_LIMIT_COUNTER + IP), eq(10L), eq(TimeUnit.SECONDS));
         verify(chain).doFilter(request, response);
     }
 
@@ -91,7 +92,7 @@ class FlowLimitingFilterTest {
         filter.doFilter(request, response, chain);
 
         verify(chain).doFilter(request, response);
-        verify(valueOperations, never()).set(eq(Const.FLOW_LIMIT_BLOCK + IP), anyString(), anyLong(), any(TimeUnit.class));
+        verify(valueOperations, never()).set(eq(Const.FLOW_LIMIT_BLOCK + IP), anyString());
     }
 
     @Test
@@ -106,7 +107,8 @@ class FlowLimitingFilterTest {
 
         filter.doFilter(request, response, chain);
 
-        verify(valueOperations).set(eq(Const.FLOW_LIMIT_BLOCK + IP), eq(""), eq(10L), eq(TimeUnit.SECONDS));
+        verify(valueOperations).set(eq(Const.FLOW_LIMIT_BLOCK + IP), eq(""));
+        verify(template).expire(eq(Const.FLOW_LIMIT_BLOCK + IP), eq(10L), eq(TimeUnit.SECONDS));
         verify(response).setStatus(HttpServletResponse.SC_FORBIDDEN);
         assertTrue(sw.toString().contains("操作频繁"));
         verify(chain, never()).doFilter(request, response);
