@@ -80,3 +80,24 @@ export const getTaskTrend7Days = (
 ) => {
     get('/api/dashboard/task-trend-7days', success, failure)
 }
+
+/** 统计卡片数据（与后端 DashboardStatCardsVO 一致） */
+export interface DashboardStatCardsVO {
+    total: number
+    running: number
+    success: number
+    today: number
+}
+
+/**
+ * 获取统计卡片数据（总数、进行中、已完成、今日创建）。
+ *
+ * @param success 成功回调
+ * @param failure 失败回调（可选）
+ */
+export const getStatCards = (
+    success: (data: DashboardStatCardsVO) => void,
+    failure?: (message: string, code: number, url: string) => void
+) => {
+    get('/api/dashboard/stat-cards', success, failure)
+}

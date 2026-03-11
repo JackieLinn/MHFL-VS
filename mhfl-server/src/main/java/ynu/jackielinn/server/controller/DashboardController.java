@@ -13,6 +13,7 @@ import ynu.jackielinn.server.common.RestResponse;
 import ynu.jackielinn.server.common.BaseController;
 import ynu.jackielinn.server.dto.response.DashboardPlatformStatsVO;
 import ynu.jackielinn.server.dto.response.DashboardTaskStatusStatsVO;
+import ynu.jackielinn.server.dto.response.DashboardStatCardsVO;
 import ynu.jackielinn.server.dto.response.DashboardTaskTrendVO;
 import ynu.jackielinn.server.service.DashboardService;
 
@@ -100,5 +101,26 @@ public class DashboardController extends BaseController {
         }
         DashboardTaskTrendVO trend = dashboardService.getTaskTrend7Days(uid, isAdmin());
         return RestResponse.success(trend);
+    }
+
+    /**
+     * 获取统计卡片数据（总数、进行中、已完成、今日创建）。管理员全平台，普通用户本人。
+     *
+     * @param request 用于获取当前用户 id
+     * @return DashboardStatCardsVO
+     */
+    @Operation(summary = "获取统计卡片数据", description = "总数、进行中、已完成、今日创建；管理员全平台，普通用户本人")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "401", description = "未登录或 token 过期")
+    })
+    @GetMapping("/stat-cards")
+    public RestResponse<DashboardStatCardsVO> getStatCards(HttpServletRequest request) {
+        Long uid = (Long) request.getAttribute("id");
+        if (uid == null) {
+            return RestResponse.failure(401, "未登录或登录已过期");
+        }
+        DashboardStatCardsVO stats = dashboardService.getStatCards(uid, isAdmin());
+        return RestResponse.success(stats);
     }
 }

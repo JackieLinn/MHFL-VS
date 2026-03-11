@@ -1,6 +1,7 @@
 package ynu.jackielinn.server.service;
 
 import ynu.jackielinn.server.dto.response.DashboardPlatformStatsVO;
+import ynu.jackielinn.server.dto.response.DashboardStatCardsVO;
 import ynu.jackielinn.server.dto.response.DashboardTaskStatusStatsVO;
 import ynu.jackielinn.server.dto.response.DashboardTaskTrendVO;
 
@@ -42,4 +43,14 @@ public interface DashboardService {
      * @return DashboardTaskTrendVO（dates + counts）
      */
     DashboardTaskTrendVO getTaskTrend7Days(Long uid, boolean isAdmin);
+
+    /**
+     * 获取统计卡片数据（总数、进行中、已完成、今日创建）。
+     * 管理员统计全平台，普通用户仅统计本人任务。已完成 = SUCCESS + RECOMMENDED。
+     *
+     * @param uid     当前用户 id
+     * @param isAdmin 是否为管理员
+     * @return DashboardStatCardsVO
+     */
+    DashboardStatCardsVO getStatCards(Long uid, boolean isAdmin);
 }

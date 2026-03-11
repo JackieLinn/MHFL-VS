@@ -5,6 +5,7 @@ import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 import ynu.jackielinn.server.dto.response.DashboardPlatformStatsVO;
 import ynu.jackielinn.server.dto.response.DashboardTaskStatusStatsVO;
+import ynu.jackielinn.server.dto.response.DashboardStatCardsVO;
 import ynu.jackielinn.server.dto.response.DashboardTaskTrendVO;
 import ynu.jackielinn.server.common.Status;
 import ynu.jackielinn.server.entity.Algorithm;
@@ -113,6 +114,32 @@ public class DashboardServiceImpl implements DashboardService {
             counts.add(cnt);
         }
         return DashboardTaskTrendVO.builder().dates(dates).counts(counts).build();
+    }
+
+    /**
+     * 获取统计卡片数据。total = 该用户/全平台全部状态任务数；今日 = create_time 在当天。
+     *
+     * @param uid     当前用户 id
+     * @param isAdmin 是否为管理员
+     * @return DashboardStatCardsVO
+     */
+    @Override
+    public DashboardStatCardsVO getStatCards(Long uid, boolean isAdmin) {
+        long total = taskService.count(taskBaseWrapper(uid, isAdmin));
+        long running = taskService.count(taskBaseWrapper(uid, isAdmin).eq(Task::getStatus, Status.IN_PROGRESS));
+        long success = taskService.count(taskBaseWrapper(uid, isAdmin).in(Task::getStatus, Status.SUCCESS, Status.RECOMMENDED));
+        LocalDate today = LocalDate.now();
+        long todayCount = taskService.count(
+                taskBaseWrapper(uid, isAdmin)
+                        .ge(Task::getCreateTime, today.atStartOfDay())
+                        .le(Task::getCreateTime, today.atTime(23, 59, 59))
+        );
+        return DashboardStatCardsVO.builder()
+                .total(total)
+                .running(running)
+                .success(success)
+                .today(todayCount)
+                .build();
     }
 
     private LambdaQueryWrapper<Task> taskBaseWrapper(Long uid, boolean isAdmin) {

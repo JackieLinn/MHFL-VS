@@ -1,12 +1,6 @@
 <script setup lang="ts">
 import {ref, onMounted, onBeforeUnmount, type Ref} from 'vue'
-
-const stats = {
-  total: 12,
-  running: 1,
-  success: 8,
-  today: 2
-}
+import {getStatCards} from '@/api/dashboard'
 
 const animatedTotal = ref(0)
 const animatedRunning = ref(0)
@@ -42,10 +36,12 @@ const animateNumber = (key: string, targetRef: Ref<number>, to: number, duration
 }
 
 onMounted(() => {
-  animateNumber('total', animatedTotal, stats.total, 800)
-  animateNumber('running', animatedRunning, stats.running, 880)
-  animateNumber('success', animatedSuccess, stats.success, 940)
-  animateNumber('today', animatedToday, stats.today, 980)
+  getStatCards((data) => {
+    animateNumber('total', animatedTotal, data.total, 800)
+    animateNumber('running', animatedRunning, data.running, 880)
+    animateNumber('success', animatedSuccess, data.success, 940)
+    animateNumber('today', animatedToday, data.today, 980)
+  })
 })
 
 onBeforeUnmount(() => {
