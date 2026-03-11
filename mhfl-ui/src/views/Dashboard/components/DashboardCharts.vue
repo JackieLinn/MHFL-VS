@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import {ref, watch, onMounted, onBeforeUnmount, nextTick} from 'vue'
+import {getTaskStatusStats} from '@/api/dashboard'
 import {useTheme} from '@/stores/theme'
 import * as echarts from 'echarts'
 
 const {actualTheme} = useTheme()
 
-const taskStatusPieData = [
-  {value: 3, name: '未开始', itemStyle: {color: '#94a3b8'}},
-  {value: 1, name: '进行中', itemStyle: {color: '#22c55e'}},
-  {value: 8, name: '已完成', itemStyle: {color: '#6366f1'}},
+const taskStatusPieData = ref([
+  {value: 0, name: '未开始', itemStyle: {color: '#94a3b8'}},
+  {value: 0, name: '进行中', itemStyle: {color: '#22c55e'}},
+  {value: 0, name: '已完成', itemStyle: {color: '#6366f1'}},
   {value: 0, name: '失败', itemStyle: {color: '#f87171'}}
-]
+])
 
 const taskTrendDays = ['02-25', '02-26', '02-27', '02-28', '03-01', '03-02', '03-03']
 const taskTrendValues = [2, 1, 3, 0, 2, 1, 2]
@@ -61,7 +62,7 @@ const getStatusPieOption = () => {
       center: ['50%', '42%'],
       label: {show: false},
       labelLine: {show: false},
-      data: taskStatusPieData,
+      data: taskStatusPieData.value,
       emphasis: {
         scale: true,
         scaleSize: 8,
@@ -150,10 +151,21 @@ watch(actualTheme, () => {
   chartStatus?.setOption(getStatusPieOption(), {notMerge: true})
   chartTrend?.setOption(getTrendLineOption(), {notMerge: true})
 })
+watch(taskStatusPieData, () => {
+  chartStatus?.setOption(getStatusPieOption(), {notMerge: true})
+}, {deep: true})
 
 let resizeObserver: ResizeObserver | null = null
 
 onMounted(() => {
+  getTaskStatusStats((data) => {
+    taskStatusPieData.value = [
+      {value: data.notStarted, name: '未开始', itemStyle: {color: '#94a3b8'}},
+      {value: data.inProgress, name: '进行中', itemStyle: {color: '#22c55e'}},
+      {value: data.completed, name: '已完成', itemStyle: {color: '#6366f1'}},
+      {value: data.failed, name: '失败', itemStyle: {color: '#f87171'}}
+    ]
+  })
   nextTick(() => {
     if (chartStatusRef.value) {
       chartStatus = echarts.init(chartStatusRef.value)

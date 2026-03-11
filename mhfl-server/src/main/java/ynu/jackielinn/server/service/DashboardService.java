@@ -1,6 +1,7 @@
 package ynu.jackielinn.server.service;
 
 import ynu.jackielinn.server.dto.response.DashboardPlatformStatsVO;
+import ynu.jackielinn.server.dto.response.DashboardTaskStatusStatsVO;
 
 import java.util.Map;
 
@@ -20,4 +21,14 @@ public interface DashboardService {
      * @return Map 算法名 -> 任务数
      */
     Map<String, Long> getTasksByAlgorithm();
+
+    /**
+     * 获取任务状态分布统计（未开始、进行中、已完成、失败）。
+     * 管理员统计全平台，普通用户仅统计本人任务。已完成 = SUCCESS + RECOMMENDED。
+     *
+     * @param uid     当前用户 id
+     * @param isAdmin 是否为管理员
+     * @return DashboardTaskStatusStatsVO
+     */
+    DashboardTaskStatusStatsVO getTaskStatusStats(Long uid, boolean isAdmin);
 }

@@ -40,3 +40,24 @@ export const getTasksByAlgorithm = (
 ) => {
     get('/api/dashboard/admin/tasks-by-algorithm', success, failure)
 }
+
+/** 任务状态分布统计（与后端 DashboardTaskStatusStatsVO 一致） */
+export interface DashboardTaskStatusStatsVO {
+    notStarted: number
+    inProgress: number
+    completed: number
+    failed: number
+}
+
+/**
+ * 获取任务状态分布统计（未开始、进行中、已完成、失败），用于饼状图。
+ *
+ * @param success 成功回调
+ * @param failure 失败回调（可选）
+ */
+export const getTaskStatusStats = (
+    success: (data: DashboardTaskStatusStatsVO) => void,
+    failure?: (message: string, code: number, url: string) => void
+) => {
+    get('/api/dashboard/task-status-stats', success, failure)
+}

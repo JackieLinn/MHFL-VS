@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 import ynu.jackielinn.server.dto.response.DashboardPlatformStatsVO;
+import ynu.jackielinn.server.dto.response.DashboardTaskStatusStatsVO;
+import ynu.jackielinn.server.common.Status;
 import ynu.jackielinn.server.entity.Algorithm;
 import ynu.jackielinn.server.entity.Task;
 import ynu.jackielinn.server.service.AccountService;
@@ -60,5 +62,34 @@ public class DashboardServiceImpl implements DashboardService {
             result.put(a.getAlgorithmName(), cnt);
         }
         return result;
+    }
+
+    /**
+     * 获取任务状态分布统计。非管理员仅查 uid，管理员查全部。已完成 = SUCCESS + RECOMMENDED。
+     *
+     * @param uid     当前用户 id
+     * @param isAdmin 是否为管理员
+     * @return DashboardTaskStatusStatsVO
+     */
+    @Override
+    public DashboardTaskStatusStatsVO getTaskStatusStats(Long uid, boolean isAdmin) {
+        long notStarted = taskService.count(taskBaseWrapper(uid, isAdmin).eq(Task::getStatus, Status.NOT_STARTED));
+        long inProgress = taskService.count(taskBaseWrapper(uid, isAdmin).eq(Task::getStatus, Status.IN_PROGRESS));
+        long completed = taskService.count(taskBaseWrapper(uid, isAdmin).in(Task::getStatus, Status.SUCCESS, Status.RECOMMENDED));
+        long failed = taskService.count(taskBaseWrapper(uid, isAdmin).eq(Task::getStatus, Status.FAILED));
+        return DashboardTaskStatusStatsVO.builder()
+                .notStarted(notStarted)
+                .inProgress(inProgress)
+                .completed(completed)
+                .failed(failed)
+                .build();
+    }
+
+    private LambdaQueryWrapper<Task> taskBaseWrapper(Long uid, boolean isAdmin) {
+        LambdaQueryWrapper<Task> w = new LambdaQueryWrapper<>();
+        if (!isAdmin) {
+            w.eq(Task::getUid, uid);
+        }
+        return w;
     }
 }
