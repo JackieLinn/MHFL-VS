@@ -22,5 +22,21 @@ export const getPlatformStats = (
     success: (data: DashboardPlatformStatsVO) => void,
     failure?: (message: string, code: number, url: string) => void
 ) => {
-    get('/api/dashboard/platform-stats', success, failure)
+    get('/api/dashboard/admin/platform-stats', success, failure)
+}
+
+/** 按算法统计任务数（算法名 -> 任务数） */
+export type TasksByAlgorithm = Record<string, number>
+
+/**
+ * 获取按算法分组的任务数量，用于柱状图。
+ *
+ * @param success 成功回调
+ * @param failure 失败回调（可选）
+ */
+export const getTasksByAlgorithm = (
+    success: (data: TasksByAlgorithm) => void,
+    failure?: (message: string, code: number, url: string) => void
+) => {
+    get('/api/dashboard/admin/tasks-by-algorithm', success, failure)
 }

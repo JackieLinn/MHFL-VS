@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {ref, computed, watch, onMounted, onBeforeUnmount, nextTick} from 'vue'
 import {getUserInfo} from '@/api/user'
-import {getPlatformStats} from '@/api/dashboard'
+import {getPlatformStats, getTasksByAlgorithm} from '@/api/dashboard'
 import {useTheme} from '@/stores/theme'
 import * as echarts from 'echarts'
 
@@ -10,13 +10,7 @@ const isAdmin = computed(() => getUserInfo()?.role === 'admin')
 
 const platformStats = ref({totalUsers: 0, totalTasks: 0, totalDatasets: 0, totalAlgorithms: 0})
 
-const algorithmBarData = [
-  {name: 'FedAvg', value: 45},
-  {name: 'FedProto', value: 38},
-  {name: 'LG-FedAvg', value: 32},
-  {name: 'FedSSA', value: 25},
-  {name: 'Standalone', value: 16}
-]
+const algorithmBarData = ref<{ name: string; value: number }[]>([])
 
 const chartAlgorithmRef = ref<HTMLElement | null>(null)
 let chartAlgorithm: echarts.ECharts | null = null
@@ -37,6 +31,8 @@ const getAlgorithmBarOption = () => {
   const textColor = chartTextColor()
   const mutedColor = chartMutedColor()
   const isDark = document.documentElement.classList.contains('dark')
+  const names = algorithmBarData.value.map(d => d.name)
+  const values = algorithmBarData.value.map(d => d.value)
   return {
     backgroundColor: 'transparent',
     tooltip: {
@@ -54,7 +50,7 @@ const getAlgorithmBarOption = () => {
     grid: {left: 56, right: 12, top: 16, bottom: 28},
     xAxis: {
       type: 'category',
-      data: algorithmBarData.map(d => d.name),
+      data: names,
       axisLine: {lineStyle: {color: mutedColor}},
       axisLabel: {color: textColor, fontSize: 13, rotate: 0, margin: 14}
     },
@@ -66,7 +62,7 @@ const getAlgorithmBarOption = () => {
     },
     series: [{
       type: 'bar',
-      data: algorithmBarData.map(d => d.value),
+      data: values,
       barWidth: '52%',
       itemStyle: {
         color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
@@ -98,6 +94,9 @@ const resizeChart = () => {
 watch(actualTheme, () => {
   chartAlgorithm?.setOption(getAlgorithmBarOption(), {notMerge: true})
 })
+watch(algorithmBarData, () => {
+  chartAlgorithm?.setOption(getAlgorithmBarOption(), {notMerge: true})
+}, {deep: true})
 
 let resizeObserver: ResizeObserver | null = null
 
@@ -106,14 +105,18 @@ onMounted(() => {
   getPlatformStats((data) => {
     platformStats.value = data
   })
+  getTasksByAlgorithm((data) => {
+    algorithmBarData.value = Object.entries(data).map(([name, value]) => ({name, value}))
+  })
   nextTick(() => {
     if (chartAlgorithmRef.value) {
       chartAlgorithm = echarts.init(chartAlgorithmRef.value)
       chartAlgorithm.setOption(getAlgorithmBarOption())
     }
     resizeObserver = new ResizeObserver(() => resizeChart())
+    if (chartAlgorithmRef.value) resizeObserver.observe(chartAlgorithmRef.value)
     const el = document.querySelector('.dashboard-page')
-    if (el) resizeObserver?.observe(el)
+    if (el) resizeObserver.observe(el)
     window.addEventListener('resize', resizeChart)
   })
 })
@@ -171,11 +174,11 @@ onBeforeUnmount(() => {
           </div>
         </div>
       </div>
-      <div class="tech-card min-w-0 p-5 rounded-xl">
+      <div class="tech-card min-w-0 p-5 rounded-xl flex flex-col min-h-0">
         <div class="tech-card-glow"></div>
-        <h3 class="card-title text-[15px] font-semibold m-0 text-[var(--home-text-primary)]">
+        <h3 class="card-title text-[15px] font-semibold m-0 text-[var(--home-text-primary)] flex-shrink-0">
           {{ $t('pages.dashboard.chartTasksByAlgorithm') }}</h3>
-        <div ref="chartAlgorithmRef" class="chart-wrap chart-algo w-full h-[280px] mt-2"></div>
+        <div ref="chartAlgorithmRef" class="chart-wrap chart-algo w-full flex-1 min-h-[200px] mt-2"></div>
       </div>
     </div>
   </section>

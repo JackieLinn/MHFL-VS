@@ -13,6 +13,8 @@ import ynu.jackielinn.server.common.BaseController;
 import ynu.jackielinn.server.dto.response.DashboardPlatformStatsVO;
 import ynu.jackielinn.server.service.DashboardService;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/dashboard")
 @Tag(name = "仪表盘 Dashboard 接口", description = "仪表盘 Dashboard 操作相关接口")
@@ -29,11 +31,29 @@ public class DashboardController extends BaseController {
     @Operation(summary = "获取平台概览统计", description = "返回全平台用户、任务、数据集、算法总数")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "成功"),
-            @ApiResponse(responseCode = "401", description = "未登录或 token 过期")
+            @ApiResponse(responseCode = "401", description = "未登录或 token 过期"),
+            @ApiResponse(responseCode = "403", description = "非管理员无权限")
     })
-    @GetMapping("/platform-stats")
+    @GetMapping("/admin/platform-stats")
     public RestResponse<DashboardPlatformStatsVO> getPlatformStats() {
         DashboardPlatformStatsVO stats = dashboardService.getPlatformStats();
         return RestResponse.success(stats);
+    }
+
+    /**
+     * 获取按算法分组的任务数量（算法名 -> 任务数），用于柱状图。
+     *
+     * @return Map 算法名 -> 任务数
+     */
+    @Operation(summary = "获取按算法统计任务数", description = "返回各算法的任务数量，用于平台概览柱状图")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "401", description = "未登录或 token 过期"),
+            @ApiResponse(responseCode = "403", description = "非管理员无权限")
+    })
+    @GetMapping("/admin/tasks-by-algorithm")
+    public RestResponse<Map<String, Long>> getTasksByAlgorithm() {
+        Map<String, Long> data = dashboardService.getTasksByAlgorithm();
+        return RestResponse.success(data);
     }
 }
