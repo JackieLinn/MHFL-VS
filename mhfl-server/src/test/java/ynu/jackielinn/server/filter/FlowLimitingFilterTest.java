@@ -113,4 +113,30 @@ class FlowLimitingFilterTest {
         assertTrue(sw.toString().contains("操作频繁"));
         verify(chain, never()).doFilter(request, response);
     }
+
+    @Test
+    void shouldNormalizeIpv6Localhost0_0_0_0_0_0_0_1To127_0_0_1() throws Exception {
+        when(request.getRemoteAddr()).thenReturn("0:0:0:0:0:0:0:1");
+        when(template.hasKey(Const.FLOW_LIMIT_BLOCK + "127.0.0.1")).thenReturn(false);
+        when(template.hasKey(Const.FLOW_LIMIT_COUNTER + "127.0.0.1")).thenReturn(false);
+
+        filter.doFilter(request, response, chain);
+
+        verify(valueOperations).set(eq(Const.FLOW_LIMIT_COUNTER + "127.0.0.1"), eq("1"));
+        verify(template).expire(eq(Const.FLOW_LIMIT_COUNTER + "127.0.0.1"), eq(10L), eq(TimeUnit.SECONDS));
+        verify(chain).doFilter(request, response);
+    }
+
+    @Test
+    void shouldNormalizeIpv6LocalhostColon1To127_0_0_1() throws Exception {
+        when(request.getRemoteAddr()).thenReturn("::1");
+        when(template.hasKey(Const.FLOW_LIMIT_BLOCK + "127.0.0.1")).thenReturn(false);
+        when(template.hasKey(Const.FLOW_LIMIT_COUNTER + "127.0.0.1")).thenReturn(false);
+
+        filter.doFilter(request, response, chain);
+
+        verify(valueOperations).set(eq(Const.FLOW_LIMIT_COUNTER + "127.0.0.1"), eq("1"));
+        verify(template).expire(eq(Const.FLOW_LIMIT_COUNTER + "127.0.0.1"), eq(10L), eq(TimeUnit.SECONDS));
+        verify(chain).doFilter(request, response);
+    }
 }

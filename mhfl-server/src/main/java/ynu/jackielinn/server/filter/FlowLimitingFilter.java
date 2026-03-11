@@ -41,12 +41,27 @@ public class FlowLimitingFilter extends HttpFilter {
     protected void doFilter(HttpServletRequest request,
                             HttpServletResponse response,
                             FilterChain chain) throws IOException, ServletException {
-        String address = request.getRemoteAddr();
+        String address = normalizeClientAddress(request.getRemoteAddr());
         if (this.tryCount(address)) {
             chain.doFilter(request, response);
         } else {
             this.writeBlockMessage(response);
         }
+    }
+
+    /**
+     * 归一化客户端地址。将 IPv6 localhost (::1 / 0:0:0:0:0:0:0:1) 统一为 127.0.0.1，
+     * 避免同一机器因 IPv4/IPv6 切换导致限流 key 分裂。
+     *
+     * @param address 原始地址
+     * @return 归一化后的地址
+     */
+    private String normalizeClientAddress(String address) {
+        if (address == null) return "127.0.0.1";
+        if ("0:0:0:0:0:0:0:1".equals(address) || "::1".equals(address)) {
+            return "127.0.0.1";
+        }
+        return address;
     }
 
     /**
