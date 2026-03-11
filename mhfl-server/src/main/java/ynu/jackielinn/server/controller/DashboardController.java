@@ -13,6 +13,7 @@ import ynu.jackielinn.server.common.RestResponse;
 import ynu.jackielinn.server.common.BaseController;
 import ynu.jackielinn.server.dto.response.DashboardPlatformStatsVO;
 import ynu.jackielinn.server.dto.response.DashboardTaskStatusStatsVO;
+import ynu.jackielinn.server.dto.response.DashboardTaskTrendVO;
 import ynu.jackielinn.server.service.DashboardService;
 
 import java.util.Map;
@@ -78,5 +79,26 @@ public class DashboardController extends BaseController {
         }
         DashboardTaskStatusStatsVO stats = dashboardService.getTaskStatusStats(uid, isAdmin());
         return RestResponse.success(stats);
+    }
+
+    /**
+     * 获取近 7 天任务趋势（含今天）。按 create_time 统计每日创建数。
+     *
+     * @param request 用于获取当前用户 id
+     * @return DashboardTaskTrendVO
+     */
+    @Operation(summary = "获取近7天任务趋势", description = "按 create_time 统计每日创建数；管理员全平台，普通用户本人")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "401", description = "未登录或 token 过期")
+    })
+    @GetMapping("/task-trend-7days")
+    public RestResponse<DashboardTaskTrendVO> getTaskTrend7Days(HttpServletRequest request) {
+        Long uid = (Long) request.getAttribute("id");
+        if (uid == null) {
+            return RestResponse.failure(401, "未登录或登录已过期");
+        }
+        DashboardTaskTrendVO trend = dashboardService.getTaskTrend7Days(uid, isAdmin());
+        return RestResponse.success(trend);
     }
 }

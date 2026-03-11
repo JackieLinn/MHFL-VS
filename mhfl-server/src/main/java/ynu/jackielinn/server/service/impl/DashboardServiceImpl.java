@@ -5,6 +5,7 @@ import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 import ynu.jackielinn.server.dto.response.DashboardPlatformStatsVO;
 import ynu.jackielinn.server.dto.response.DashboardTaskStatusStatsVO;
+import ynu.jackielinn.server.dto.response.DashboardTaskTrendVO;
 import ynu.jackielinn.server.common.Status;
 import ynu.jackielinn.server.entity.Algorithm;
 import ynu.jackielinn.server.entity.Task;
@@ -14,6 +15,9 @@ import ynu.jackielinn.server.service.DashboardService;
 import ynu.jackielinn.server.service.DatasetService;
 import ynu.jackielinn.server.service.TaskService;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -83,6 +87,32 @@ public class DashboardServiceImpl implements DashboardService {
                 .completed(completed)
                 .failed(failed)
                 .build();
+    }
+
+    /**
+     * 获取近 7 天任务趋势。遍历 7 天，每天 count create_time 在当天 00:00:00～23:59:59 的任务。
+     *
+     * @param uid     当前用户 id
+     * @param isAdmin 是否为管理员
+     * @return DashboardTaskTrendVO
+     */
+    @Override
+    public DashboardTaskTrendVO getTaskTrend7Days(Long uid, boolean isAdmin) {
+        LocalDate today = LocalDate.now();
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("MM-dd");
+        List<String> dates = new ArrayList<>(7);
+        List<Long> counts = new ArrayList<>(7);
+        for (int i = 6; i >= 0; i--) {
+            LocalDate dayStart = today.minusDays(i);
+            dates.add(dayStart.format(fmt));
+            long cnt = taskService.count(
+                    taskBaseWrapper(uid, isAdmin)
+                            .ge(Task::getCreateTime, dayStart.atStartOfDay())
+                            .le(Task::getCreateTime, dayStart.atTime(23, 59, 59))
+            );
+            counts.add(cnt);
+        }
+        return DashboardTaskTrendVO.builder().dates(dates).counts(counts).build();
     }
 
     private LambdaQueryWrapper<Task> taskBaseWrapper(Long uid, boolean isAdmin) {

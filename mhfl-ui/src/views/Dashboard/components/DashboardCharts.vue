@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {ref, watch, onMounted, onBeforeUnmount, nextTick} from 'vue'
-import {getTaskStatusStats} from '@/api/dashboard'
+import {getTaskStatusStats, getTaskTrend7Days} from '@/api/dashboard'
 import {useTheme} from '@/stores/theme'
 import * as echarts from 'echarts'
 
@@ -13,8 +13,8 @@ const taskStatusPieData = ref([
   {value: 0, name: '失败', itemStyle: {color: '#f87171'}}
 ])
 
-const taskTrendDays = ['02-25', '02-26', '02-27', '02-28', '03-01', '03-02', '03-03']
-const taskTrendValues = [2, 1, 3, 0, 2, 1, 2]
+const taskTrendDays = ref<string[]>([])
+const taskTrendValues = ref<number[]>([])
 
 const chartStatusRef = ref<HTMLElement | null>(null)
 const chartTrendRef = ref<HTMLElement | null>(null)
@@ -84,6 +84,9 @@ const getTrendLineOption = () => {
   const textColor = chartTextColor()
   const mutedColor = chartMutedColor()
   const isDark = document.documentElement.classList.contains('dark')
+  const vals = taskTrendValues.value
+  const maxVal = vals.length > 0 ? Math.max(...vals, 1) : 1
+  const yMax = Math.ceil(maxVal * 1.2) || 1
   return {
     backgroundColor: 'transparent',
     tooltip: {
@@ -101,18 +104,21 @@ const getTrendLineOption = () => {
     grid: {left: 48, right: 16, top: 12, bottom: 32},
     xAxis: {
       type: 'category',
-      data: taskTrendDays,
+      data: taskTrendDays.value,
       axisLine: {lineStyle: {color: mutedColor}},
       axisLabel: {color: textColor, fontSize: 13, margin: 14}
     },
     yAxis: {
       type: 'value',
+      min: 0,
+      max: yMax,
+      splitNumber: Math.min(5, yMax),
       splitLine: {lineStyle: {color: mutedColor, type: 'dashed', opacity: 0.3}},
       axisLabel: {color: textColor, fontSize: 13}
     },
     series: [{
       type: 'line',
-      data: taskTrendValues,
+      data: taskTrendValues.value,
       smooth: true,
       symbol: 'circle',
       symbolSize: 7,
@@ -154,6 +160,9 @@ watch(actualTheme, () => {
 watch(taskStatusPieData, () => {
   chartStatus?.setOption(getStatusPieOption(), {notMerge: true})
 }, {deep: true})
+watch([taskTrendDays, taskTrendValues], () => {
+  chartTrend?.setOption(getTrendLineOption(), {notMerge: true})
+}, {deep: true})
 
 let resizeObserver: ResizeObserver | null = null
 
@@ -165,6 +174,10 @@ onMounted(() => {
       {value: data.completed, name: '已完成', itemStyle: {color: '#6366f1'}},
       {value: data.failed, name: '失败', itemStyle: {color: '#f87171'}}
     ]
+  })
+  getTaskTrend7Days((data) => {
+    taskTrendDays.value = data.dates
+    taskTrendValues.value = data.counts
   })
   nextTick(() => {
     if (chartStatusRef.value) {

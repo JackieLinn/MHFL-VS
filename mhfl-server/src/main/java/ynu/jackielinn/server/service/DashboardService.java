@@ -2,6 +2,7 @@ package ynu.jackielinn.server.service;
 
 import ynu.jackielinn.server.dto.response.DashboardPlatformStatsVO;
 import ynu.jackielinn.server.dto.response.DashboardTaskStatusStatsVO;
+import ynu.jackielinn.server.dto.response.DashboardTaskTrendVO;
 
 import java.util.Map;
 
@@ -31,4 +32,14 @@ public interface DashboardService {
      * @return DashboardTaskStatusStatsVO
      */
     DashboardTaskStatusStatsVO getTaskStatusStats(Long uid, boolean isAdmin);
+
+    /**
+     * 获取近 7 天任务趋势（含今天）。按 task 表 create_time 统计每日创建数。
+     * 管理员统计全平台，普通用户仅统计本人任务。
+     *
+     * @param uid     当前用户 id
+     * @param isAdmin 是否为管理员
+     * @return DashboardTaskTrendVO（dates + counts）
+     */
+    DashboardTaskTrendVO getTaskTrend7Days(Long uid, boolean isAdmin);
 }

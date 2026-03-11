@@ -61,3 +61,22 @@ export const getTaskStatusStats = (
 ) => {
     get('/api/dashboard/task-status-stats', success, failure)
 }
+
+/** 近7天任务趋势（与后端 DashboardTaskTrendVO 一致） */
+export interface DashboardTaskTrendVO {
+    dates: string[]
+    counts: number[]
+}
+
+/**
+ * 获取近 7 天任务趋势（含今天），用于折线图。
+ *
+ * @param success 成功回调
+ * @param failure 失败回调（可选）
+ */
+export const getTaskTrend7Days = (
+    success: (data: DashboardTaskTrendVO) => void,
+    failure?: (message: string, code: number, url: string) => void
+) => {
+    get('/api/dashboard/task-trend-7days', success, failure)
+}
