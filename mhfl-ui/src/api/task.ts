@@ -65,6 +65,28 @@ export const listTasks = (
     get(`/api/task/list${query ? `?${query}` : ''}`, success, failure)
 }
 
+/** Round 轮次数据（后端 roundNum 从 0 开始，前端展示时 +1） */
+export interface RoundVO {
+    id: number | null
+    roundNum: number
+    loss: number | null
+    accuracy: number | null
+    precision: number | null
+    recall: number | null
+    f1Score: number | null
+}
+
+/**
+ * 获取任务轮次列表（历史曲线数据）
+ */
+export const getTaskRounds = (
+    taskId: number,
+    success: (data: RoundVO[]) => void,
+    failure?: (message: string, code: number, url: string) => void
+) => {
+    get(`/api/task/${taskId}/rounds`, success, failure)
+}
+
 /**
  * 获取任务详情
  */

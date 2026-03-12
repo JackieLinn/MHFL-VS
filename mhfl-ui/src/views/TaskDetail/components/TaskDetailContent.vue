@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import {computed} from 'vue'
-import type {TaskVO} from '@/api/task'
+import {ref, computed, watch} from 'vue'
+import {getTaskRounds, type TaskVO, type RoundVO} from '@/api/task'
 import TaskExpSettingsCard from './TaskExpSettingsCard.vue'
 import TaskMetricsCard from './TaskMetricsCard.vue'
 import TaskRoundCurvesCard from './TaskRoundCurvesCard.vue'
@@ -10,29 +10,56 @@ const props = defineProps<{
   task: TaskVO
 }>()
 
-const generateConvergenceCurve = (
-    finalValue: number,
-    numRounds: number,
-    initRatio = 0.18,
-    convergeSpeed = 3.2,
-    noiseScale = 0.018
-): number[] => {
-  if (finalValue == null || !Number.isFinite(finalValue) || finalValue === -1) {
-    return Array(numRounds).fill(0.5)
-  }
-  const init = finalValue * initRatio
-  const points: number[] = []
-  for (let r = 0; r < numRounds; r++) {
-    const t = r / Math.max(numRounds - 1, 1)
-    const progress = 1 - Math.exp(-convergeSpeed * t)
-    const base = init + (finalValue - init) * progress
-    const decay = 1 - t * 0.6
-    const noise = (Math.random() - 0.5) * 2 * noiseScale * decay
-    points.push(Math.max(0.01, Math.min(0.99, base + noise)))
-  }
-  points[points.length - 1] = finalValue
-  return points
+const rounds = ref<RoundVO[]>([])
+const roundsLoading = ref(false)
+
+const fetchRounds = () => {
+  const id = props.task.id
+  if (!id) return
+  roundsLoading.value = true
+  getTaskRounds(
+      id,
+      (data) => {
+        rounds.value = data ?? []
+        roundsLoading.value = false
+      },
+      () => {
+        roundsLoading.value = false
+      }
+  )
 }
+
+watch(() => props.task.id, (id) => {
+  if (id) fetchRounds()
+}, {immediate: true})
+
+const toNum = (v: number | null | undefined) => (v != null && Number.isFinite(v) ? v : 0)
+
+const emptyRound = (i: number, metrics?: { acc: number; prec: number; rec: number; f1: number }): RoundVO => ({
+  id: null,
+  roundNum: i,
+  loss: null,
+  accuracy: metrics?.acc ?? 0,
+  precision: metrics?.prec ?? 0,
+  recall: metrics?.rec ?? 0,
+  f1Score: metrics?.f1 ?? 0
+})
+
+/** 按 numSteps 生成横轴：无数据时全 0 或 task 指标；有部分数据时补齐缺失为 0 */
+const displayRounds = computed((): RoundVO[] => {
+  const r = rounds.value
+  const numSteps = Math.max(0, props.task.numSteps ?? 0)
+  const t = props.task
+  const safeMetric = (v: number | null | undefined) => Math.max(0, toNum(v))
+  const fallbackMetrics = numSteps > 0 && r.length === 0
+    ? { acc: safeMetric(t.accuracy) || 0, prec: safeMetric(t.precision) || 0, rec: safeMetric(t.recall) || 0, f1: safeMetric(t.f1Score) || 0 }
+    : undefined
+  if (numSteps <= 0) return r.length > 0 ? r : [emptyRound(0), emptyRound(1)]
+  const map = new Map(r.map((x) => [x.roundNum, x]))
+  return Array.from({ length: numSteps }, (_, i) =>
+    map.get(i) ?? emptyRound(i, r.length === 0 ? fallbackMetrics : undefined)
+  )
+})
 
 const settings = computed(() => ({
   numNodes: props.task.numNodes,
@@ -50,21 +77,6 @@ const metrics = computed(() => ({
   recall: props.task.recall ?? -1,
   f1Score: props.task.f1Score ?? -1
 }))
-
-const numRounds = computed(() => props.task.numSteps ?? 500)
-
-const chartSeriesData = computed(() => {
-  const result: Record<string, number[]> = {}
-  const acc = props.task.accuracy ?? 0.5
-  const prec = props.task.precision ?? 0.5
-  const rec = props.task.recall ?? 0.5
-  const f1 = props.task.f1Score ?? 0.5
-  result.accuracy = generateConvergenceCurve(acc, numRounds.value)
-  result.precision = generateConvergenceCurve(prec, numRounds.value)
-  result.recall = generateConvergenceCurve(rec, numRounds.value)
-  result.f1Score = generateConvergenceCurve(f1, numRounds.value)
-  return result
-})
 
 const clientMetrics = computed(() => {
   const bases = {
@@ -90,7 +102,7 @@ const clientMetrics = computed(() => {
   <div class="task-detail-content flex flex-col gap-6 min-w-0">
     <TaskExpSettingsCard :settings="settings"/>
     <TaskMetricsCard :metrics="metrics"/>
-    <TaskRoundCurvesCard :num-rounds="numRounds" :chart-series-data="chartSeriesData"/>
+    <TaskRoundCurvesCard :rounds="displayRounds" :has-real-data="rounds.length > 0" :loading="roundsLoading"/>
     <TaskClientMetricsCard :client-metrics="clientMetrics"/>
   </div>
 </template>

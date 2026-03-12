@@ -3,14 +3,19 @@ import {computed, ref, watch, onMounted, onBeforeUnmount, nextTick} from 'vue'
 import {useI18n} from 'vue-i18n'
 import {useTheme} from '@/stores/theme'
 import * as echarts from 'echarts'
+import type {RoundVO} from '@/api/task'
 
 const {t, locale} = useI18n()
 const {actualTheme} = useTheme()
 
-const props = defineProps<{
-  numRounds: number
-  chartSeriesData: Record<string, number[]>
-}>()
+const props = withDefaults(
+  defineProps<{
+    rounds: RoundVO[]
+    hasRealData?: boolean
+    loading?: boolean
+  }>(),
+  { hasRealData: true }
+)
 
 const getChartColorVar = (name: string): string => {
   const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
@@ -27,12 +32,55 @@ const chartTooltipBorder = () => getChartColorVar('--home-card-border')
 
 const chartColor = '#6366f1'
 
-const makeChartOption = (metricVal: string, titleKey: string) => {
+/** 横坐标：后端 roundNum 从 0 开始，前端展示 +1 */
+const xAxisLabels = computed(() =>
+    props.rounds.map((r) => (r.roundNum ?? 0) + 1)
+)
+
+/** 横坐标刻度自适应：约 6~12 个标签，步长取整（500→50, 100→10, 1000→100） */
+const xAxisInterval = computed(() => {
+  const n = xAxisLabels.value.length
+  if (n <= 1) return 1
+  const maxRound = xAxisLabels.value[n - 1] ?? 1
+  return Math.max(1, Math.ceil(maxRound / 10))
+})
+
+/** 是否显示该横坐标刻度（首、尾、以及 step 整数倍） */
+const showXAxisLabel = (idx: number): boolean => {
+  const labels = xAxisLabels.value
+  if (idx < 0 || idx >= labels.length) return false
+  const val = labels[idx] ?? 0
+  const step = xAxisInterval.value
+  if (idx === 0 || idx === labels.length - 1) return true
+  return val % step === 0
+}
+
+const chartSeriesData = computed(() => {
+  const r = props.rounds
+  const toVal = (v: number | null | undefined) =>
+      v != null && Number.isFinite(v) ? v : null
+  return {
+    accuracy: r.map((x) => toVal(x.accuracy)),
+    precision: r.map((x) => toVal(x.precision)),
+    recall: r.map((x) => toVal(x.recall)),
+    f1Score: r.map((x) => toVal(x.f1Score))
+  }
+})
+
+const metricTitleKeys: Record<string, string> = {
+  accuracy: 'chartAccuracy',
+  precision: 'chartPrecision',
+  recall: 'chartRecall',
+  f1Score: 'chartF1'
+}
+
+const makeChartOption = (metricVal: 'accuracy' | 'precision' | 'recall' | 'f1Score') => {
+  const titleKey = metricTitleKeys[metricVal] ?? metricVal
   const textColor = chartTextColor()
   const mutedColor = chartMutedColor()
   const isDark = document.documentElement.classList.contains('dark')
-  const rounds = Array.from({length: props.numRounds}, (_, i) => i + 1)
-  const seriesData = props.chartSeriesData[metricVal] ?? []
+  const labels = xAxisLabels.value
+  const seriesData = chartSeriesData.value[metricVal]
 
   return {
     backgroundColor: 'transparent',
@@ -63,7 +111,8 @@ const makeChartOption = (metricVal: string, titleKey: string) => {
     grid: {left: 52, right: 20, top: 36, bottom: 48},
     xAxis: {
       type: 'category',
-      data: rounds,
+      boundaryGap: false,
+      data: labels,
       name: t('pages.recommended.chartXAxis'),
       nameLocation: 'middle',
       nameGap: 36,
@@ -73,12 +122,18 @@ const makeChartOption = (metricVal: string, titleKey: string) => {
         color: textColor,
         fontSize: 11,
         margin: 8,
-        interval: (idx: number) => idx === 0 || idx % 50 === 49 || idx === props.numRounds - 1
+        interval: (idx: number) => showXAxisLabel(idx)
       }
     },
     yAxis: {
       type: 'value',
-      scale: true,
+      scale: props.hasRealData,
+      min: props.hasRealData
+        ? (value: { min: number }) => Math.max(0, (value.min ?? 0) - 0.02)
+        : 0,
+      max: props.hasRealData
+        ? (value: { max: number }) => Math.min(1, (value.max ?? 1) + 0.02)
+        : 1,
       axisLabel: {
         color: textColor,
         fontSize: 11,
@@ -89,9 +144,10 @@ const makeChartOption = (metricVal: string, titleKey: string) => {
       axisTick: {show: false}
     },
     series: [{
-      name: t('pages.recommended.chartAccuracy'),
+      name: t(`pages.recommended.chart${metricVal.charAt(0).toUpperCase() + metricVal.slice(1)}`),
       type: 'line',
       data: seriesData,
+      connectNulls: true,
       smooth: 0.25,
       symbol: 'none',
       lineStyle: {width: 2.5, color: chartColor},
@@ -114,19 +170,19 @@ const initCharts = () => {
   nextTick(() => {
     if (chartAccuracyRef.value && !chartAccuracyInst) {
       chartAccuracyInst = echarts.init(chartAccuracyRef.value)
-      chartAccuracyInst.setOption(makeChartOption('accuracy', 'chartAccuracy'))
+      chartAccuracyInst.setOption(makeChartOption('accuracy'))
     }
     if (chartPrecisionRef.value && !chartPrecisionInst) {
       chartPrecisionInst = echarts.init(chartPrecisionRef.value)
-      chartPrecisionInst.setOption(makeChartOption('precision', 'chartPrecision'))
+      chartPrecisionInst.setOption(makeChartOption('precision'))
     }
     if (chartRecallRef.value && !chartRecallInst) {
       chartRecallInst = echarts.init(chartRecallRef.value)
-      chartRecallInst.setOption(makeChartOption('recall', 'chartRecall'))
+      chartRecallInst.setOption(makeChartOption('recall'))
     }
     if (chartF1Ref.value && !chartF1Inst) {
       chartF1Inst = echarts.init(chartF1Ref.value)
-      chartF1Inst.setOption(makeChartOption('f1Score', 'chartF1'))
+      chartF1Inst.setOption(makeChartOption('f1Score'))
     }
     connectCharts()
   })
@@ -138,10 +194,10 @@ const connectCharts = () => {
 }
 
 const updateCharts = () => {
-  chartAccuracyInst?.setOption(makeChartOption('accuracy', 'chartAccuracy'), {notMerge: true})
-  chartPrecisionInst?.setOption(makeChartOption('precision', 'chartPrecision'), {notMerge: true})
-  chartRecallInst?.setOption(makeChartOption('recall', 'chartRecall'), {notMerge: true})
-  chartF1Inst?.setOption(makeChartOption('f1Score', 'chartF1'), {notMerge: true})
+  chartAccuracyInst?.setOption(makeChartOption('accuracy'), {notMerge: true})
+  chartPrecisionInst?.setOption(makeChartOption('precision'), {notMerge: true})
+  chartRecallInst?.setOption(makeChartOption('recall'), {notMerge: true})
+  chartF1Inst?.setOption(makeChartOption('f1Score'), {notMerge: true})
 }
 
 const resizeCharts = () => {
@@ -151,7 +207,7 @@ const resizeCharts = () => {
   chartF1Inst?.resize()
 }
 
-watch([() => props.chartSeriesData, actualTheme, locale], () => {
+watch([chartSeriesData, actualTheme, locale], () => {
   updateCharts()
 }, {deep: true})
 
@@ -176,7 +232,8 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <section class="task-detail-section task-detail-tech-card relative overflow-hidden rounded-xl py-5 px-6 shrink-0">
+  <section v-loading="loading"
+           class="task-detail-section task-detail-tech-card relative overflow-hidden rounded-xl py-5 px-6 shrink-0">
     <div class="task-detail-card-glow"></div>
     <div class="task-detail-card-scanline"></div>
     <h3 class="task-detail-section-title m-0 mb-4 text-[15px] font-semibold flex items-center gap-2 relative z-[1]">
