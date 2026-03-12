@@ -1,8 +1,8 @@
 /**
  * 任务相关 API
- * 任务列表、详情、创建、启动、停止等
+ * 任务列表、详情、创建、启动、停止、删除、推荐等
  */
-import {get, post} from '@/utils'
+import {get, post, put, del} from '@/utils'
 
 /** 任务状态：后端 @JsonValue 序列化为 code 0-5 */
 export type TaskStatusCode = 0 | 1 | 2 | 3 | 4 | 5
@@ -115,4 +115,26 @@ export const startTask = (
     failure?: (message: string, code: number, url: string) => void
 ) => {
     post(`/api/task/${id}/start`, null, success, failure)
+}
+
+/**
+ * 删除任务（推荐任务不可删）
+ */
+export const deleteTask = (
+    id: number,
+    success: () => void,
+    failure?: (message: string, code: number, url: string) => void
+) => {
+    del(`/api/task/${id}`, success, failure)
+}
+
+/**
+ * 设为推荐 / 取消推荐（仅管理员；仅 SUCCESS/RECOMMENDED 可操作）
+ */
+export const setRecommend = (
+    id: number,
+    success: () => void,
+    failure?: (message: string, code: number, url: string) => void
+) => {
+    put(`/api/task/admin/${id}/recommend`, {}, success, failure)
 }

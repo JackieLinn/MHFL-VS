@@ -1,6 +1,8 @@
 {
   "common": {
     "user": "用户",
+    "confirm": "确认",
+    "cancel": "取消",
     "logout": "退出登录",
     "backToTop": "回到顶部",
     "viewSource": "查看项目源码",
@@ -214,6 +216,15 @@
       "paramSteps": "步",
       "creatorWithUid": "UID {uid} · {username}",
       "viewDetail": "查看详情",
+      "start": "启动",
+      "delete": "删除",
+      "setRecommend": "设为推荐",
+      "unsetRecommend": "取消推荐",
+      "deleteConfirm": "确定要删除该任务吗？删除后可在列表中恢复（逻辑删除）。",
+      "deleteSuccess": "删除成功",
+      "startDisabledHint": "仅未开始的任务可启动",
+      "recommendDisabledHint": "仅管理员可操作；仅已完成或推荐状态可切换",
+      "deleteDisabledHint": "推荐任务不可删除",
       "createTask": "创建新任务",
       "create": {
         "title": "创建新任务",

@@ -1,17 +1,33 @@
 <script setup lang="ts">
+import {computed} from 'vue'
+import {useRouter} from 'vue-router'
 import {useI18n} from 'vue-i18n'
-import {View} from '@element-plus/icons-vue'
+import {View, Delete, VideoPlay, Star, StarFilled} from '@element-plus/icons-vue'
 import type {TaskVO, TaskStatusCode} from '@/api/task'
 
 const props = defineProps<{
   task: TaskVO
+  isAdmin?: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'view-detail', task: TaskVO): void
+  (e: 'delete', task: TaskVO): void
 }>()
 
+const router = useRouter()
 const {t} = useI18n()
+
+/** 状态码：0 未开始 1 进行中 2 已完成 3 推荐 4 失败 5 已取消 */
+const NOT_STARTED = 0
+const SUCCESS = 2
+const RECOMMENDED = 3
+
+const canDelete = computed(() => props.task.status !== RECOMMENDED)
+const canStart = computed(() => props.task.status === NOT_STARTED)
+const canSetRecommend = computed(() => props.isAdmin && props.task.status === SUCCESS)
+const canUnsetRecommend = computed(() => props.isAdmin && props.task.status === RECOMMENDED)
+const canRecommend = computed(() => canSetRecommend.value || canUnsetRecommend.value)
 
 /** 状态码转显示文案 */
 const statusLabel = (code: TaskStatusCode): string => {
@@ -90,6 +106,23 @@ const timeText = (row: TaskVO): string => {
 const handleViewDetail = () => {
   emit('view-detail', props.task)
 }
+
+const handleStart = () => {
+  router.push({name: 'TaskDetail', params: {id: String(props.task.id)}})
+}
+
+const handleDelete = () => {
+  emit('delete', props.task)
+}
+
+/** 推荐按钮：先不连后端，占位 */
+const handleSetRecommend = () => {
+  // TODO: 对接 setRecommend API
+}
+
+const handleUnsetRecommend = () => {
+  // TODO: 对接 setRecommend API
+}
 </script>
 
 <template>
@@ -116,8 +149,44 @@ const handleViewDetail = () => {
         <span class="cell-label">{{ $t('pages.task.status') }}</span>
         <span :class="statusBadgeClass(task.status)">{{ statusLabel(task.status) }}</span>
       </div>
-      <div class="row-action">
-        <el-button type="primary" size="small" :icon="View" @click="handleViewDetail">
+      <div class="row-action task-card-actions">
+        <el-tooltip :content="$t('pages.task.startDisabledHint')" :disabled="canStart" placement="top">
+          <el-button
+              type="success"
+              size="small"
+              :icon="VideoPlay"
+              :disabled="!canStart"
+              class="task-action-btn"
+              @click="handleStart"
+          >
+            {{ $t('pages.task.start') }}
+          </el-button>
+        </el-tooltip>
+        <el-tooltip :content="$t('pages.task.recommendDisabledHint')" :disabled="canRecommend" placement="top">
+          <el-button
+              :type="canUnsetRecommend ? 'info' : 'warning'"
+              size="small"
+              :icon="canUnsetRecommend ? StarFilled : Star"
+              :disabled="!canRecommend"
+              class="task-action-btn"
+              @click="canSetRecommend ? handleSetRecommend() : handleUnsetRecommend()"
+          >
+            {{ canUnsetRecommend ? $t('pages.task.unsetRecommend') : $t('pages.task.setRecommend') }}
+          </el-button>
+        </el-tooltip>
+        <el-tooltip :content="$t('pages.task.deleteDisabledHint')" :disabled="canDelete" placement="top">
+          <el-button
+              type="danger"
+              size="small"
+              :icon="Delete"
+              :disabled="!canDelete"
+              class="task-action-btn"
+              @click="handleDelete"
+          >
+            {{ $t('pages.task.delete') }}
+          </el-button>
+        </el-tooltip>
+        <el-button type="primary" size="small" :icon="View" class="task-action-btn" @click="handleViewDetail">
           {{ $t('pages.task.viewDetail') }}
         </el-button>
       </div>
@@ -182,6 +251,19 @@ html.dark .task-row:hover {
 
 .row-action {
   justify-self: end;
+}
+
+/* 操作按钮区：固定宽度保证对齐 */
+.task-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+}
+
+.task-action-btn {
+  min-width: 88px;
 }
 
 .row-cell {

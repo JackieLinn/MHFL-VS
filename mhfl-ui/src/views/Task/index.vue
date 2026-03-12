@@ -2,14 +2,18 @@
 import {ref, computed, onMounted, watch} from 'vue'
 import {useRouter} from 'vue-router'
 import {useI18n} from 'vue-i18n'
+import {ElMessage, ElMessageBox} from 'element-plus'
 import {Search, Plus} from '@element-plus/icons-vue'
 import PageHeader from '@/components/PageHeader.vue'
 import CreateTaskDialog from './components/CreateTaskDialog.vue'
 import TaskCard from './components/TaskCard.vue'
-import {listTasks, type TaskVO} from '@/api/task'
+import {getUserInfo} from '@/api/user'
+import {listTasks, deleteTask, type TaskVO} from '@/api/task'
 
 const router = useRouter()
 const {t} = useI18n()
+
+const isAdmin = computed(() => getUserInfo()?.role === 'admin')
 
 // 搜索条件
 const keyword = ref('')
@@ -84,6 +88,25 @@ const handleCreateTask = () => {
 const onTaskCreated = () => {
   fetchList()
 }
+
+const handleDelete = (task: TaskVO) => {
+  ElMessageBox.confirm(t('pages.task.deleteConfirm'), t('common.confirm'), {
+    confirmButtonText: t('common.confirm'),
+    cancelButtonText: t('common.cancel'),
+    type: 'warning'
+  }).then(() => {
+    deleteTask(
+        task.id,
+        () => {
+          ElMessage.success(t('pages.task.deleteSuccess'))
+          fetchList()
+        },
+        () => {
+        }
+    )
+  }).catch(() => {
+  })
+}
 </script>
 
 <template>
@@ -135,7 +158,9 @@ const onTaskCreated = () => {
           v-for="task in list"
           :key="task.id"
           :task="task"
+          :is-admin="isAdmin"
           @view-detail="handleViewDetail"
+          @delete="handleDelete"
       />
     </div>
 

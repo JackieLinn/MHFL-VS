@@ -1,6 +1,8 @@
 {
   "common": {
     "user": "User",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
     "logout": "Logout",
     "backToTop": "Back to top",
     "viewSource": "View Source Code",
@@ -214,6 +216,15 @@
       "paramSteps": "steps",
       "creatorWithUid": "UID {uid} · {username}",
       "viewDetail": "View Detail",
+      "start": "Start",
+      "delete": "Delete",
+      "setRecommend": "Set as Recommended",
+      "unsetRecommend": "Unset Recommended",
+      "deleteConfirm": "Are you sure you want to delete this task? It can be recovered (soft delete).",
+      "deleteSuccess": "Deleted successfully",
+      "startDisabledHint": "Only NOT_STARTED tasks can be started",
+      "recommendDisabledHint": "Admin only; only SUCCESS or RECOMMENDED status can be toggled",
+      "deleteDisabledHint": "Recommended tasks cannot be deleted",
       "createTask": "Create Task",
       "create": {
         "title": "Create New Task",
