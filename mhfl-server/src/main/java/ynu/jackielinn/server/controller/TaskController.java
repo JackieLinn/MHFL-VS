@@ -116,7 +116,7 @@ public class TaskController extends BaseController {
      * @param request 用于获取当前用户 id 与是否管理员
      * @return 操作结果
      */
-    @Operation(summary = "删除任务接口", description = "逻辑删除任务，将 is_deleted 置为 1；本人或管理员可删")
+    @Operation(summary = "删除任务接口", description = "逻辑删除任务，将 is_deleted 置为 1；推荐任务不可删；本人或管理员可删")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "成功"),
             @ApiResponse(responseCode = "400", description = "任务不存在或无权限删除"),

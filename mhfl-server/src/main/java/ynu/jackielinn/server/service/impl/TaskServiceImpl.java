@@ -209,6 +209,9 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
         if (task == null) {
             return "任务不存在";
         }
+        if (task.getStatus() == Status.RECOMMENDED) {
+            return "推荐任务不可删除";
+        }
         if (!isAdmin && !task.getUid().equals(currentUserId)) {
             return "无权限删除该任务";
         }
