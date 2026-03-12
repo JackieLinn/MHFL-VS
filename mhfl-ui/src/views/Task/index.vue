@@ -2,87 +2,14 @@
 import {ref, computed, onMounted, watch} from 'vue'
 import {useRouter} from 'vue-router'
 import {useI18n} from 'vue-i18n'
-import {Search, Plus, View} from '@element-plus/icons-vue'
+import {Search, Plus} from '@element-plus/icons-vue'
 import PageHeader from '@/components/PageHeader.vue'
 import CreateTaskDialog from './components/CreateTaskDialog.vue'
-import {listTasks, type TaskVO, type TaskStatusCode} from '@/api/task'
+import TaskCard from './components/TaskCard.vue'
+import {listTasks, type TaskVO} from '@/api/task'
 
 const router = useRouter()
 const {t} = useI18n()
-
-/** 状态码转显示文案 */
-const statusLabel = (code: TaskStatusCode): string => {
-  const map: Record<TaskStatusCode, string> = {
-    0: t('pages.dashboard.statusNotStarted'),
-    1: t('pages.dashboard.statusInProgress'),
-    2: t('pages.dashboard.statusSuccess'),
-    3: t('pages.dashboard.statusRecommended'),
-    4: t('pages.dashboard.statusFailed'),
-    5: t('pages.dashboard.statusCancelled')
-  }
-  return map[code] ?? '—'
-}
-
-/** 状态徽章样式类 */
-const statusBadgeClass = (code: TaskStatusCode): string => {
-  const map: Record<TaskStatusCode, string> = {
-    0: 'status-info',
-    1: 'status-warning',
-    2: 'status-success',
-    3: 'status-primary',
-    4: 'status-danger',
-    5: 'status-cancelled'
-  }
-  return `status-badge ${map[code] ?? 'status-info'}`
-}
-
-/** Loss 展示：4 位小数；-1 表示占位，显示 — */
-const formatLoss = (v: number | null | undefined): string => {
-  if (v == null || v === -1) return '—'
-  return Number.isFinite(v) ? v.toFixed(4) : '—'
-}
-
-/** 百分数展示：accuracy/precision/recall/f1Score，保留 2 位小数；-1 表示占位，显示 — */
-const formatPercent = (v: number | null | undefined): string => {
-  if (v == null || v === -1) return '—'
-  return Number.isFinite(v) ? `${(v * 100).toFixed(2)}%` : '—'
-}
-
-/** 训练参数紧凑展示：节点数 · 比例 · 类别数 · lowProb · epochs · steps */
-const paramsText = (row: TaskVO): string => {
-  const n = row.numNodes ?? '—'
-  const f = row.fraction != null ? row.fraction : '—'
-  const c = row.classesPerNode ?? '—'
-  const l = row.lowProb != null ? row.lowProb : '—'
-  const e = row.epochs ?? '—'
-  const s = row.numSteps ?? '—'
-  return `${n}${t('pages.task.paramNodes')} · ${f} · ${c}${t('pages.task.paramClasses')} · ${l} · ${e}${t('pages.task.paramEpochs')} · ${s}${t('pages.task.paramSteps')}`
-}
-
-/** 指标紧凑展示：Loss 4 位小数，Acc/P/R/F1 百分数 2 位小数 */
-const metricsText = (row: TaskVO): string => {
-  const parts = [
-    `Loss: ${formatLoss(row.loss)}`,
-    `Acc: ${formatPercent(row.accuracy)}`,
-    `P: ${formatPercent(row.precision)}`,
-    `R: ${formatPercent(row.recall)}`,
-    `F1: ${formatPercent(row.f1Score)}`
-  ]
-  return parts.join(' · ')
-}
-
-/** 创建者展示：UID + 用户名 */
-const creatorText = (task: TaskVO): string => t('pages.task.creatorWithUid', {
-  uid: task.uid,
-  username: task.username || '—'
-})
-
-/** 时间一行展示 */
-const timeText = (row: TaskVO): string => {
-  const c = row.createTime || '—'
-  const u = row.updateTime || '—'
-  return `${t('pages.task.createTime')}: ${c}  |  ${t('pages.task.updateTime')}: ${u}`
-}
 
 // 搜索条件
 const keyword = ref('')
@@ -204,56 +131,12 @@ const onTaskCreated = () => {
         <p class="empty-hint">{{ $t('pages.task.noTasksHint') }}</p>
       </div>
 
-      <div
+      <TaskCard
           v-for="task in list"
           :key="task.id"
-          class="task-row"
-      >
-        <!-- 第一行：核心信息 + 查看详情 -->
-        <div class="row-primary">
-          <div class="row-cell cell-id">
-            <span class="cell-label">{{ $t('pages.task.id') }}</span>
-            <span class="cell-value">{{ task.id }}</span>
-          </div>
-          <div class="row-cell cell-dataName">
-            <span class="cell-label">{{ $t('pages.task.dataName') }}</span>
-            <span class="cell-value text-ellipsis font-semibold" :title="task.dataName">{{ task.dataName }}</span>
-          </div>
-          <div class="row-cell cell-algorithmName">
-            <span class="cell-label">{{ $t('pages.task.algorithmName') }}</span>
-            <span class="cell-value text-ellipsis" :title="task.algorithmName">{{ task.algorithmName }}</span>
-          </div>
-          <div class="row-cell cell-creator">
-            <span class="cell-label">{{ $t('pages.task.username') }}</span>
-            <span class="cell-value text-ellipsis" :title="creatorText(task)">{{ creatorText(task) }}</span>
-          </div>
-          <div class="row-cell cell-status">
-            <span class="cell-label">{{ $t('pages.task.status') }}</span>
-            <span :class="statusBadgeClass(task.status)">{{ statusLabel(task.status) }}</span>
-          </div>
-          <div class="row-action">
-            <el-button type="primary" size="small" :icon="View" @click="handleViewDetail(task)">
-              {{ $t('pages.task.viewDetail') }}
-            </el-button>
-          </div>
-        </div>
-
-        <!-- 第二行：训练参数、指标、时间 -->
-        <div class="row-secondary">
-          <div class="secondary-group params-group">
-            <span class="group-label">{{ $t('pages.task.paramsLabel') }}</span>
-            <span class="group-value text-ellipsis" :title="paramsText(task)">{{ paramsText(task) }}</span>
-          </div>
-          <div class="secondary-group metrics-group">
-            <span class="group-label">{{ $t('pages.task.metricsLabel') }}</span>
-            <span class="group-value text-ellipsis" :title="metricsText(task)">{{ metricsText(task) }}</span>
-          </div>
-          <div class="secondary-group time-group">
-            <span class="group-label">{{ $t('pages.task.timeLabel') }}</span>
-            <span class="group-value time-value" :title="timeText(task)">{{ timeText(task) }}</span>
-          </div>
-        </div>
-      </div>
+          :task="task"
+          @view-detail="handleViewDetail"
+      />
     </div>
 
     <!-- 分页 -->
@@ -348,192 +231,6 @@ const onTaskCreated = () => {
   font-size: 13px;
   color: var(--home-text-muted);
   margin: 0;
-}
-
-/* 任务卡片行（参考 AccountManage，增强视觉效果） */
-.task-row {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 18px 22px;
-  border-radius: 14px;
-  border: 1px solid var(--user-role-border);
-  background: var(--user-role-bg);
-  transition: all 0.25s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-}
-
-html.dark .task-row {
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
-}
-
-.task-row:hover {
-  filter: brightness(0.98);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.12);
-  border-color: rgba(99, 102, 241, 0.25);
-}
-
-html.dark .task-row:hover {
-  filter: brightness(1.06);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-  border-color: rgba(165, 180, 252, 0.2);
-}
-
-/* 第一行：核心信息网格 + 操作按钮 */
-.row-primary {
-  display: grid;
-  grid-template-columns: 56px minmax(140px, 1.5fr) minmax(120px, 1.2fr) minmax(140px, 1.2fr) 100px auto;
-  gap: 16px 24px;
-  align-items: center;
-}
-
-.row-action {
-  justify-self: end;
-}
-
-.row-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-  align-items: center;
-  text-align: center;
-}
-
-.row-cell .cell-value {
-  width: 100%;
-}
-
-.cell-label {
-  font-size: 11px;
-  color: var(--home-text-muted);
-  line-height: 1.2;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.cell-value {
-  font-size: 14px;
-  color: var(--home-text-primary);
-  line-height: 1.4;
-}
-
-.text-ellipsis {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  min-width: 0;
-  width: 100%;
-}
-
-.cell-dataName .cell-value {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--home-text-primary);
-}
-
-/* 状态徽章（自定义，适配深色模式） */
-.status-badge {
-  display: inline-block;
-  padding: 2px 10px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 500;
-  width: fit-content;
-}
-
-.status-info {
-  background: rgba(100, 116, 139, 0.2);
-  color: var(--user-badge-text);
-}
-
-.status-cancelled {
-  background: rgba(120, 113, 108, 0.25);
-  color: #78716c;
-}
-
-html.dark .status-cancelled {
-  background: rgba(120, 113, 108, 0.3);
-  color: #a8a29e;
-}
-
-.status-warning {
-  background: rgba(245, 158, 11, 0.2);
-  color: #d97706;
-}
-
-html.dark .status-warning {
-  background: rgba(245, 158, 11, 0.25);
-  color: #fbbf24;
-}
-
-.status-success {
-  background: rgba(34, 197, 94, 0.2);
-  color: #16a34a;
-}
-
-html.dark .status-success {
-  background: rgba(34, 197, 94, 0.25);
-  color: #4ade80;
-}
-
-.status-primary {
-  background: var(--admin-badge-bg);
-  color: var(--admin-badge-text);
-}
-
-.status-danger {
-  background: rgba(239, 68, 68, 0.2);
-  color: #dc2626;
-}
-
-html.dark .status-danger {
-  background: rgba(239, 68, 68, 0.25);
-  color: #f87171;
-}
-
-/* 第二行：训练参数、指标、时间（时间列略宽，整体左移） */
-.row-secondary {
-  display: grid;
-  grid-template-columns: 1fr 1.2fr minmax(340px, 1.4fr);
-  gap: 20px 24px;
-  padding-top: 14px;
-  margin-top: 2px;
-  border-top: 1px solid var(--home-border);
-}
-
-.secondary-group {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-  align-items: center;
-  text-align: center;
-}
-
-.secondary-group .group-value {
-  width: 100%;
-  min-width: 0;
-}
-
-.group-label {
-  font-size: 11px;
-  color: var(--home-text-muted);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.group-value {
-  font-size: 14px;
-  color: var(--home-text-secondary);
-  line-height: 1.5;
-}
-
-.time-value {
-  white-space: nowrap;
 }
 
 /* 分页样式 */
