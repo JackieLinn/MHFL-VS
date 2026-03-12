@@ -148,7 +148,7 @@ public class TaskController extends BaseController {
             @ApiResponse(responseCode = "401", description = "未登录或 token 过期"),
             @ApiResponse(responseCode = "403", description = "非管理员无权限")
     })
-    @PutMapping("/{id}/recommend")
+    @PutMapping("/admin/{id}/recommend")
     public RestResponse<Void> setRecommend(
             @Parameter(description = "任务 id") @PathVariable Long id,
             HttpServletRequest request) {
