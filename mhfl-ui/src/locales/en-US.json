@@ -220,7 +220,7 @@
       "delete": "Delete",
       "setRecommend": "Set as Recommended",
       "unsetRecommend": "Unset Recommended",
-      "deleteConfirm": "Are you sure you want to delete this task? It can be recovered (soft delete).",
+      "deleteConfirm": "Are you sure you want to delete this task?",
       "deleteSuccess": "Deleted successfully",
       "startDisabledHint": "Only NOT_STARTED tasks can be started",
       "recommendDisabledHint": "Admin only; only SUCCESS or RECOMMENDED status can be toggled",
