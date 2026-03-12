@@ -8,22 +8,36 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.core.annotation.Order;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
+import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Component;
 import ynu.jackielinn.server.common.RestResponse;
 import ynu.jackielinn.server.utils.Const;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Optional;
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 /**
  * 限流控制过滤器
- * 防止用户高频请求接口，借助 Redis 进行限流
+ * 防止用户高频请求接口，借助 Redis 进行限流。
+ * 使用 Lua 脚本原子执行 INCR + EXPIRE，消除 hasKey/INCR 竞态导致的 TTL 丢失（-1）。
  */
 @Component
 @Order(Const.ORDER_LIMIT)
 public class FlowLimitingFilter extends HttpFilter {
+
+    private static final String INCR_WITH_EXPIRE_SCRIPT =
+            """
+                    local current = redis.call('INCR', KEYS[1])
+                    if current == 1 then
+                      redis.call('EXPIRE', KEYS[1], 10)
+                    end
+                    return current""";
+
+    private static final RedisScript<Long> SCRIPT =
+            new DefaultRedisScript<>(INCR_WITH_EXPIRE_SCRIPT, Long.class);
 
     @Resource
     private StringRedisTemplate template;
@@ -50,11 +64,8 @@ public class FlowLimitingFilter extends HttpFilter {
     }
 
     /**
-     * 归一化客户端地址。将 IPv6 localhost (::1 / 0:0:0:0:0:0:0:1) 统一为 127.0.0.1，
+     * 归一化客户端地址。将 IPv6 localhost 统一为 127.0.0.1，
      * 避免同一机器因 IPv4/IPv6 切换导致限流 key 分裂。
-     *
-     * @param address 原始地址
-     * @return 归一化后的地址
      */
     private String normalizeClientAddress(String address) {
         if (address == null) return "127.0.0.1";
@@ -92,33 +103,22 @@ public class FlowLimitingFilter extends HttpFilter {
     }
 
     /**
-     * 检查指定 IP 地址的请求是否在限制周期内。
-     * 使用 setIfAbsent(key, "1", 10, SECONDS) 原子创建 counter，避免 set+expire 竞态导致 TTL 丢失。
-     *
-     * @param ip 请求的 IP 地址
-     * @return 如果请求未超过限制，返回 true；否则返回 false
+     * 使用 Lua 脚本原子执行 INCR + EXPIRE：
+     * - INCR 不存在的 key 时 Redis 会创建，返回 1，脚本中设置 EXPIRE 10s
+     * - INCR 已存在的 key 时保留原 TTL，不修改
+     * 消除 hasKey 与 INCR 之间的竞态（key 在 hasKey 后、INCR 前过期导致 INCR 创建无 TTL 的 key）。
      */
     private boolean limitPeriodCheck(String ip) {
         String counterKey = Const.FLOW_LIMIT_COUNTER + ip;
         String blockKey = Const.FLOW_LIMIT_BLOCK + ip;
-        if (template.hasKey(counterKey)) {
-            long increment = Optional.ofNullable(template.opsForValue().increment(counterKey)).orElse(0L);
-            if (increment > 100) {
-                template.opsForValue().set(blockKey, "");
-                template.expire(blockKey, 10, TimeUnit.SECONDS);
-                return false;
-            }
-        } else {
-            Boolean created = template.opsForValue().setIfAbsent(counterKey, "1", 10, TimeUnit.SECONDS);
-            if (!Boolean.TRUE.equals(created)) {
-                // 竞态：另一请求已创建 key，需 INCR（该 key 由 setIfAbsent 创建，已带 TTL）
-                long increment = Optional.ofNullable(template.opsForValue().increment(counterKey)).orElse(0L);
-                if (increment > 100) {
-                    template.opsForValue().set(blockKey, "");
-                    template.expire(blockKey, 10, TimeUnit.SECONDS);
-                    return false;
-                }
-            }
+
+        Long current = template.execute(SCRIPT, Collections.singletonList(counterKey));
+        if (current == null) current = 0L;
+
+        if (current > 100) {
+            template.opsForValue().set(blockKey, "");
+            template.expire(blockKey, 10, TimeUnit.SECONDS);
+            return false;
         }
         return true;
     }

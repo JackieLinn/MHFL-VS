@@ -11,19 +11,21 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.data.redis.core.script.RedisScript;
 import ynu.jackielinn.server.utils.Const;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.lenient;
 
 /**
  * FlowLimitingFilter 单元测试：限流通过/拦截及 Redis 分支。
+ * 使用 Lua 脚本后，核心逻辑为 execute(SCRIPT, keys) + block 检查。
  */
 @ExtendWith(MockitoExtension.class)
 class FlowLimitingFilterTest {
@@ -67,48 +69,49 @@ class FlowLimitingFilterTest {
         verify(response).setContentType("application/json;charset=utf-8");
         assertTrue(sw.toString().contains("操作频繁"));
         verify(chain, never()).doFilter(request, response);
+        verify(template, never()).execute(any(RedisScript.class), anyList());
     }
 
     @Test
-    void shouldPassWhenNoCounterKeyAndSetIfAbsentSucceeds() throws Exception {
+    void shouldPassWhenLuaReturns1() throws Exception {
         when(request.getRemoteAddr()).thenReturn(IP);
         when(template.hasKey(Const.FLOW_LIMIT_BLOCK + IP)).thenReturn(false);
-        when(template.hasKey(Const.FLOW_LIMIT_COUNTER + IP)).thenReturn(false);
-        when(valueOperations.setIfAbsent(eq(Const.FLOW_LIMIT_COUNTER + IP), eq("1"), eq(10L), eq(TimeUnit.SECONDS)))
-                .thenReturn(true);
+        when(template.execute(any(RedisScript.class), eq(Collections.singletonList(Const.FLOW_LIMIT_COUNTER + IP))))
+                .thenReturn(1L);
 
         filter.doFilter(request, response, chain);
 
-        verify(valueOperations).setIfAbsent(eq(Const.FLOW_LIMIT_COUNTER + IP), eq("1"), eq(10L), eq(TimeUnit.SECONDS));
+        verify(template).execute(any(RedisScript.class), eq(Collections.singletonList(Const.FLOW_LIMIT_COUNTER + IP)));
         verify(chain).doFilter(request, response);
+        verify(template, never()).opsForValue();
     }
 
     @Test
-    void shouldPassWhenCounterIncrementNotExceedLimit() throws Exception {
+    void shouldPassWhenLuaReturns5() throws Exception {
         when(request.getRemoteAddr()).thenReturn(IP);
         when(template.hasKey(Const.FLOW_LIMIT_BLOCK + IP)).thenReturn(false);
-        when(template.hasKey(Const.FLOW_LIMIT_COUNTER + IP)).thenReturn(true);
-        when(valueOperations.increment(Const.FLOW_LIMIT_COUNTER + IP)).thenReturn(5L);
+        when(template.execute(any(RedisScript.class), eq(Collections.singletonList(Const.FLOW_LIMIT_COUNTER + IP))))
+                .thenReturn(5L);
 
         filter.doFilter(request, response, chain);
 
         verify(chain).doFilter(request, response);
-        verify(valueOperations, never()).set(eq(Const.FLOW_LIMIT_BLOCK + IP), anyString());
+        verify(template, never()).opsForValue();
     }
 
     @Test
-    void shouldBlockWhenCounterIncrementExceeds100() throws Exception {
+    void shouldBlockWhenLuaReturns101() throws Exception {
         when(request.getRemoteAddr()).thenReturn(IP);
         when(template.hasKey(Const.FLOW_LIMIT_BLOCK + IP)).thenReturn(false);
-        when(template.hasKey(Const.FLOW_LIMIT_COUNTER + IP)).thenReturn(true);
-        when(valueOperations.increment(Const.FLOW_LIMIT_COUNTER + IP)).thenReturn(101L);
+        when(template.execute(any(RedisScript.class), eq(Collections.singletonList(Const.FLOW_LIMIT_COUNTER + IP))))
+                .thenReturn(101L);
 
         StringWriter sw = new StringWriter();
         when(response.getWriter()).thenReturn(new PrintWriter(sw));
 
         filter.doFilter(request, response, chain);
 
-        verify(valueOperations).set(eq(Const.FLOW_LIMIT_BLOCK + IP), eq(""));
+        verify(template.opsForValue()).set(eq(Const.FLOW_LIMIT_BLOCK + IP), eq(""));
         verify(template).expire(eq(Const.FLOW_LIMIT_BLOCK + IP), eq(10L), eq(TimeUnit.SECONDS));
         verify(response).setStatus(HttpServletResponse.SC_FORBIDDEN);
         assertTrue(sw.toString().contains("操作频繁"));
@@ -119,13 +122,12 @@ class FlowLimitingFilterTest {
     void shouldNormalizeIpv6Localhost0_0_0_0_0_0_0_1To127_0_0_1() throws Exception {
         when(request.getRemoteAddr()).thenReturn("0:0:0:0:0:0:0:1");
         when(template.hasKey(Const.FLOW_LIMIT_BLOCK + "127.0.0.1")).thenReturn(false);
-        when(template.hasKey(Const.FLOW_LIMIT_COUNTER + "127.0.0.1")).thenReturn(false);
-        when(valueOperations.setIfAbsent(eq(Const.FLOW_LIMIT_COUNTER + "127.0.0.1"), eq("1"), eq(10L), eq(TimeUnit.SECONDS)))
-                .thenReturn(true);
+        when(template.execute(any(RedisScript.class), eq(Collections.singletonList(Const.FLOW_LIMIT_COUNTER + "127.0.0.1"))))
+                .thenReturn(1L);
 
         filter.doFilter(request, response, chain);
 
-        verify(valueOperations).setIfAbsent(eq(Const.FLOW_LIMIT_COUNTER + "127.0.0.1"), eq("1"), eq(10L), eq(TimeUnit.SECONDS));
+        verify(template).execute(any(RedisScript.class), eq(Collections.singletonList(Const.FLOW_LIMIT_COUNTER + "127.0.0.1")));
         verify(chain).doFilter(request, response);
     }
 
@@ -133,29 +135,24 @@ class FlowLimitingFilterTest {
     void shouldNormalizeIpv6LocalhostColon1To127_0_0_1() throws Exception {
         when(request.getRemoteAddr()).thenReturn("::1");
         when(template.hasKey(Const.FLOW_LIMIT_BLOCK + "127.0.0.1")).thenReturn(false);
-        when(template.hasKey(Const.FLOW_LIMIT_COUNTER + "127.0.0.1")).thenReturn(false);
-        when(valueOperations.setIfAbsent(eq(Const.FLOW_LIMIT_COUNTER + "127.0.0.1"), eq("1"), eq(10L), eq(TimeUnit.SECONDS)))
-                .thenReturn(true);
+        when(template.execute(any(RedisScript.class), eq(Collections.singletonList(Const.FLOW_LIMIT_COUNTER + "127.0.0.1"))))
+                .thenReturn(1L);
 
         filter.doFilter(request, response, chain);
 
-        verify(valueOperations).setIfAbsent(eq(Const.FLOW_LIMIT_COUNTER + "127.0.0.1"), eq("1"), eq(10L), eq(TimeUnit.SECONDS));
+        verify(template).execute(any(RedisScript.class), eq(Collections.singletonList(Const.FLOW_LIMIT_COUNTER + "127.0.0.1")));
         verify(chain).doFilter(request, response);
     }
 
     @Test
-    void shouldIncrWhenSetIfAbsentFailsDueToRace() throws Exception {
+    void shouldPassWhenLuaReturnsNull() throws Exception {
         when(request.getRemoteAddr()).thenReturn(IP);
         when(template.hasKey(Const.FLOW_LIMIT_BLOCK + IP)).thenReturn(false);
-        when(template.hasKey(Const.FLOW_LIMIT_COUNTER + IP)).thenReturn(false);
-        when(valueOperations.setIfAbsent(eq(Const.FLOW_LIMIT_COUNTER + IP), eq("1"), eq(10L), eq(TimeUnit.SECONDS)))
-                .thenReturn(false);
-        when(valueOperations.increment(Const.FLOW_LIMIT_COUNTER + IP)).thenReturn(2L);
+        when(template.execute(any(RedisScript.class), eq(Collections.singletonList(Const.FLOW_LIMIT_COUNTER + IP))))
+                .thenReturn(null);
 
         filter.doFilter(request, response, chain);
 
-        verify(valueOperations).setIfAbsent(eq(Const.FLOW_LIMIT_COUNTER + IP), eq("1"), eq(10L), eq(TimeUnit.SECONDS));
-        verify(valueOperations).increment(Const.FLOW_LIMIT_COUNTER + IP);
         verify(chain).doFilter(request, response);
     }
 }
