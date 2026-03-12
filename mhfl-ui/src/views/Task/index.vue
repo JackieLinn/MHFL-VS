@@ -89,6 +89,11 @@ const onTaskCreated = () => {
   fetchList()
 }
 
+const onRecommendSuccess = () => {
+  ElMessage.success(t('pages.task.recommendSuccess'))
+  fetchList()
+}
+
 const handleDelete = (task: TaskVO) => {
   ElMessageBox.confirm(t('pages.task.deleteConfirm'), t('common.confirm'), {
     confirmButtonText: t('common.confirm'),
@@ -161,6 +166,7 @@ const handleDelete = (task: TaskVO) => {
           :is-admin="isAdmin"
           @view-detail="handleViewDetail"
           @delete="handleDelete"
+          @recommend-success="onRecommendSuccess"
       />
     </div>
 

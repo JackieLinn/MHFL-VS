@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import {computed} from 'vue'
+import {ref, computed} from 'vue'
 import {useRouter} from 'vue-router'
 import {useI18n} from 'vue-i18n'
 import {View, Delete, VideoPlay, Star, StarFilled} from '@element-plus/icons-vue'
+import {setRecommend} from '@/api/task'
 import type {TaskVO, TaskStatusCode} from '@/api/task'
 
 const props = defineProps<{
@@ -13,7 +14,10 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'view-detail', task: TaskVO): void
   (e: 'delete', task: TaskVO): void
+  (e: 'recommend-success'): void
 }>()
+
+const recommendLoading = ref(false)
 
 const router = useRouter()
 const {t} = useI18n()
@@ -115,13 +119,19 @@ const handleDelete = () => {
   emit('delete', props.task)
 }
 
-/** 推荐按钮：先不连后端，占位 */
-const handleSetRecommend = () => {
-  // TODO: 对接 setRecommend API
-}
-
-const handleUnsetRecommend = () => {
-  // TODO: 对接 setRecommend API
+const handleRecommend = () => {
+  if (!canRecommend.value) return
+  recommendLoading.value = true
+  setRecommend(
+      props.task.id,
+      () => {
+        recommendLoading.value = false
+        emit('recommend-success')
+      },
+      () => {
+        recommendLoading.value = false
+      }
+  )
 }
 </script>
 
@@ -168,8 +178,9 @@ const handleUnsetRecommend = () => {
               size="small"
               :icon="canUnsetRecommend ? StarFilled : Star"
               :disabled="!canRecommend"
+              :loading="recommendLoading"
               class="task-action-btn"
-              @click="canSetRecommend ? handleSetRecommend() : handleUnsetRecommend()"
+              @click="handleRecommend"
           >
             {{ canUnsetRecommend ? $t('pages.task.unsetRecommend') : $t('pages.task.setRecommend') }}
           </el-button>

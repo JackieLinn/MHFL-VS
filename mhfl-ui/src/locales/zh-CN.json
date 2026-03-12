@@ -220,6 +220,7 @@
       "delete": "删除",
       "setRecommend": "设为推荐",
       "unsetRecommend": "取消推荐",
+      "recommendSuccess": "操作成功",
       "deleteConfirm": "确定要删除该任务吗？",
       "deleteSuccess": "删除成功",
       "startDisabledHint": "仅未开始的任务可启动",
