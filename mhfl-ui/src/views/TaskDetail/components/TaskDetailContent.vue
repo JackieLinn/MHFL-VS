@@ -73,12 +73,17 @@ const displayRounds = computed((): RoundVO[] => {
   const t = props.task
   const safeMetric = (v: number | null | undefined) => Math.max(0, toNum(v))
   const fallbackMetrics = numSteps > 0 && r.length === 0
-    ? { acc: safeMetric(t.accuracy) || 0, prec: safeMetric(t.precision) || 0, rec: safeMetric(t.recall) || 0, f1: safeMetric(t.f1Score) || 0 }
-    : undefined
+      ? {
+        acc: safeMetric(t.accuracy) || 0,
+        prec: safeMetric(t.precision) || 0,
+        rec: safeMetric(t.recall) || 0,
+        f1: safeMetric(t.f1Score) || 0
+      }
+      : undefined
   if (numSteps <= 0) return r.length > 0 ? r : [emptyRound(0), emptyRound(1)]
   const map = new Map(r.map((x) => [x.roundNum, x]))
-  return Array.from({ length: numSteps }, (_, i) =>
-    map.get(i) ?? emptyRound(i, r.length === 0 ? fallbackMetrics : undefined)
+  return Array.from({length: numSteps}, (_, i) =>
+      map.get(i) ?? emptyRound(i, r.length === 0 ? fallbackMetrics : undefined)
   )
 })
 
@@ -106,6 +111,6 @@ const metrics = computed(() => ({
     <TaskExpSettingsCard :settings="settings"/>
     <TaskMetricsCard :metrics="metrics"/>
     <TaskRoundCurvesCard :rounds="displayRounds" :has-real-data="rounds.length > 0" :loading="roundsLoading"/>
-    <TaskClientMetricsCard :clients="clients" :loading="clientsLoading"/>
+    <TaskClientMetricsCard :clients="clients" :task-id="task.id" :num-steps="task.numSteps" :loading="clientsLoading"/>
   </div>
 </template>

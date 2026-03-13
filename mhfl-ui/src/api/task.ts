@@ -90,6 +90,18 @@ export interface ClientVO {
 }
 
 /**
+ * 获取任务下某客户端全部记录（按 roundNum 升序，用于详情折线图）
+ */
+export const getTaskClientDetail = (
+    taskId: number,
+    clientIndex: number,
+    success: (data: ClientVO[]) => void,
+    failure?: (message: string, code: number, url: string) => void
+) => {
+    get(`/api/task/${taskId}/clients/${clientIndex}`, success, failure)
+}
+
+/**
  * 获取任务各客户端最新状态（按 client_index 0～numNodes-1 排序，未训练占位 -1）
  */
 export const getTaskClientsLatest = (

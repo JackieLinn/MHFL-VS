@@ -2,7 +2,7 @@
 import {ref, computed, watch, nextTick} from 'vue'
 import {useI18n} from 'vue-i18n'
 import * as echarts from 'echarts'
-import type {ClientVO} from '@/api/task'
+import {getTaskClientDetail, type ClientVO} from '@/api/task'
 import {
   getClientModel,
   cnnColors,
@@ -17,6 +17,8 @@ type ClientMetricKey = 'accuracy' | 'precision' | 'recall' | 'f1Score'
 const props = withDefaults(
   defineProps<{
     clients: ClientVO[]
+    taskId?: number
+    numSteps?: number
     loading?: boolean
   }>(),
   { loading: false }
@@ -25,8 +27,8 @@ const props = withDefaults(
 const selectedClientDetailMetric = ref<ClientMetricKey>('accuracy')
 const clientDetailVisible = ref(false)
 const selectedClientId = ref(0)
-
-const numRounds = computed(() => 500)
+const clientDetailRecords = ref<ClientVO[]>([])
+const clientDetailChartLoading = ref(false)
 
 const openClientDetail = (clientIndex: number) => {
   selectedClientId.value = clientIndex
@@ -62,22 +64,49 @@ const getClientMetricVal = (clientIdx: number, key: ClientMetricKey): number => 
   return v != null && v >= 0 ? v : -1
 }
 
+const numSteps = computed(() => Math.max(0, props.numSteps ?? 0))
+
+/** 横轴标签：1～numSteps */
+const clientDetailXLabels = computed(() =>
+  numSteps.value > 0 ? Array.from({ length: numSteps.value }, (_, i) => i + 1) : []
+)
+
+/** 横轴刻度自适应 */
+const clientDetailXInterval = computed(() => {
+  const n = clientDetailXLabels.value.length
+  if (n <= 1) return 1
+  const maxRound = clientDetailXLabels.value[n - 1] ?? 1
+  return Math.max(1, Math.ceil(maxRound / 10))
+})
+
+const showClientDetailXLabel = (idx: number): boolean => {
+  const labels = clientDetailXLabels.value
+  if (idx < 0 || idx >= labels.length) return false
+  const val = labels[idx] ?? 0
+  const step = clientDetailXInterval.value
+  if (idx === 0 || idx === labels.length - 1) return true
+  return val % step === 0
+}
+
+/** 阶梯折线：未训练轮次 0，训练后持续展示最新值直到下次训练 */
 const clientDetailChartData = computed(() => {
-  const clientIdx = selectedClientId.value - 1
-  if (clientIdx < 0) return null
+  const list = clientDetailRecords.value
+  const steps = numSteps.value
   const m = selectedClientDetailMetric.value
-  const finalVal = getClientMetricVal(clientIdx, m)
-  if (finalVal < 0) return null
-  const init = finalVal * 0.18
-  const points: number[] = []
-  for (let r = 0; r < numRounds.value; r++) {
-    const tVal = r / Math.max(numRounds.value - 1, 1)
-    const progress = 1 - Math.exp(-3.2 * tVal)
-    const noise = (Math.random() - 0.5) * 0.02
-    points.push(Math.max(0.01, Math.min(0.99, init + (finalVal - init) * progress + noise)))
+  if (steps <= 0) return []
+  const data: number[] = []
+  let idx = 0
+  for (let r = 0; r < steps; r++) {
+    while (idx < list.length && (list[idx].roundNum ?? -1) <= r) idx++
+    if (idx > 0) {
+      const rec = list[idx - 1]
+      const v = rec[m]
+      data.push(v != null && v >= 0 ? v : 0)
+    } else {
+      data.push(0)
+    }
   }
-  points[points.length - 1] = finalVal
-  return points
+  return data
 })
 
 const initClientDetailChart = () => {
@@ -92,26 +121,27 @@ const initClientDetailChart = () => {
 const updateClientDetailChart = () => {
   if (!clientDetailChartInst || !clientDetailVisible.value) return
   const data = clientDetailChartData.value
-  if (!data?.length) return
+  const labels = clientDetailXLabels.value
+  if (!labels.length) return
   const textColor = chartTextColor()
   const mutedColor = chartMutedColor()
   const isDark = document.documentElement.classList.contains('dark')
-  const rounds = Array.from({length: numRounds.value}, (_, i) => i + 1)
   const metricKey = selectedClientDetailMetric.value
+  const hasRealData = data.some((v) => v > 0)
   const option = {
     backgroundColor: 'transparent',
     title: {
       text: t('pages.recommended.clientDetailTitle'),
       left: 0,
       top: 0,
-      textStyle: {color: textColor, fontSize: 14, fontWeight: 600}
+      textStyle: { color: textColor, fontSize: 14, fontWeight: 600 }
     },
     tooltip: {
       trigger: 'axis',
-      textStyle: {fontSize: 12, color: textColor},
+      textStyle: { fontSize: 12, color: textColor },
       axisPointer: {
         type: 'line',
-        lineStyle: {color: isDark ? 'rgba(99,102,241,0.5)' : 'rgba(99,102,241,0.3)', type: 'dashed'}
+        lineStyle: { color: isDark ? 'rgba(99,102,241,0.5)' : 'rgba(99,102,241,0.3)', type: 'dashed' }
       },
       backgroundColor: chartTooltipBg(),
       borderColor: chartTooltipBorder(),
@@ -120,60 +150,92 @@ const updateClientDetailChart = () => {
       formatter: (params: { axisValue?: number; data?: number }[]) => {
         const round = params[0]?.axisValue ?? 0
         const d = params[0]?.data
-        const val = typeof d === 'number' ? (d * 100).toFixed(2) + '%' : '-'
+        const val = typeof d === 'number' ? (d * 100).toFixed(2) + '%' : '0%'
         return `Round ${round}<br/>${val}`
       }
     },
-    grid: {left: 52, right: 20, top: 36, bottom: 48},
+    grid: { left: 52, right: 20, top: 36, bottom: 48 },
     xAxis: {
       type: 'category',
-      data: rounds,
+      boundaryGap: false,
+      data: labels,
       name: t('pages.recommended.chartXAxis'),
       nameLocation: 'middle',
       nameGap: 36,
-      nameTextStyle: {color: textColor, fontSize: 12, fontWeight: 500},
-      axisLine: {lineStyle: {color: mutedColor}},
+      nameTextStyle: { color: textColor, fontSize: 12, fontWeight: 500 },
+      axisLine: { lineStyle: { color: mutedColor } },
       axisLabel: {
         color: textColor,
         fontSize: 11,
         margin: 8,
-        interval: (idx: number) => idx === 0 || idx % 50 === 49 || idx === numRounds.value - 1
+        interval: (i: number) => showClientDetailXLabel(i)
       }
     },
     yAxis: {
       type: 'value',
-      scale: true,
+      scale: hasRealData,
+      min: hasRealData ? (v: { min: number }) => Math.max(0, (v.min ?? 0) - 0.02) : 0,
+      max: hasRealData ? (v: { max: number }) => Math.min(1, (v.max ?? 1) + 0.02) : 1,
       axisLabel: {
         color: textColor,
         fontSize: 11,
         formatter: (v: number) => (v * 100).toFixed(1) + '%'
       },
-      splitLine: {lineStyle: {color: mutedColor, type: 'dashed', opacity: 0.25}},
-      axisLine: {show: false},
-      axisTick: {show: false}
+      splitLine: { lineStyle: { color: mutedColor, type: 'dashed', opacity: 0.25 } },
+      axisLine: { show: false },
+      axisTick: { show: false }
     },
     series: [{
       name: t(`pages.recommended.${clientMetricOptions.find(o => o.val === metricKey)?.key ?? 'clientMetricAccuracy'}`),
       type: 'line',
       data,
-      smooth: 0.25,
+      step: 'end',
       symbol: 'none',
-      lineStyle: {width: 2.5, color: '#6366f1'},
-      itemStyle: {color: '#6366f1'},
-      emphasis: {focus: 'series', lineStyle: {width: 3.5}}
+      lineStyle: { width: 2.5, color: '#6366f1' },
+      itemStyle: { color: '#6366f1' },
+      emphasis: { focus: 'series', lineStyle: { width: 3.5 } }
     }]
   }
-  clientDetailChartInst.setOption(option, {notMerge: true})
+  clientDetailChartInst.setOption(option, { notMerge: true })
+}
+
+const fetchClientDetail = () => {
+  const tid = props.taskId
+  const clientIdx = selectedClientId.value - 1
+  if (tid == null || clientIdx < 0) return
+  clientDetailRecords.value = []
+  clientDetailChartLoading.value = true
+  getTaskClientDetail(
+    tid,
+    clientIdx,
+    (data) => {
+      clientDetailRecords.value = data ?? []
+      clientDetailChartLoading.value = false
+      nextTick(() => setTimeout(updateClientDetailChart, 50))
+    },
+    () => {
+      clientDetailRecords.value = []
+      clientDetailChartLoading.value = false
+    }
+  )
 }
 
 watch(clientDetailVisible, (visible) => {
-  if (visible) {
+  if (visible && selectedClientId.value > 0) {
+    fetchClientDetail()
     nextTick(() => setTimeout(initClientDetailChart, 50))
   }
 })
-watch([selectedClientId, selectedClientDetailMetric, clientDetailChartData], () => {
+
+watch([selectedClientId], () => {
+  if (clientDetailVisible.value && selectedClientId.value > 0) {
+    fetchClientDetail()
+  }
+})
+
+watch([selectedClientDetailMetric, clientDetailChartData], () => {
   if (clientDetailVisible.value) updateClientDetailChart()
-}, {deep: true})
+}, { deep: true })
 </script>
 
 <template>
@@ -281,8 +343,11 @@ watch([selectedClientId, selectedClientDetailMetric, clientDetailChartData], () 
         </button>
       </div>
       <div
-          class="task-detail-client-detail-chart-wrap rounded-xl border border-[var(--home-card-border)] bg-[var(--home-hover-bg)] p-4"
+          class="task-detail-client-detail-chart-wrap rounded-xl border border-[var(--home-card-border)] bg-[var(--home-hover-bg)] p-4 relative"
       >
+        <div v-if="clientDetailChartLoading" class="absolute inset-0 flex items-center justify-center bg-[var(--home-hover-bg)]/80 z-10 rounded-xl">
+          <span class="text-[var(--home-text-muted)]">{{ $t('pages.taskDetail.loading') }}</span>
+        </div>
         <div ref="clientDetailChartRef" class="w-full h-[340px]"></div>
       </div>
     </div>
