@@ -76,6 +76,30 @@ export interface RoundVO {
     f1Score: number | null
 }
 
+/** 客户端最新记录（后端 clientIndex 0～numNodes-1，前端展示 +1） */
+export interface ClientVO {
+    id: number | null
+    roundNum: number
+    clientIndex: number
+    loss: number
+    accuracy: number
+    precision: number
+    recall: number
+    f1Score: number
+    timestamp: string | null
+}
+
+/**
+ * 获取任务各客户端最新状态（按 client_index 0～numNodes-1 排序，未训练占位 -1）
+ */
+export const getTaskClientsLatest = (
+    taskId: number,
+    success: (data: ClientVO[]) => void,
+    failure?: (message: string, code: number, url: string) => void
+) => {
+    get(`/api/task/${taskId}/clients/latest`, success, failure)
+}
+
 /**
  * 获取任务轮次列表（历史曲线数据）
  */

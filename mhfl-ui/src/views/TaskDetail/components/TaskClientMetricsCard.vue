@@ -2,6 +2,7 @@
 import {ref, computed, watch, nextTick} from 'vue'
 import {useI18n} from 'vue-i18n'
 import * as echarts from 'echarts'
+import type {ClientVO} from '@/api/task'
 import {
   getClientModel,
   cnnColors,
@@ -11,11 +12,15 @@ import {
 
 const {t} = useI18n()
 
-type ClientMetricKey = 'accuracy' | 'precision' | 'recall' | 'f1'
+type ClientMetricKey = 'accuracy' | 'precision' | 'recall' | 'f1Score'
 
-const props = defineProps<{
-  clientMetrics: { accuracy: number; precision: number; recall: number; f1: number }[]
-}>()
+const props = withDefaults(
+  defineProps<{
+    clients: ClientVO[]
+    loading?: boolean
+  }>(),
+  { loading: false }
+)
 
 const selectedClientDetailMetric = ref<ClientMetricKey>('accuracy')
 const clientDetailVisible = ref(false)
@@ -49,14 +54,20 @@ const chartTooltipBg = () =>
         : 'rgba(255, 255, 255, 0.96)'
 const chartTooltipBorder = () => getChartColorVar('--home-card-border')
 
-const getClientMetricVal = (clientIdx: number, key: ClientMetricKey): number =>
-    props.clientMetrics[clientIdx]?.[key] ?? 0
+/** 后端 clientIndex 0～n-1，前端展示 +1；未训练返回 -1 */
+const getClientMetricVal = (clientIdx: number, key: ClientMetricKey): number => {
+  const c = props.clients[clientIdx]
+  if (!c) return -1
+  const v = c[key]
+  return v != null && v >= 0 ? v : -1
+}
 
 const clientDetailChartData = computed(() => {
   const clientIdx = selectedClientId.value - 1
   if (clientIdx < 0) return null
   const m = selectedClientDetailMetric.value
   const finalVal = getClientMetricVal(clientIdx, m)
+  if (finalVal < 0) return null
   const init = finalVal * 0.18
   const points: number[] = []
   for (let r = 0; r < numRounds.value; r++) {
@@ -175,21 +186,27 @@ watch([selectedClientId, selectedClientDetailMetric, clientDetailChartData], () 
         {{ $t('pages.taskDetail.clientMetricsTitle') }}
       </h3>
     </div>
-    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 relative z-[1]">
+    <div v-if="clientsLoading" class="py-8 text-center text-[var(--home-text-muted)]">
+      {{ $t('pages.taskDetail.loading') }}
+    </div>
+    <div v-else-if="clients.length === 0" class="py-8 text-center text-[var(--home-text-muted)]">
+      {{ $t('pages.taskDetail.noClientData') }}
+    </div>
+    <div v-else class="grid grid-cols-5 gap-3 relative z-[1]">
       <div
-          v-for="i in 100"
-          :key="i"
+          v-for="(c, idx) in clients"
+          :key="c.clientIndex"
           class="task-detail-client-cell"
-          :class="`task-detail-client-cell-cnn${getClientModel(i)}`"
-          @click="openClientDetail(i)"
+          :class="`task-detail-client-cell-cnn${getClientModel(c.clientIndex + 1)}`"
+          @click="openClientDetail(c.clientIndex + 1)"
       >
         <div class="task-detail-client-header">
-          <span class="task-detail-client-label">{{ $t('pages.recommended.clientLabel') }} {{ i }}</span>
+          <span class="task-detail-client-label">{{ $t('pages.recommended.clientLabel') }} {{ c.clientIndex + 1 }}</span>
           <span
               class="task-detail-client-model-badge"
-              :style="{borderColor: cnnColors[getClientModel(i) - 1], color: cnnColors[getClientModel(i) - 1]}"
+              :style="{borderColor: cnnColors[getClientModel(c.clientIndex + 1) - 1], color: cnnColors[getClientModel(c.clientIndex + 1) - 1]}"
           >
-            {{ $t(`pages.recommended.clientModelCnn${getClientModel(i)}`) }}
+            {{ $t(`pages.recommended.clientModelCnn${getClientModel(c.clientIndex + 1)}`) }}
           </span>
         </div>
         <div class="task-detail-client-rings-grid">
@@ -197,7 +214,7 @@ watch([selectedClientId, selectedClientDetailMetric, clientDetailChartData], () 
               v-for="(opt, oi) in clientMetricOptions"
               :key="opt.val"
               class="task-detail-client-mini-ring"
-              :title="`${$t('pages.recommended.' + opt.key)}: ${(getClientMetricVal(i - 1, opt.val) * 100).toFixed(2)}%`"
+              :title="getClientMetricVal(idx, opt.val) >= 0 ? `${$t('pages.recommended.' + opt.key)}: ${(getClientMetricVal(idx, opt.val) * 100).toFixed(2)}%` : $t('pages.taskDetail.untrained')"
           >
             <div class="task-detail-client-mini-ring-wrap">
               <svg viewBox="0 0 36 36" class="task-detail-client-mini-svg">
@@ -208,12 +225,12 @@ watch([selectedClientId, selectedClientDetailMetric, clientDetailChartData], () 
                     cy="18"
                     r="15.9"
                     stroke-dasharray="100"
-                    :stroke-dashoffset="100 - getClientMetricVal(i - 1, opt.val) * 100"
+                    :stroke-dashoffset="getClientMetricVal(idx, opt.val) >= 0 ? 100 - getClientMetricVal(idx, opt.val) * 100 : 100"
                     :style="{stroke: clientMetricColors[oi]}"
                 />
               </svg>
               <span class="task-detail-client-mini-value tabular-nums">
-                {{ (getClientMetricVal(i - 1, opt.val) * 100).toFixed(1) }}%
+                {{ getClientMetricVal(idx, opt.val) >= 0 ? (getClientMetricVal(idx, opt.val) * 100).toFixed(1) + '%' : $t('pages.taskDetail.untrained') }}
               </span>
             </div>
             <span class="task-detail-client-mini-label">{{ $t(`pages.taskDetail.metricFull.${opt.val}`) }}</span>
@@ -222,7 +239,7 @@ watch([selectedClientId, selectedClientDetailMetric, clientDetailChartData], () 
         <button
             type="button"
             class="task-detail-client-detail-btn"
-            @click.stop="openClientDetail(i)"
+            @click.stop="openClientDetail(c.clientIndex + 1)"
         >
           {{ $t('pages.recommended.clientDetailBtn') }}
         </button>

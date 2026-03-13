@@ -58,7 +58,7 @@ export const clientMetricOptions = [
   {val: 'accuracy' as const, key: 'clientMetricAccuracy'},
   {val: 'precision' as const, key: 'clientMetricPrecision'},
   {val: 'recall' as const, key: 'clientMetricRecall'},
-  {val: 'f1' as const, key: 'clientMetricF1'}
+  {val: 'f1Score' as const, key: 'clientMetricF1'}
 ] as const
 
 /** 4 个指标的展示颜色（用于客户端卡片小环） */

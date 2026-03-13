@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {ref, computed, watch} from 'vue'
-import {getTaskRounds, type TaskVO, type RoundVO} from '@/api/task'
+import {getTaskRounds, getTaskClientsLatest, type TaskVO, type RoundVO, type ClientVO} from '@/api/task'
 import TaskExpSettingsCard from './TaskExpSettingsCard.vue'
 import TaskMetricsCard from './TaskMetricsCard.vue'
 import TaskRoundCurvesCard from './TaskRoundCurvesCard.vue'
@@ -12,6 +12,8 @@ const props = defineProps<{
 
 const rounds = ref<RoundVO[]>([])
 const roundsLoading = ref(false)
+const clients = ref<ClientVO[]>([])
+const clientsLoading = ref(false)
 
 const fetchRounds = () => {
   const id = props.task.id
@@ -29,8 +31,27 @@ const fetchRounds = () => {
   )
 }
 
+const fetchClients = () => {
+  const id = props.task.id
+  if (!id) return
+  clientsLoading.value = true
+  getTaskClientsLatest(
+      id,
+      (data) => {
+        clients.value = data ?? []
+        clientsLoading.value = false
+      },
+      () => {
+        clientsLoading.value = false
+      }
+  )
+}
+
 watch(() => props.task.id, (id) => {
-  if (id) fetchRounds()
+  if (id) {
+    fetchRounds()
+    fetchClients()
+  }
 }, {immediate: true})
 
 const toNum = (v: number | null | undefined) => (v != null && Number.isFinite(v) ? v : 0)
@@ -78,24 +99,6 @@ const metrics = computed(() => ({
   f1Score: props.task.f1Score ?? -1
 }))
 
-const clientMetrics = computed(() => {
-  const bases = {
-    accuracy: props.task.accuracy ?? 0.5,
-    precision: props.task.precision ?? 0.5,
-    recall: props.task.recall ?? 0.5,
-    f1: props.task.f1Score ?? 0.5
-  }
-  const spread = 0.08
-  return Array.from({length: 100}, (_, clientIdx) => {
-    const noise = (Math.sin(clientIdx * 0.5) * 0.5 + Math.cos(clientIdx * 0.3) * 0.5) * spread
-    return {
-      accuracy: Math.max(0.2, Math.min(0.85, bases.accuracy + noise)),
-      precision: Math.max(0.2, Math.min(0.85, bases.precision + noise * 0.98)),
-      recall: Math.max(0.2, Math.min(0.85, bases.recall + noise * 1.02)),
-      f1: Math.max(0.2, Math.min(0.85, bases.f1 + noise))
-    }
-  })
-})
 </script>
 
 <template>
@@ -103,6 +106,6 @@ const clientMetrics = computed(() => {
     <TaskExpSettingsCard :settings="settings"/>
     <TaskMetricsCard :metrics="metrics"/>
     <TaskRoundCurvesCard :rounds="displayRounds" :has-real-data="rounds.length > 0" :loading="roundsLoading"/>
-    <TaskClientMetricsCard :client-metrics="clientMetrics"/>
+    <TaskClientMetricsCard :clients="clients" :loading="clientsLoading"/>
   </div>
 </template>
