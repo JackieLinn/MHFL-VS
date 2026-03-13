@@ -284,6 +284,7 @@
       },
       "desc": "Details for task #{id}",
       "backToList": "Back to List",
+      "stopTraining": "Stop Training",
       "basicInfo": "Basic Info",
       "invalidId": "Invalid task ID",
       "loadFailed": "Failed to load"

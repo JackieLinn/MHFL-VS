@@ -2,7 +2,7 @@
 import {ref, computed, onMounted, watch} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {useI18n} from 'vue-i18n'
-import {ArrowLeft} from '@element-plus/icons-vue'
+import {ArrowLeft, VideoPause, CircleClose} from '@element-plus/icons-vue'
 import PageHeader from '@/components/PageHeader.vue'
 import BackToTop from '@/components/BackToTop.vue'
 import TaskDetailContent from './components/TaskDetailContent.vue'
@@ -77,6 +77,11 @@ const goBack = () => {
   router.push({name: 'Task'})
 }
 
+/** 停止训练（后续实现逻辑） */
+const onStopTask = () => {
+  // TODO
+}
+
 watch(taskId, (id) => {
   if (Number.isFinite(id) && id >= 1) {
     fetchDetail()
@@ -111,6 +116,23 @@ onMounted(() => {
           <span class="detail-meta-label">{{ $t('pages.task.dataName') }}</span>
           <span class="detail-meta-value">{{ task.dataName }}</span>
         </span>
+        <el-button
+            v-if="task.status === 1"
+            class="detail-stop-btn"
+            type="danger"
+            :icon="VideoPause"
+            @click="onStopTask"
+        >
+          {{ $t('pages.taskDetail.stopTraining') }}
+        </el-button>
+        <el-button
+            v-else-if="task.status === 5"
+            class="detail-stop-btn"
+            disabled
+            :icon="CircleClose"
+        >
+          {{ statusLabel(task.status) }}
+        </el-button>
       </div>
     </div>
 
@@ -216,6 +238,10 @@ html.dark .status-success {
 .status-primary {
   background: var(--admin-badge-bg);
   color: var(--admin-badge-text);
+}
+
+.detail-stop-btn :deep(.el-icon) {
+  font-size: 18px;
 }
 
 .status-danger {

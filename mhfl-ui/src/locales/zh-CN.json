@@ -275,6 +275,7 @@
       "untrained": "未训练",
       "desc": "任务 #{id} 的详细信息",
       "backToList": "返回列表",
+      "stopTraining": "停止训练",
       "basicInfo": "基本信息",
       "invalidId": "无效的任务 ID",
       "loadFailed": "加载失败",
