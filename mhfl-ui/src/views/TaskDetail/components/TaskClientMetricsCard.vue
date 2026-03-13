@@ -3,14 +3,18 @@ import {ref, computed, watch, nextTick} from 'vue'
 import {useI18n} from 'vue-i18n'
 import * as echarts from 'echarts'
 import {getTaskClientDetail, type ClientVO} from '@/api/task'
-import {
-  getClientModel,
-  cnnColors,
-  clientMetricOptions,
-  clientMetricColors
-} from './taskDetailConstants'
 
-const {t} = useI18n()
+const { t } = useI18n()
+
+const getClientModel = (i: number) => ((i - 1) % 5) + 1
+const cnnColors = ['#3b82f6', '#22c55e', '#0d9488', '#d946ef', '#f59e0b'] as const
+const clientMetricOptions = [
+  { val: 'accuracy' as const, key: 'clientMetricAccuracy' },
+  { val: 'precision' as const, key: 'clientMetricPrecision' },
+  { val: 'recall' as const, key: 'clientMetricRecall' },
+  { val: 'f1Score' as const, key: 'clientMetricF1' }
+] as const
+const clientMetricColors = ['#6366f1', '#22c55e', '#0d9488', '#f59e0b'] as const
 
 type ClientMetricKey = 'accuracy' | 'precision' | 'recall' | 'f1Score'
 

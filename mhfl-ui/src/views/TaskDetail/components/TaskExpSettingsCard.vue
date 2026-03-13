@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import {settingKeys} from './taskDetailConstants'
+const settingKeys = [
+  { key: 'settingNumNodes', val: 'numNodes', icon: 'i-mdi-account-group-outline' },
+  { key: 'settingFraction', val: 'fraction', icon: 'i-mdi-percent' },
+  { key: 'settingClassesPerNode', val: 'classesPerNode', icon: 'i-mdi-label-multiple-outline' },
+  { key: 'settingLowProb', val: 'lowProb', icon: 'i-mdi-chart-line' },
+  { key: 'settingNumSteps', val: 'numSteps', icon: 'i-mdi-repeat' },
+  { key: 'settingEpochs', val: 'epochs', icon: 'i-mdi-backup-restore' }
+] as const
 
 defineProps<{
   settings: Record<string, string | number>

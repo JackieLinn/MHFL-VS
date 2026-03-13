@@ -1,5 +1,11 @@
 <script setup lang="ts">
-import {metricKeys} from './taskDetailConstants'
+const metricKeys = [
+  { key: 'metricLoss', val: 'loss', format: (v: number) => (v == null || v === -1 ? '—' : v.toFixed(4)), icon: 'i-mdi-chart-box-outline' },
+  { key: 'metricAccuracy', val: 'accuracy', format: (v: number) => (v == null || v === -1 ? '—' : (v * 100).toFixed(2) + '%'), icon: 'i-mdi-target' },
+  { key: 'metricPrecision', val: 'precision', format: (v: number) => (v == null || v === -1 ? '—' : (v * 100).toFixed(2) + '%'), icon: 'i-mdi-crosshairs-gps' },
+  { key: 'metricRecall', val: 'recall', format: (v: number) => (v == null || v === -1 ? '—' : (v * 100).toFixed(2) + '%'), icon: 'i-mdi-chart-areaspline' },
+  { key: 'metricF1', val: 'f1Score', format: (v: number) => (v == null || v === -1 ? '—' : (v * 100).toFixed(2) + '%'), icon: 'i-mdi-chart-bar' }
+] as const
 
 defineProps<{
   metrics: {
