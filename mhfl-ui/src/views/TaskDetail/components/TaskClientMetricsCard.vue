@@ -4,28 +4,28 @@ import {useI18n} from 'vue-i18n'
 import * as echarts from 'echarts'
 import {getTaskClientDetail, type ClientVO} from '@/api/task'
 
-const { t } = useI18n()
+const {t} = useI18n()
 
 const getClientModel = (i: number) => ((i - 1) % 5) + 1
 const cnnColors = ['#3b82f6', '#22c55e', '#0d9488', '#d946ef', '#f59e0b'] as const
 const clientMetricOptions = [
-  { val: 'accuracy' as const, key: 'clientMetricAccuracy' },
-  { val: 'precision' as const, key: 'clientMetricPrecision' },
-  { val: 'recall' as const, key: 'clientMetricRecall' },
-  { val: 'f1Score' as const, key: 'clientMetricF1' }
+  {val: 'accuracy' as const, key: 'clientMetricAccuracy'},
+  {val: 'precision' as const, key: 'clientMetricPrecision'},
+  {val: 'recall' as const, key: 'clientMetricRecall'},
+  {val: 'f1Score' as const, key: 'clientMetricF1'}
 ] as const
 const clientMetricColors = ['#6366f1', '#22c55e', '#0d9488', '#f59e0b'] as const
 
 type ClientMetricKey = 'accuracy' | 'precision' | 'recall' | 'f1Score'
 
 const props = withDefaults(
-  defineProps<{
-    clients: ClientVO[]
-    taskId?: number
-    numSteps?: number
-    loading?: boolean
-  }>(),
-  { loading: false }
+    defineProps<{
+      clients: ClientVO[]
+      taskId?: number
+      numSteps?: number
+      loading?: boolean
+    }>(),
+    {loading: false}
 )
 
 const selectedClientDetailMetric = ref<ClientMetricKey>('accuracy')
@@ -72,7 +72,7 @@ const numSteps = computed(() => Math.max(0, props.numSteps ?? 0))
 
 /** 横轴标签：1～numSteps */
 const clientDetailXLabels = computed(() =>
-  numSteps.value > 0 ? Array.from({ length: numSteps.value }, (_, i) => i + 1) : []
+    numSteps.value > 0 ? Array.from({length: numSteps.value}, (_, i) => i + 1) : []
 )
 
 /** 横轴刻度自适应 */
@@ -101,11 +101,12 @@ const clientDetailChartData = computed(() => {
   const data: number[] = []
   let idx = 0
   for (let r = 0; r < steps; r++) {
-    while (idx < list.length && (list[idx].roundNum ?? -1) <= r) idx++
+    while (idx < list.length && (list[idx]?.roundNum ?? -1) <= r) idx++
     if (idx > 0) {
       const rec = list[idx - 1]
-      const v = rec[m]
-      data.push(v != null && v >= 0 ? v : 0)
+      const v = rec?.[m as keyof ClientVO]
+      const numV = typeof v === 'number' && Number.isFinite(v) ? v : -1
+      data.push(numV >= 0 ? numV : 0)
     } else {
       data.push(0)
     }
@@ -138,14 +139,14 @@ const updateClientDetailChart = () => {
       text: t('pages.recommended.clientDetailTitle'),
       left: 0,
       top: 0,
-      textStyle: { color: textColor, fontSize: 14, fontWeight: 600 }
+      textStyle: {color: textColor, fontSize: 14, fontWeight: 600}
     },
     tooltip: {
       trigger: 'axis',
-      textStyle: { fontSize: 12, color: textColor },
+      textStyle: {fontSize: 12, color: textColor},
       axisPointer: {
         type: 'line',
-        lineStyle: { color: isDark ? 'rgba(99,102,241,0.5)' : 'rgba(99,102,241,0.3)', type: 'dashed' }
+        lineStyle: {color: isDark ? 'rgba(99,102,241,0.5)' : 'rgba(99,102,241,0.3)', type: 'dashed'}
       },
       backgroundColor: chartTooltipBg(),
       borderColor: chartTooltipBorder(),
@@ -158,7 +159,7 @@ const updateClientDetailChart = () => {
         return `Round ${round}<br/>${val}`
       }
     },
-    grid: { left: 52, right: 20, top: 36, bottom: 48 },
+    grid: {left: 52, right: 20, top: 36, bottom: 48},
     xAxis: {
       type: 'category',
       boundaryGap: false,
@@ -166,8 +167,8 @@ const updateClientDetailChart = () => {
       name: t('pages.recommended.chartXAxis'),
       nameLocation: 'middle',
       nameGap: 36,
-      nameTextStyle: { color: textColor, fontSize: 12, fontWeight: 500 },
-      axisLine: { lineStyle: { color: mutedColor } },
+      nameTextStyle: {color: textColor, fontSize: 12, fontWeight: 500},
+      axisLine: {lineStyle: {color: mutedColor}},
       axisLabel: {
         color: textColor,
         fontSize: 11,
@@ -185,9 +186,9 @@ const updateClientDetailChart = () => {
         fontSize: 11,
         formatter: (v: number) => (v * 100).toFixed(1) + '%'
       },
-      splitLine: { lineStyle: { color: mutedColor, type: 'dashed', opacity: 0.25 } },
-      axisLine: { show: false },
-      axisTick: { show: false }
+      splitLine: {lineStyle: {color: mutedColor, type: 'dashed', opacity: 0.25}},
+      axisLine: {show: false},
+      axisTick: {show: false}
     },
     series: [{
       name: t(`pages.recommended.${clientMetricOptions.find(o => o.val === metricKey)?.key ?? 'clientMetricAccuracy'}`),
@@ -195,12 +196,12 @@ const updateClientDetailChart = () => {
       data,
       step: 'end',
       symbol: 'none',
-      lineStyle: { width: 2.5, color: '#6366f1' },
-      itemStyle: { color: '#6366f1' },
-      emphasis: { focus: 'series', lineStyle: { width: 3.5 } }
+      lineStyle: {width: 2.5, color: '#6366f1'},
+      itemStyle: {color: '#6366f1'},
+      emphasis: {focus: 'series', lineStyle: {width: 3.5}}
     }]
   }
-  clientDetailChartInst.setOption(option, { notMerge: true })
+  clientDetailChartInst.setOption(option, {notMerge: true})
 }
 
 const fetchClientDetail = () => {
@@ -210,17 +211,17 @@ const fetchClientDetail = () => {
   clientDetailRecords.value = []
   clientDetailChartLoading.value = true
   getTaskClientDetail(
-    tid,
-    clientIdx,
-    (data) => {
-      clientDetailRecords.value = data ?? []
-      clientDetailChartLoading.value = false
-      nextTick(() => setTimeout(updateClientDetailChart, 50))
-    },
-    () => {
-      clientDetailRecords.value = []
-      clientDetailChartLoading.value = false
-    }
+      tid,
+      clientIdx,
+      (data) => {
+        clientDetailRecords.value = data ?? []
+        clientDetailChartLoading.value = false
+        nextTick(() => setTimeout(updateClientDetailChart, 50))
+      },
+      () => {
+        clientDetailRecords.value = []
+        clientDetailChartLoading.value = false
+      }
   )
 }
 
@@ -239,7 +240,7 @@ watch([selectedClientId], () => {
 
 watch([selectedClientDetailMetric, clientDetailChartData], () => {
   if (clientDetailVisible.value) updateClientDetailChart()
-}, { deep: true })
+}, {deep: true})
 </script>
 
 <template>
@@ -252,7 +253,7 @@ watch([selectedClientDetailMetric, clientDetailChartData], () => {
         {{ $t('pages.taskDetail.clientMetricsTitle') }}
       </h3>
     </div>
-    <div v-if="clientsLoading" class="py-8 text-center text-[var(--home-text-muted)]">
+    <div v-if="loading" class="py-8 text-center text-[var(--home-text-muted)]">
       {{ $t('pages.taskDetail.loading') }}
     </div>
     <div v-else-if="clients.length === 0" class="py-8 text-center text-[var(--home-text-muted)]">
@@ -267,7 +268,9 @@ watch([selectedClientDetailMetric, clientDetailChartData], () => {
           @click="openClientDetail(c.clientIndex + 1)"
       >
         <div class="task-detail-client-header">
-          <span class="task-detail-client-label">{{ $t('pages.recommended.clientLabel') }} {{ c.clientIndex + 1 }}</span>
+          <span class="task-detail-client-label">{{ $t('pages.recommended.clientLabel') }} {{
+              c.clientIndex + 1
+            }}</span>
           <span
               class="task-detail-client-model-badge"
               :style="{borderColor: cnnColors[getClientModel(c.clientIndex + 1) - 1], color: cnnColors[getClientModel(c.clientIndex + 1) - 1]}"
@@ -296,7 +299,9 @@ watch([selectedClientDetailMetric, clientDetailChartData], () => {
                 />
               </svg>
               <span class="task-detail-client-mini-value tabular-nums">
-                {{ getClientMetricVal(idx, opt.val) >= 0 ? (getClientMetricVal(idx, opt.val) * 100).toFixed(1) + '%' : $t('pages.taskDetail.untrained') }}
+                {{
+                  getClientMetricVal(idx, opt.val) >= 0 ? (getClientMetricVal(idx, opt.val) * 100).toFixed(1) + '%' : $t('pages.taskDetail.untrained')
+                }}
               </span>
             </div>
             <span class="task-detail-client-mini-label">{{ $t(`pages.taskDetail.metricFull.${opt.val}`) }}</span>
@@ -349,7 +354,8 @@ watch([selectedClientDetailMetric, clientDetailChartData], () => {
       <div
           class="task-detail-client-detail-chart-wrap rounded-xl border border-[var(--home-card-border)] bg-[var(--home-hover-bg)] p-4 relative"
       >
-        <div v-if="clientDetailChartLoading" class="absolute inset-0 flex items-center justify-center bg-[var(--home-hover-bg)]/80 z-10 rounded-xl">
+        <div v-if="clientDetailChartLoading"
+             class="absolute inset-0 flex items-center justify-center bg-[var(--home-hover-bg)]/80 z-10 rounded-xl">
           <span class="text-[var(--home-text-muted)]">{{ $t('pages.taskDetail.loading') }}</span>
         </div>
         <div ref="clientDetailChartRef" class="w-full h-[340px]"></div>

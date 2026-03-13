@@ -86,7 +86,9 @@ const getStoredZoom = (): { start: number; end: number } | null => {
     const s = localStorage.getItem(STORAGE_KEY_PREFIX + tid)
     if (!s) return null
     const obj = JSON.parse(s) as { start?: number; end?: number }
-    if (typeof obj?.start === 'number' && typeof obj?.end === 'number') return obj
+    if (typeof obj?.start === 'number' && typeof obj?.end === 'number') {
+      return { start: obj.start, end: obj.end }
+    }
     return null
   } catch {
     return null
@@ -231,8 +233,9 @@ let chartPrecisionInst: echarts.ECharts | null = null
 let chartRecallInst: echarts.ECharts | null = null
 let chartF1Inst: echarts.ECharts | null = null
 
-const onDataZoom = (ev: { start?: number; end?: number; batch?: Array<{ start?: number; end?: number }> }) => {
-  const b = ev?.batch?.[0] ?? ev
+const onDataZoom = (ev: unknown) => {
+  const e = ev as { start?: number; end?: number; batch?: Array<{ start?: number; end?: number }> }
+  const b = e?.batch?.[0] ?? e
   const start = b?.start
   const end = b?.end
   if (typeof start === 'number' && typeof end === 'number') {
@@ -247,22 +250,22 @@ const initCharts = () => {
     if (chartAccuracyRef.value && !chartAccuracyInst) {
       chartAccuracyInst = echarts.init(chartAccuracyRef.value)
       chartAccuracyInst.setOption(makeChartOption('accuracy'))
-      chartAccuracyInst.on('dataZoom', onDataZoom)
+      chartAccuracyInst.on('dataZoom', onDataZoom as () => void)
     }
     if (chartPrecisionRef.value && !chartPrecisionInst) {
       chartPrecisionInst = echarts.init(chartPrecisionRef.value)
       chartPrecisionInst.setOption(makeChartOption('precision'))
-      chartPrecisionInst.on('dataZoom', onDataZoom)
+      chartPrecisionInst.on('dataZoom', onDataZoom as () => void)
     }
     if (chartRecallRef.value && !chartRecallInst) {
       chartRecallInst = echarts.init(chartRecallRef.value)
       chartRecallInst.setOption(makeChartOption('recall'))
-      chartRecallInst.on('dataZoom', onDataZoom)
+      chartRecallInst.on('dataZoom', onDataZoom as () => void)
     }
     if (chartF1Ref.value && !chartF1Inst) {
       chartF1Inst = echarts.init(chartF1Ref.value)
       chartF1Inst.setOption(makeChartOption('f1Score'))
-      chartF1Inst.on('dataZoom', onDataZoom)
+      chartF1Inst.on('dataZoom', onDataZoom as () => void)
     }
     connectCharts()
   })
