@@ -15,36 +15,36 @@ const setDataset = (ds: DatasetType) => {
 
 <template>
   <div class="recommended-page p-8 pb-4 min-h-full flex flex-col">
-    <PageHeader
-        class="mb-5"
-        :title="$t('pages.recommended.title')"
-        :desc="$t('pages.recommended.desc')"
-    />
+    <!-- 整体参与滚动的区域 -->
+    <div id="recommended-scroll" class="recommended-scroll flex-1 flex flex-col min-h-0 overflow-y-auto">
+      <PageHeader
+          class="mb-5 shrink-0"
+          :title="$t('pages.recommended.title')"
+          :desc="$t('pages.recommended.desc')"
+      />
 
-    <!-- 中间切换：CIFAR-100 / Tiny-ImageNet -->
-    <div class="flex justify-center mb-6 shrink-0">
-      <div class="recommended-switch">
-        <button
-            type="button"
-            class="recommended-switch-btn"
-            :class="{ active: activeDataset === 'cifar100' }"
-            @click="setDataset('cifar100')"
-        >
-          {{ $t('pages.recommended.datasetCifar100') }}
-        </button>
-        <button
-            type="button"
-            class="recommended-switch-btn"
-            :class="{ active: activeDataset === 'tiny-imagenet' }"
-            @click="setDataset('tiny-imagenet')"
-        >
-          {{ $t('pages.recommended.datasetTinyImageNet') }}
-        </button>
+      <!-- 中间切换：CIFAR-100 / Tiny-ImageNet -->
+      <div class="flex justify-center mb-6 shrink-0">
+        <div class="recommended-switch">
+          <button
+              type="button"
+              class="recommended-switch-btn"
+              :class="{ active: activeDataset === 'cifar100' }"
+              @click="setDataset('cifar100')"
+          >
+            {{ $t('pages.recommended.datasetCifar100') }}
+          </button>
+          <button
+              type="button"
+              class="recommended-switch-btn"
+              :class="{ active: activeDataset === 'tiny-imagenet' }"
+              @click="setDataset('tiny-imagenet')"
+          >
+            {{ $t('pages.recommended.datasetTinyImageNet') }}
+          </button>
+        </div>
       </div>
-    </div>
 
-    <!-- 内容区：独立滚动容器，与任务详情页一致 -->
-    <div id="recommended-scroll" class="recommended-content flex-1 flex flex-col min-w-0 overflow-y-auto">
       <RecommendedContent :dataset="activeDataset"/>
     </div>
 
@@ -61,7 +61,7 @@ const setDataset = (ds: DatasetType) => {
   animation: recommendedFadeIn 0.5s ease 0.1s both;
 }
 
-.recommended-content {
+.recommended-scroll {
   min-height: 0;
 }
 

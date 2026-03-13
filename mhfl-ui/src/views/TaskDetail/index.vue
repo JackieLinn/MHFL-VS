@@ -129,15 +129,17 @@ onMounted(() => {
 
 <template>
   <div class="task-detail-page p-8 pb-4 min-h-full flex flex-col">
-    <PageHeader
-        class="mb-5"
-        :title="$t('pages.taskDetail.title')"
-        :desc="$t('pages.taskDetail.desc', {id: taskId})"
-    />
+    <!-- 整体参与滚动的区域 -->
+    <div id="task-detail-scroll" class="detail-scroll flex-1 flex flex-col min-h-0 overflow-y-auto">
+      <PageHeader
+          class="mb-5 shrink-0"
+          :title="$t('pages.taskDetail.title')"
+          :desc="$t('pages.taskDetail.desc', {id: taskId})"
+      />
 
-    <div class="detail-actions mb-5 flex items-center gap-4">
-      <el-button :icon="ArrowLeft" @click="goBack">{{ $t('pages.taskDetail.backToList') }}</el-button>
-      <div v-if="task" class="detail-meta flex flex-wrap items-center gap-4 text-sm">
+      <div class="detail-actions mb-5 flex items-center gap-4 shrink-0">
+        <el-button :icon="ArrowLeft" @click="goBack">{{ $t('pages.taskDetail.backToList') }}</el-button>
+        <div v-if="task" class="detail-meta flex flex-wrap items-center gap-4 text-sm">
         <span class="detail-meta-item">
           <span class="detail-meta-label">{{ $t('pages.task.status') }}</span>
           <span :class="statusBadgeClass(task.status)">{{ statusLabel(task.status) }}</span>
@@ -198,7 +200,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <div id="task-detail-scroll" v-loading="loading" class="detail-content flex-1 flex flex-col min-w-0">
+    <div v-loading="loading" class="detail-content flex-1 flex flex-col min-w-0">
       <div v-if="error" class="detail-error">
         <p>{{ error }}</p>
       </div>
@@ -206,6 +208,7 @@ onMounted(() => {
       <div v-else-if="task" class="flex-1 flex flex-col min-w-0">
         <TaskDetailContent :task="task" @status-change="onStatusChange" @progress="progress = $event"/>
       </div>
+    </div>
     </div>
 
     <BackToTop scroll-target="#task-detail-scroll"/>
@@ -220,8 +223,11 @@ onMounted(() => {
   min-height: 0;
 }
 
+.detail-scroll {
+  min-height: 0;
+}
+
 .detail-content {
-  overflow-y: auto;
   min-height: 0;
 }
 
