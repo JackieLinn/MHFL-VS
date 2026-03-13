@@ -3,7 +3,7 @@ import {computed, ref, watch, onMounted, onBeforeUnmount, nextTick} from 'vue'
 import {useI18n} from 'vue-i18n'
 import {useTheme} from '@/stores/theme'
 import * as echarts from 'echarts'
-import {algorithmKeys, chartColors, chartMetricKeys} from './recommendedConstants'
+import {algorithmKeys, chartColors} from './recommendedConstants'
 
 const {t, locale} = useI18n()
 const {actualTheme} = useTheme()
@@ -26,6 +26,9 @@ const chartTooltipBg = () =>
         ? 'rgba(15, 23, 42, 0.92)'
         : 'rgba(255, 255, 255, 0.96)'
 const chartTooltipBorder = () => getChartColorVar('--home-card-border')
+
+const chartColor = '#6366f1'
+const needDataZoom = computed(() => numRounds.value > 50)
 
 const makeChartOption = (metricVal: string, titleKey: string) => {
   const textColor = chartTextColor()
@@ -65,7 +68,7 @@ const makeChartOption = (metricVal: string, titleKey: string) => {
     },
     legend: {
       type: 'scroll',
-      bottom: 0,
+      bottom: needDataZoom.value ? 28 : 0,
       left: 'center',
       textStyle: {color: textColor, fontSize: 13},
       itemWidth: 16,
@@ -74,7 +77,31 @@ const makeChartOption = (metricVal: string, titleKey: string) => {
       padding: [2, 0, 0, 0],
       data: algorithmKeys.map((a) => t(`pages.recommended.${a.key}`))
     },
-    grid: {left: 52, right: 20, top: 36, bottom: 78},
+    grid: {left: 52, right: 20, top: 36, bottom: needDataZoom.value ? 110 : 78},
+    dataZoom: needDataZoom.value
+        ? [
+          {
+            type: 'slider',
+            show: true,
+            xAxisIndex: [0],
+            start: 0,
+            end: 100,
+            left: 50,
+            right: 50,
+            height: 22,
+            bottom: 2,
+            borderColor: 'transparent',
+            fillerColor: 'rgba(99, 102, 241, 0.2)',
+            handleStyle: {color: chartColor},
+            textStyle: {color: textColor, fontSize: 11},
+            minSpan: 5,
+            maxSpan: 100,
+            showDetail: true,
+            showDataShadow: 'auto',
+            dataBackground: {lineStyle: {opacity: 0.3}, areaStyle: {opacity: 0.05}}
+          }
+        ]
+        : undefined,
     xAxis: {
       type: 'category',
       data: rounds,
@@ -165,7 +192,7 @@ const resizeCharts = () => {
   chartF1Inst?.resize()
 }
 
-watch([() => props.dataset, actualTheme, locale], () => {
+watch([() => props.dataset, needDataZoom, actualTheme, locale], () => {
   updateCharts()
 })
 
@@ -220,6 +247,7 @@ onBeforeUnmount(() => {
   border: 1px solid var(--home-card-border);
   border-radius: 12px;
   padding: 16px;
+  padding-bottom: 24px;
   transition: border-color 0.25s ease, box-shadow 0.25s ease;
 }
 

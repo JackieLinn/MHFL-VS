@@ -4,8 +4,7 @@ import {getTaskRounds, getTaskClientsLatest, type TaskVO, type RoundVO, type Cli
 import {
   useTaskWebSocket,
   type RoundMessage,
-  type ClientMessage,
-  type StatusMessage
+  type ClientMessage
 } from '@/composables/useTaskWebSocket'
 import TaskExpSettingsCard from './TaskExpSettingsCard.vue'
 import TaskMetricsCard from './TaskMetricsCard.vue'
