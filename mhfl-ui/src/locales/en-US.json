@@ -303,6 +303,9 @@
       "backToList": "Back to List",
       "stopTraining": "Stop Training",
       "stopSuccess": "Training stopped",
+      "progressLabel": "Progress",
+      "progressInProgress": "{current}/{total} rounds",
+      "progressDone": "{current}/{total} rounds",
       "basicInfo": "Basic Info",
       "invalidId": "Invalid task ID",
       "loadFailed": "Failed to load"

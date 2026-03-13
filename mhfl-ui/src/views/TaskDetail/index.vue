@@ -22,6 +22,7 @@ const taskId = computed(() => {
 const task = ref<TaskVO | null>(null)
 const loading = ref(false)
 const error = ref('')
+const progress = ref<{ current: number; total: number }>({current: 0, total: 0})
 
 const onStatusChange = () => {
   if (Number.isFinite(taskId.value) && taskId.value >= 1) {
@@ -136,7 +137,7 @@ onMounted(() => {
 
     <div class="detail-actions mb-5 flex items-center gap-4">
       <el-button :icon="ArrowLeft" @click="goBack">{{ $t('pages.taskDetail.backToList') }}</el-button>
-      <div v-if="task" class="detail-meta flex items-center gap-4 text-sm">
+      <div v-if="task" class="detail-meta flex flex-wrap items-center gap-4 text-sm">
         <span class="detail-meta-item">
           <span class="detail-meta-label">{{ $t('pages.task.status') }}</span>
           <span :class="statusBadgeClass(task.status)">{{ statusLabel(task.status) }}</span>
@@ -149,6 +150,24 @@ onMounted(() => {
           <span class="detail-meta-label">{{ $t('pages.task.dataName') }}</span>
           <span class="detail-meta-value">{{ task.dataName }}</span>
         </span>
+        <div v-if="progress.total > 0" class="detail-meta-item detail-progress-wrap">
+          <span class="detail-meta-label">{{ $t('pages.taskDetail.progressLabel') }}</span>
+          <div class="detail-progress-inner">
+            <el-progress
+                :percentage="progress.total > 0 ? Math.min(100, Math.round((progress.current / progress.total) * 100)) : 0"
+                :stroke-width="8"
+                :show-text="false"
+                :status="task.status === 1 ? undefined : (task.status === 2 || task.status === 3 ? 'success' : 'exception')"
+            />
+            <span class="detail-progress-text">
+              {{
+                task.status === 1
+                    ? $t('pages.taskDetail.progressInProgress', {current: progress.current, total: progress.total})
+                    : $t('pages.taskDetail.progressDone', {current: progress.current, total: progress.total})
+              }}
+            </span>
+          </div>
+        </div>
         <el-button
             v-if="task.status === 0"
             type="success"
@@ -185,7 +204,7 @@ onMounted(() => {
       </div>
 
       <div v-else-if="task" class="flex-1 flex flex-col min-w-0">
-        <TaskDetailContent :task="task" @status-change="onStatusChange"/>
+        <TaskDetailContent :task="task" @status-change="onStatusChange" @progress="progress = $event"/>
       </div>
     </div>
 
@@ -214,6 +233,31 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.detail-progress-wrap {
+  min-width: 180px;
+  max-width: 320px;
+}
+
+.detail-progress-inner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.detail-progress-inner .el-progress {
+  flex: 1;
+  min-width: 80px;
+}
+
+.detail-progress-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--home-text-secondary);
+  white-space: nowrap;
 }
 
 .detail-meta-label {

@@ -18,6 +18,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   statusChange: [status: string]
+  progress: [payload: { current: number; total: number }]
 }>()
 
 const rounds = ref<RoundVO[]>([])
@@ -140,8 +141,8 @@ onBeforeUnmount(disconnect)
 const toNum = (v: number | null | undefined) => (v != null && Number.isFinite(v) ? v : 0)
 
 const emptyRound = (
-  i: number,
-  metrics?: { acc: number; prec: number; rec: number; f1: number } | null
+    i: number,
+    metrics?: { acc: number; prec: number; rec: number; f1: number } | null
 ): RoundVO => ({
   id: null,
   roundNum: i,
@@ -195,6 +196,16 @@ const settings = computed(() => ({
  * 训练指标：进行中且已有 rounds 时，从 rounds 取 accuracy 最高的轮次作为最佳指标实时更新；
  * 否则使用 task 的指标。
  */
+const progressInfo = computed(() => {
+  const total = Math.max(0, props.task.numSteps ?? 0)
+  const current = rounds.value.length
+  return {current, total}
+})
+
+watch(progressInfo, (v) => {
+  emit('progress', v)
+}, {immediate: true})
+
 const metrics = computed(() => {
   const t = props.task
   const r = rounds.value
@@ -231,7 +242,8 @@ const metrics = computed(() => {
   <div class="task-detail-content flex flex-col gap-6 min-w-0">
     <TaskExpSettingsCard :settings="settings"/>
     <TaskMetricsCard :metrics="metrics"/>
-    <TaskRoundCurvesCard :rounds="displayRounds" :task-id="task.id" :has-real-data="rounds.length > 0" :loading="roundsLoading"/>
+    <TaskRoundCurvesCard :rounds="displayRounds" :task-id="task.id" :has-real-data="rounds.length > 0"
+                         :loading="roundsLoading"/>
     <TaskClientMetricsCard :clients="clients" :task-id="task.id" :num-steps="task.numSteps" :loading="clientsLoading"/>
   </div>
 </template>
