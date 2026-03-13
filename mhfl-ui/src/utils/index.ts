@@ -1,6 +1,7 @@
 import axios, {type AxiosInstance, type AxiosError, type AxiosResponse} from "axios";
 import {ElMessage} from "element-plus";
 import {clearAllPageSizePreferences} from "@/composables/usePageSize";
+import {resolveTrainError} from "@/utils/trainError";
 
 // =========================================================================
 // 类型定义
@@ -116,10 +117,10 @@ const handleResponse = (
             success(data.data);
         } else {
             const message = data.message || '请求失败';
-            // 始终显示错误信息
-            ElMessage.warning(message);
+            const isTrainApi = url.includes('/api/task/') && (url.includes('/start') || url.includes('/stop'));
+            const displayMessage = isTrainApi ? resolveTrainError(message) : message;
+            ElMessage.warning(displayMessage);
             console.warn(`请求地址: ${url}, 状态码: ${data.code}, 错误信息: ${message}`);
-            // 调用 failure 回调（如果提供），用于重置 loading 等状态
             failure?.(message, data.code, url);
         }
         return;

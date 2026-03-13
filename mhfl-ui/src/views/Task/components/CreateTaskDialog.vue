@@ -6,7 +6,7 @@ import {ElMessage} from 'element-plus'
 import type {FormInstance, FormRules} from 'element-plus'
 import {listDatasetsForSelect, type DatasetVO} from '@/api/dataset'
 import {listAlgorithmsForSelect, type AlgorithmVO} from '@/api/algorithm'
-import {createTask, type CreateTaskRO, type CreateTaskResultVO} from '@/api/task'
+import {createTask, startTask, type CreateTaskRO, type CreateTaskResultVO} from '@/api/task'
 
 const props = defineProps<{
   modelValue: boolean
@@ -167,9 +167,6 @@ const doCreate = (andStart: boolean) => {
     createTask(
         payload,
         (data: CreateTaskResultVO) => {
-          submitting.value = false
-          visible.value = false
-          emit('created', data.taskId)
           if (data.recommendedSameConfig) {
             ElMessage.info(t('pages.task.create.recommendedSameConfigHint'))
           }
@@ -179,7 +176,26 @@ const doCreate = (andStart: boolean) => {
             ElMessage.success(t('pages.task.create.createSuccess'))
           }
           if (andStart) {
-            router.push({name: 'TaskDetail', params: {id: String(data.taskId)}})
+            startTask(
+                data.taskId,
+                () => {
+                  submitting.value = false
+                  visible.value = false
+                  emit('created', data.taskId)
+                  ElMessage.success(t('pages.task.create.startSuccess'))
+                  router.push({name: 'TaskDetail', params: {id: String(data.taskId)}})
+                },
+                () => {
+                  submitting.value = false
+                  visible.value = false
+                  emit('created', data.taskId)
+                  router.push({name: 'TaskDetail', params: {id: String(data.taskId)}})
+                }
+            )
+          } else {
+            submitting.value = false
+            visible.value = false
+            emit('created', data.taskId)
           }
         },
         () => {

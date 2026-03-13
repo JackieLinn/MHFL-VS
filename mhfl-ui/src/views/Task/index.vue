@@ -167,6 +167,7 @@ const handleDelete = (task: TaskVO) => {
           @view-detail="handleViewDetail"
           @delete="handleDelete"
           @recommend-success="onRecommendSuccess"
+          @start-success="onTaskCreated"
       />
     </div>
 

@@ -3,7 +3,7 @@ import {ref, computed} from 'vue'
 import {useRouter} from 'vue-router'
 import {useI18n} from 'vue-i18n'
 import {View, Delete, VideoPlay, Star, StarFilled} from '@element-plus/icons-vue'
-import {setRecommend} from '@/api/task'
+import {setRecommend, startTask} from '@/api/task'
 import type {TaskVO, TaskStatusCode} from '@/api/task'
 
 const props = defineProps<{
@@ -15,9 +15,11 @@ const emit = defineEmits<{
   (e: 'view-detail', task: TaskVO): void
   (e: 'delete', task: TaskVO): void
   (e: 'recommend-success'): void
+  (e: 'start-success'): void
 }>()
 
 const recommendLoading = ref(false)
+const startLoading = ref(false)
 
 const router = useRouter()
 const {t} = useI18n()
@@ -112,7 +114,19 @@ const handleViewDetail = () => {
 }
 
 const handleStart = () => {
-  router.push({name: 'TaskDetail', params: {id: String(props.task.id)}})
+  if (!canStart.value) return
+  startLoading.value = true
+  startTask(
+      props.task.id,
+      () => {
+        startLoading.value = false
+        emit('start-success')
+        router.push({name: 'TaskDetail', params: {id: String(props.task.id)}})
+      },
+      () => {
+        startLoading.value = false
+      }
+  )
 }
 
 const handleDelete = () => {
@@ -166,6 +180,7 @@ const handleRecommend = () => {
               size="small"
               :icon="VideoPlay"
               :disabled="!canStart"
+              :loading="startLoading"
               class="task-action-btn"
               @click="handleStart"
           >

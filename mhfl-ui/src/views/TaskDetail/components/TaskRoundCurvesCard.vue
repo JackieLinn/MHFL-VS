@@ -11,6 +11,7 @@ const {actualTheme} = useTheme()
 const props = withDefaults(
   defineProps<{
     rounds: RoundVO[]
+    taskId?: number
     hasRealData?: boolean
     loading?: boolean
   }>(),
@@ -74,6 +75,41 @@ const metricTitleKeys: Record<string, string> = {
   f1Score: 'chartF1'
 }
 
+const STORAGE_KEY_PREFIX = 'mhfl-task-datazoom-'
+
+const needDataZoom = computed(() => xAxisLabels.value.length > 1)
+
+const getStoredZoom = (): { start: number; end: number } | null => {
+  const tid = props.taskId
+  if (!tid) return null
+  try {
+    const s = localStorage.getItem(STORAGE_KEY_PREFIX + tid)
+    if (!s) return null
+    const obj = JSON.parse(s) as { start?: number; end?: number }
+    if (typeof obj?.start === 'number' && typeof obj?.end === 'number') return obj
+    return null
+  } catch {
+    return null
+  }
+}
+
+const saveZoom = (start: number, end: number) => {
+  const tid = props.taskId
+  if (!tid) return
+  try {
+    localStorage.setItem(STORAGE_KEY_PREFIX + tid, JSON.stringify({ start, end }))
+  } catch {
+    /* ignore */
+  }
+}
+
+const dataZoomRange = ref<{ start: number; end: number } | null>(null)
+
+const initDataZoomRange = () => {
+  const stored = getStoredZoom()
+  dataZoomRange.value = stored ?? { start: 0, end: 100 }
+}
+
 const makeChartOption = (metricVal: 'accuracy' | 'precision' | 'recall' | 'f1Score') => {
   const titleKey = metricTitleKeys[metricVal] ?? metricVal
   const textColor = chartTextColor()
@@ -108,14 +144,43 @@ const makeChartOption = (metricVal: 'accuracy' | 'precision' | 'recall' | 'f1Sco
         return `Round ${round}<br/>${val}`
       }
     },
-    grid: {left: 52, right: 20, top: 36, bottom: 48},
+    grid: {
+      left: 52,
+      right: 20,
+      top: 36,
+      bottom: needDataZoom.value ? 92 : 48
+    },
+    dataZoom: needDataZoom.value
+      ? [
+          {
+            type: 'slider',
+            show: true,
+            xAxisIndex: [0],
+            start: dataZoomRange.value?.start ?? 0,
+            end: dataZoomRange.value?.end ?? 100,
+            left: 50,
+            right: 50,
+            height: 22,
+            bottom: 2,
+            borderColor: 'transparent',
+            fillerColor: 'rgba(99, 102, 241, 0.2)',
+            handleStyle: {color: chartColor},
+            textStyle: {color: textColor, fontSize: 11},
+            minSpan: 5,
+            maxSpan: 100,
+            showDetail: true,
+            showDataShadow: 'auto',
+            dataBackground: {lineStyle: {opacity: 0.3}, areaStyle: {opacity: 0.05}}
+          }
+        ]
+      : undefined,
     xAxis: {
       type: 'category',
       boundaryGap: false,
       data: labels,
       name: t('pages.recommended.chartXAxis'),
       nameLocation: 'middle',
-      nameGap: 36,
+      nameGap: 52,
       nameTextStyle: {color: textColor, fontSize: 12, fontWeight: 500},
       axisLine: {lineStyle: {color: mutedColor}},
       axisLabel: {
@@ -166,23 +231,38 @@ let chartPrecisionInst: echarts.ECharts | null = null
 let chartRecallInst: echarts.ECharts | null = null
 let chartF1Inst: echarts.ECharts | null = null
 
+const onDataZoom = (ev: { start?: number; end?: number; batch?: Array<{ start?: number; end?: number }> }) => {
+  const b = ev?.batch?.[0] ?? ev
+  const start = b?.start
+  const end = b?.end
+  if (typeof start === 'number' && typeof end === 'number') {
+    dataZoomRange.value = { start, end }
+    saveZoom(start, end)
+  }
+}
+
 const initCharts = () => {
   nextTick(() => {
+    initDataZoomRange()
     if (chartAccuracyRef.value && !chartAccuracyInst) {
       chartAccuracyInst = echarts.init(chartAccuracyRef.value)
       chartAccuracyInst.setOption(makeChartOption('accuracy'))
+      chartAccuracyInst.on('dataZoom', onDataZoom)
     }
     if (chartPrecisionRef.value && !chartPrecisionInst) {
       chartPrecisionInst = echarts.init(chartPrecisionRef.value)
       chartPrecisionInst.setOption(makeChartOption('precision'))
+      chartPrecisionInst.on('dataZoom', onDataZoom)
     }
     if (chartRecallRef.value && !chartRecallInst) {
       chartRecallInst = echarts.init(chartRecallRef.value)
       chartRecallInst.setOption(makeChartOption('recall'))
+      chartRecallInst.on('dataZoom', onDataZoom)
     }
     if (chartF1Ref.value && !chartF1Inst) {
       chartF1Inst = echarts.init(chartF1Ref.value)
       chartF1Inst.setOption(makeChartOption('f1Score'))
+      chartF1Inst.on('dataZoom', onDataZoom)
     }
     connectCharts()
   })
@@ -207,7 +287,12 @@ const resizeCharts = () => {
   chartF1Inst?.resize()
 }
 
-watch([chartSeriesData, actualTheme, locale], () => {
+watch(() => props.taskId, () => {
+  initDataZoomRange()
+  updateCharts()
+})
+
+watch([chartSeriesData, needDataZoom, actualTheme, locale], () => {
   updateCharts()
 }, {deep: true})
 
@@ -224,6 +309,10 @@ onMounted(() => {
 onBeforeUnmount(() => {
   resizeObserver?.disconnect()
   window.removeEventListener('resize', resizeCharts)
+  chartAccuracyInst?.off('dataZoom', onDataZoom)
+  chartPrecisionInst?.off('dataZoom', onDataZoom)
+  chartRecallInst?.off('dataZoom', onDataZoom)
+  chartF1Inst?.off('dataZoom', onDataZoom)
   chartAccuracyInst?.dispose()
   chartPrecisionInst?.dispose()
   chartRecallInst?.dispose()
@@ -263,6 +352,7 @@ onBeforeUnmount(() => {
   border: 1px solid var(--home-card-border);
   border-radius: 12px;
   padding: 16px;
+  padding-bottom: 24px;
   transition: border-color 0.25s ease, box-shadow 0.25s ease;
 }
 

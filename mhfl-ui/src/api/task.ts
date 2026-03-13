@@ -176,6 +176,17 @@ export const startTask = (
 }
 
 /**
+ * 停止训练（仅进行中任务可操作）
+ */
+export const stopTask = (
+    id: number,
+    success: () => void,
+    failure?: (message: string, code: number, url: string) => void
+) => {
+    post(`/api/task/${id}/stop`, null, success, failure)
+}
+
+/**
  * 删除任务（推荐任务不可删）
  */
 export const deleteTask = (

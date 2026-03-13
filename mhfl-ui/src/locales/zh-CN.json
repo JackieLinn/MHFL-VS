@@ -265,7 +265,24 @@
         "createSuccess": "创建成功",
         "copiedHint": "已从同配置成功任务复制结果，无需再训练",
         "recommendedSameConfigHint": "该配置已有推荐示例，请到示例展示查看",
-        "startFailed": "启动训练失败"
+        "startFailed": "启动训练失败",
+        "startSuccess": "训练已启动",
+        "stopSuccess": "训练已停止"
+      },
+      "errors": {
+        "gpuUnavailable": "GPU 不可用或未检测到 GPU",
+        "gpuMemoryInsufficient": "GPU 显存不足",
+        "unsupportedDataset": "不支持的数据集，仅支持 CIFAR100 / Tiny-Imagenet",
+        "taskAlreadyRunning": "任务正在运行中",
+        "taskNotRunning": "任务未在运行",
+        "trainServiceFailed": "调用训练服务失败",
+        "startFailed": "启动训练失败",
+        "stopFailed": "停止训练失败",
+        "taskAlreadyInProgress": "任务已在训练中",
+        "taskAlreadyTrained": "该任务已训练过，不能再次训练",
+        "noPermissionStart": "无权限启动该任务",
+        "noPermissionStop": "无权限停止该任务",
+        "taskNotInProgress": "任务未在训练中，无需停止"
       }
     },
     "taskDetail": {
@@ -276,6 +293,7 @@
       "desc": "任务 #{id} 的详细信息",
       "backToList": "返回列表",
       "stopTraining": "停止训练",
+      "stopSuccess": "训练已停止",
       "basicInfo": "基本信息",
       "invalidId": "无效的任务 ID",
       "loadFailed": "加载失败",

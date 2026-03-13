@@ -2,11 +2,12 @@
 import {ref, computed, onMounted, watch} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {useI18n} from 'vue-i18n'
-import {ArrowLeft, VideoPause, CircleClose} from '@element-plus/icons-vue'
+import {ElMessage} from 'element-plus'
+import {ArrowLeft, VideoPause, CircleClose, VideoPlay} from '@element-plus/icons-vue'
 import PageHeader from '@/components/PageHeader.vue'
 import BackToTop from '@/components/BackToTop.vue'
 import TaskDetailContent from './components/TaskDetailContent.vue'
-import {getTaskDetail, type TaskVO, type TaskStatusCode} from '@/api/task'
+import {getTaskDetail, startTask, stopTask, type TaskVO, type TaskStatusCode} from '@/api/task'
 
 const route = useRoute()
 const router = useRouter()
@@ -77,9 +78,41 @@ const goBack = () => {
   router.push({name: 'Task'})
 }
 
-/** 停止训练（后续实现逻辑） */
+const stopLoading = ref(false)
+const startLoading = ref(false)
+
+/** 启动训练 */
+const onStartTask = () => {
+  if (!task.value || task.value.status !== 0) return
+  startLoading.value = true
+  startTask(
+      task.value.id,
+      () => {
+        startLoading.value = false
+        ElMessage.success(t('pages.task.create.startSuccess'))
+        fetchDetail()
+      },
+      () => {
+        startLoading.value = false
+      }
+  )
+}
+
+/** 停止训练 */
 const onStopTask = () => {
-  // TODO
+  if (!task.value || task.value.status !== 1) return
+  stopLoading.value = true
+  stopTask(
+      task.value.id,
+      () => {
+        stopLoading.value = false
+        ElMessage.success(t('pages.taskDetail.stopSuccess'))
+        fetchDetail()
+      },
+      () => {
+        stopLoading.value = false
+      }
+  )
 }
 
 watch(taskId, (id) => {
@@ -117,10 +150,20 @@ onMounted(() => {
           <span class="detail-meta-value">{{ task.dataName }}</span>
         </span>
         <el-button
-            v-if="task.status === 1"
+            v-if="task.status === 0"
+            type="success"
+            :icon="VideoPlay"
+            :loading="startLoading"
+            @click="onStartTask"
+        >
+          {{ $t('pages.task.start') }}
+        </el-button>
+        <el-button
+            v-else-if="task.status === 1"
             class="detail-stop-btn"
             type="danger"
             :icon="VideoPause"
+            :loading="stopLoading"
             @click="onStopTask"
         >
           {{ $t('pages.taskDetail.stopTraining') }}

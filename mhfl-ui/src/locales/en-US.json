@@ -265,7 +265,24 @@
         "createSuccess": "Created successfully",
         "copiedHint": "Copied from same-config success task, no need to train again",
         "recommendedSameConfigHint": "This config has a recommended example, see Recommended",
-        "startFailed": "Failed to start training"
+        "startFailed": "Failed to start training",
+        "startSuccess": "Training started",
+        "stopSuccess": "Training stopped"
+      },
+      "errors": {
+        "gpuUnavailable": "GPU unavailable or not detected",
+        "gpuMemoryInsufficient": "GPU memory insufficient",
+        "unsupportedDataset": "Unsupported dataset, only CIFAR100 / Tiny-Imagenet supported",
+        "taskAlreadyRunning": "Task is already running",
+        "taskNotRunning": "Task is not running",
+        "trainServiceFailed": "Failed to call training service",
+        "startFailed": "Failed to start training",
+        "stopFailed": "Failed to stop training",
+        "taskAlreadyInProgress": "Task is already in progress",
+        "taskAlreadyTrained": "Task has been trained, cannot train again",
+        "noPermissionStart": "No permission to start this task",
+        "noPermissionStop": "No permission to stop this task",
+        "taskNotInProgress": "Task is not in progress, no need to stop"
       }
     },
     "taskDetail": {
@@ -285,6 +302,7 @@
       "desc": "Details for task #{id}",
       "backToList": "Back to List",
       "stopTraining": "Stop Training",
+      "stopSuccess": "Training stopped",
       "basicInfo": "Basic Info",
       "invalidId": "Invalid task ID",
       "loadFailed": "Failed to load"
