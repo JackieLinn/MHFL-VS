@@ -1,5 +1,6 @@
 import axios, {type AxiosInstance, type AxiosError, type AxiosResponse} from "axios";
 import {ElMessage} from "element-plus";
+import {clearAllPageSizePreferences} from "@/composables/usePageSize";
 
 // =========================================================================
 // 类型定义
@@ -49,10 +50,11 @@ const defaultError = (error: AxiosError) => {
     }
 };
 
-// 删除 Token
+// 删除 Token（登出时清除分页记忆，下次登录恢复默认 10）
 const deleteAccessToken = (): void => {
     localStorage.removeItem(authItemName);
     sessionStorage.removeItem(authItemName);
+    clearAllPageSizePreferences();
 };
 
 // 获取 Token

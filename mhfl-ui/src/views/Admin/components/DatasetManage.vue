@@ -10,6 +10,7 @@ import {
   deleteDatasetAdmin,
   type DatasetVO
 } from '@/api/dataset'
+import {usePageSize} from '@/composables/usePageSize'
 
 const {t} = useI18n()
 
@@ -20,8 +21,7 @@ const endTime = ref('')
 
 // 分页
 const currentPage = ref(1)
-const pageSizeOptions = [5, 10, 20, 50] as const
-const pageSize = ref(10)
+const {pageSize, pageSizeOptions} = usePageSize('dataset')
 const total = ref(0)
 const list = ref<DatasetVO[]>([])
 const loading = ref(false)

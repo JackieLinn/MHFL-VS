@@ -9,6 +9,7 @@ import CreateTaskDialog from './components/CreateTaskDialog.vue'
 import TaskCard from './components/TaskCard.vue'
 import {getUserInfo} from '@/api/user'
 import {listTasks, deleteTask, type TaskVO} from '@/api/task'
+import {usePageSize} from '@/composables/usePageSize'
 
 const router = useRouter()
 const {t} = useI18n()
@@ -22,8 +23,7 @@ const endTime = ref('')
 
 // 分页
 const currentPage = ref(1)
-const pageSizeOptions = [5, 10, 20, 50] as const
-const pageSize = ref(10)
+const {pageSize, pageSizeOptions} = usePageSize('task')
 const total = ref(0)
 const list = ref<TaskVO[]>([])
 const loading = ref(false)
