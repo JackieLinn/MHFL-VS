@@ -1,6 +1,12 @@
 <script setup lang="ts">
-import {ref, computed, watch} from 'vue'
+import {ref, computed, watch, onBeforeUnmount} from 'vue'
 import {getTaskRounds, getTaskClientsLatest, type TaskVO, type RoundVO, type ClientVO} from '@/api/task'
+import {
+  useTaskWebSocket,
+  type RoundMessage,
+  type ClientMessage,
+  type StatusMessage
+} from '@/composables/useTaskWebSocket'
 import TaskExpSettingsCard from './TaskExpSettingsCard.vue'
 import TaskMetricsCard from './TaskMetricsCard.vue'
 import TaskRoundCurvesCard from './TaskRoundCurvesCard.vue'
@@ -8,6 +14,10 @@ import TaskClientMetricsCard from './TaskClientMetricsCard.vue'
 
 const props = defineProps<{
   task: TaskVO
+}>()
+
+const emit = defineEmits<{
+  statusChange: [status: string]
 }>()
 
 const rounds = ref<RoundVO[]>([])
@@ -47,12 +57,85 @@ const fetchClients = () => {
   )
 }
 
+const toRoundVO = (m: RoundMessage): RoundVO => ({
+  id: null,
+  roundNum: m.roundNum,
+  loss: m.loss ?? null,
+  accuracy: m.accuracy ?? null,
+  precision: m.precision ?? null,
+  recall: m.recall ?? null,
+  f1Score: m.f1Score ?? null
+})
+
+const toClientVO = (m: ClientMessage): ClientVO => ({
+  id: null,
+  roundNum: m.roundNum,
+  clientIndex: m.clientIndex,
+  loss: m.loss ?? -1,
+  accuracy: m.accuracy ?? -1,
+  precision: m.precision ?? -1,
+  recall: m.recall ?? -1,
+  f1Score: m.f1Score ?? -1,
+  timestamp: m.timestamp ?? null
+})
+
+const TERMINAL_STATUSES = ['SUCCESS', 'FAILED', 'CANCELLED']
+
+const {connect, disconnect, connected} = useTaskWebSocket(props.task.id, {
+  onRound: (msg) => {
+    rounds.value = (() => {
+      const map = new Map(rounds.value.map((r) => [r.roundNum, r]))
+      map.set(msg.roundNum, toRoundVO(msg))
+      return Array.from(map.values()).sort((a, b) => a.roundNum - b.roundNum)
+    })()
+  },
+  onClient: (msg) => {
+    const arr = [...clients.value]
+    while (arr.length <= msg.clientIndex) {
+      arr.push({
+        id: null,
+        roundNum: -1,
+        clientIndex: arr.length,
+        loss: -1,
+        accuracy: -1,
+        precision: -1,
+        recall: -1,
+        f1Score: -1,
+        timestamp: null
+      })
+    }
+    arr[msg.clientIndex] = toClientVO(msg)
+    clients.value = arr
+  },
+  onStatus: (msg) => {
+    emit('statusChange', msg.status)
+    if (TERMINAL_STATUSES.includes(msg.status)) {
+      disconnect()
+    }
+  }
+})
+
 watch(() => props.task.id, (id) => {
   if (id) {
     fetchRounds()
     fetchClients()
   }
 }, {immediate: true})
+
+watch(
+    () => [props.task.id, props.task.status] as const,
+    ([id, status]) => {
+      if (!Number.isFinite(id) || id < 1) return
+      if (status === 1) {
+        connect()
+      } else {
+        disconnect()
+      }
+    },
+    {immediate: true}
+)
+
+onBeforeUnmount(disconnect)
 
 const toNum = (v: number | null | undefined) => (v != null && Number.isFinite(v) ? v : 0)
 

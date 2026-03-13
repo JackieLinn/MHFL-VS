@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {ref, computed, onMounted} from 'vue'
+import {ref, computed, onMounted, watch} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {useI18n} from 'vue-i18n'
 import {ArrowLeft} from '@element-plus/icons-vue'
@@ -21,6 +21,12 @@ const taskId = computed(() => {
 const task = ref<TaskVO | null>(null)
 const loading = ref(false)
 const error = ref('')
+
+const onStatusChange = () => {
+  if (Number.isFinite(taskId.value) && taskId.value >= 1) {
+    fetchDetail()
+  }
+}
 
 const statusLabel = (code: TaskStatusCode): string => {
   const map: Record<TaskStatusCode, string> = {
@@ -71,6 +77,12 @@ const goBack = () => {
   router.push({name: 'Task'})
 }
 
+watch(taskId, (id) => {
+  if (Number.isFinite(id) && id >= 1) {
+    fetchDetail()
+  }
+})
+
 onMounted(() => {
   fetchDetail()
 })
@@ -108,7 +120,7 @@ onMounted(() => {
       </div>
 
       <div v-else-if="task" class="flex-1 flex flex-col min-w-0">
-        <TaskDetailContent :task="task"/>
+        <TaskDetailContent :task="task" @status-change="onStatusChange"/>
       </div>
     </div>
 
