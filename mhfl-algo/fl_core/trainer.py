@@ -506,6 +506,17 @@ class BaseTrainer(ABC):
         """
         pass
 
+    def _should_stop(self) -> bool:
+        """
+        检查是否应停止训练。代理失效（Manager 进程异常等）时视为用户已停止。
+        """
+        if self.stop_event is None:
+            return False
+        try:
+            return self.stop_event.is_set()
+        except Exception:
+            return True  # 代理失效时视为用户已停止
+
     def train(self):
         """
         主训练循环
@@ -525,7 +536,7 @@ class BaseTrainer(ABC):
         )
 
         for step in pbar:
-            if self.stop_event is not None and self.stop_event.is_set():
+            if self._should_stop():
                 self._log_info("Training stopped by user")
                 break
             # 随机选择客户端
@@ -543,7 +554,7 @@ class BaseTrainer(ABC):
 
             # 训练每个选中的客户端
             for client_id in selected_clients:
-                if self.stop_event is not None and self.stop_event.is_set():
+                if self._should_stop():
                     self._log_info("Training stopped by user")
                     break
                 # 获取客户端模型
@@ -588,7 +599,7 @@ class BaseTrainer(ABC):
                 if self.client_callback:
                     self.client_callback(self.tid, step, client_id, metrics)
 
-            if self.stop_event is not None and self.stop_event.is_set():
+            if self._should_stop():
                 break
             # 计算平均指标（所有选中客户端的平均值）
             mean_loss = round(float(np.mean(all_client_losses)), 4) if all_client_losses else 0.0

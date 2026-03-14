@@ -108,7 +108,11 @@ def _run_training(request: TrainStartRequest, stop_event) -> None:
 
         trainer.train()
 
-        if stop_event.is_set():
+        try:
+            was_cancelled = stop_event.is_set()
+        except Exception:
+            was_cancelled = True  # 代理失效时视为用户停止
+        if was_cancelled:
             publisher.publish_status(request.task_id, "CANCELLED", "用户停止训练")
         else:
             publisher.publish_status(request.task_id, "SUCCESS", "训练完成")
