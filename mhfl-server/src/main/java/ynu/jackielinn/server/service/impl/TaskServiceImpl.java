@@ -109,6 +109,9 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
                 .last("limit 1")
                 .one();
         if (recommendedSame != null) {
+            if (recommendedSame.getUid() != null && recommendedSame.getUid().equals(uid)) {
+                throw new IllegalArgumentException("您已有该配置的成功任务，无需重复训练");
+            }
             throw new IllegalArgumentException("该配置已有推荐示例，请到示例展示查看");
         }
         Task source = lambdaQuery()
@@ -125,6 +128,9 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
                 .last("limit 1")
                 .one();
         if (source != null) {
+            if (source.getUid() != null && source.getUid().equals(uid)) {
+                throw new IllegalArgumentException("您已有该配置的成功任务，无需重复训练");
+            }
             Task newTask = Task.builder()
                     .uid(uid)
                     .did(source.getDid())
