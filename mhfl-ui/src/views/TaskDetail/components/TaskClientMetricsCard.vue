@@ -300,7 +300,7 @@ watch([selectedClientDetailMetric, clientDetailChartData], () => {
               </svg>
               <span class="task-detail-client-mini-value tabular-nums">
                 {{
-                  getClientMetricVal(idx, opt.val) >= 0 ? (getClientMetricVal(idx, opt.val) * 100).toFixed(1) + '%' : $t('pages.taskDetail.untrained')
+                  getClientMetricVal(idx, opt.val) >= 0 ? (getClientMetricVal(idx, opt.val) * 100).toFixed(2) + '%' : $t('pages.taskDetail.untrained')
                 }}
               </span>
             </div>
