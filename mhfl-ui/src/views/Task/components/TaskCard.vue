@@ -187,7 +187,7 @@ const handleRecommend = () => {
             {{ $t('pages.task.start') }}
           </el-button>
         </el-tooltip>
-        <el-tooltip :content="$t('pages.task.recommendDisabledHint')" :disabled="canRecommend" placement="top">
+        <el-tooltip v-if="isAdmin" :content="$t('pages.task.recommendDisabledHint')" :disabled="canRecommend" placement="top">
           <el-button
               :type="canUnsetRecommend ? 'info' : 'warning'"
               size="small"
