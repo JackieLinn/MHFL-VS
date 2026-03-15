@@ -195,6 +195,20 @@ const selectConv = (id: number) => {
   nextTick(() => msgListRef.value?.scrollToBottom())
 }
 
+const editConv = (id: number, currentTitle: string) => {
+  ElMessageBox.prompt(t('assistant.editConvTitlePlaceholder'), t('assistant.editConvTitle'), {
+    confirmButtonText: t('common.confirm'),
+    cancelButtonText: t('common.cancel'),
+    inputValue: currentTitle,
+    inputPlaceholder: t('assistant.editConvTitlePlaceholder')
+  }).then(({ value }) => {
+    const trimmed = (value ?? '').trim()
+    if (!trimmed) return
+    const conv = conversations.value.find(c => c.id === id)
+    if (conv) conv.title = trimmed.length > 30 ? trimmed.slice(0, 30) + '...' : trimmed
+  }).catch(() => {})
+}
+
 const deleteConv = (id: number) => {
   ElMessageBox.confirm(t('assistant.confirmDeleteConv'), t('assistant.deleteConv'), {
     confirmButtonText: t('common.confirm'),
@@ -309,6 +323,7 @@ const toggleDislike = (msgId: number) => {
         :is-sending="isSending"
         :search-keyword="searchKeyword"
         @select="selectConv"
+        @edit="editConv"
         @delete="deleteConv"
         @new-chat="newChat"
         @toggle="sidebarCollapsed = !sidebarCollapsed"

@@ -430,6 +430,8 @@
     "newChat": "新建对话",
     "searchPlaceholder": "搜索历史对话...",
     "recentChats": "历史对话",
+    "editConvTitle": "修改标题",
+    "editConvTitlePlaceholder": "请输入新标题",
     "deleteConv": "删除对话",
     "confirmDeleteConv": "确定删除该对话吗？删除后无法恢复。",
     "noConvFound": "未找到相关对话",

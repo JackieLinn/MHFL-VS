@@ -21,6 +21,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   select: [id: number]
+  edit: [id: number, title: string]
   delete: [id: number]
   newChat: []
   toggle: []
@@ -43,6 +44,12 @@ const filtered = computed(() => {
 const handleSelect = (id: number) => {
   if (props.isSending) return
   emit('select', id)
+}
+
+const handleEdit = (e: MouseEvent, id: number, title: string) => {
+  e.stopPropagation()
+  if (props.isSending) return
+  emit('edit', id, title)
 }
 
 const handleDelete = (e: MouseEvent, id: number) => {
@@ -112,13 +119,22 @@ const handleDelete = (e: MouseEvent, id: number) => {
             <div class="text-[12px] truncate mt-0.5" style="color: var(--home-text-muted)">{{ conv.preview }}</div>
             <div class="text-[11px] mt-0.5 opacity-65" style="color: var(--home-text-muted)">{{ conv.time }}</div>
           </div>
-          <button
-              class="conv-item-delete icon-btn icon-btn--sm opacity-0 group-hover:opacity-100 shrink-0"
-              :title="t('assistant.deleteConv')"
-              @click="handleDelete($event, conv.id)"
-          >
-            <span class="i-mdi-delete-outline"></span>
-          </button>
+          <div class="flex flex-col gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+                class="conv-item-edit icon-btn icon-btn--sm"
+                :title="t('assistant.editConvTitle')"
+                @click="handleEdit($event, conv.id, conv.title)"
+            >
+              <span class="i-mdi-pencil-outline"></span>
+            </button>
+            <button
+                class="conv-item-delete icon-btn icon-btn--sm"
+                :title="t('assistant.deleteConv')"
+                @click="handleDelete($event, conv.id)"
+            >
+              <span class="i-mdi-delete-outline"></span>
+            </button>
+          </div>
         </div>
 
         <div v-if="filtered.length === 0" class="flex flex-col items-center gap-2 py-8 px-4 text-[13px]"
@@ -222,8 +238,15 @@ const handleDelete = (e: MouseEvent, id: number) => {
   font-size: 14px;
 }
 
+.conv-item-edit,
 .conv-item-delete {
   transition: opacity 0.18s;
+}
+
+.conv-item-edit:hover {
+  color: #6366f1;
+  border-color: rgba(99, 102, 241, 0.4);
+  background: rgba(99, 102, 241, 0.08);
 }
 
 .conv-item-delete:hover {
