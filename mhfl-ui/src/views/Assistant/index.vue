@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {ref, computed, nextTick} from 'vue'
 import {useI18n} from 'vue-i18n'
+import {ElMessageBox} from 'element-plus'
 import AssistantSidebar from './components/AssistantSidebar.vue'
 import AssistantTopbar from './components/AssistantTopbar.vue'
 import AssistantWelcome from './components/AssistantWelcome.vue'
@@ -194,6 +195,22 @@ const selectConv = (id: number) => {
   nextTick(() => msgListRef.value?.scrollToBottom())
 }
 
+const deleteConv = (id: number) => {
+  ElMessageBox.confirm(t('assistant.confirmDeleteConv'), t('assistant.deleteConv'), {
+    confirmButtonText: t('common.confirm'),
+    cancelButtonText: t('common.cancel'),
+    type: 'warning'
+  }).then(() => {
+    const idx = conversations.value.findIndex(c => c.id === id)
+    if (idx === -1) return
+    conversations.value.splice(idx, 1)
+    if (activeConvId.value === id) {
+      activeConvId.value = conversations.value[0]?.id ?? null
+      nextTick(() => msgListRef.value?.scrollToBottom())
+    }
+  }).catch(() => {})
+}
+
 // ===== 流式输出 =====
 const streamText = (convId: number, msgId: number, fullText: string) => {
   const conv = conversations.value.find(c => c.id === convId)
@@ -292,6 +309,7 @@ const toggleDislike = (msgId: number) => {
         :is-sending="isSending"
         :search-keyword="searchKeyword"
         @select="selectConv"
+        @delete="deleteConv"
         @new-chat="newChat"
         @toggle="sidebarCollapsed = !sidebarCollapsed"
         @update:search-keyword="searchKeyword = $event"

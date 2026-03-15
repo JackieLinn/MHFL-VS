@@ -430,6 +430,8 @@
     "newChat": "New Chat",
     "searchPlaceholder": "Search conversations...",
     "recentChats": "Recent Chats",
+    "deleteConv": "Delete conversation",
+    "confirmDeleteConv": "Delete this conversation? This action cannot be undone.",
     "noConvFound": "No conversations found",
     "footerTip": "Powered by LLM",
     "welcomeTitle": "Hi, I'm MHFL Smart Assistant",

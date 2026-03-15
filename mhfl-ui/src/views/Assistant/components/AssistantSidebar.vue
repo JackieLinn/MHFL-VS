@@ -21,6 +21,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   select: [id: number]
+  delete: [id: number]
   newChat: []
   toggle: []
   'update:searchKeyword': [val: string]
@@ -42,6 +43,12 @@ const filtered = computed(() => {
 const handleSelect = (id: number) => {
   if (props.isSending) return
   emit('select', id)
+}
+
+const handleDelete = (e: MouseEvent, id: number) => {
+  e.stopPropagation()
+  if (props.isSending) return
+  emit('delete', id)
 }
 </script>
 
@@ -89,7 +96,7 @@ const handleSelect = (id: number) => {
         <div
             v-for="conv in filtered"
             :key="conv.id"
-            class="conv-item flex items-start gap-2.5 p-2.5 rounded-[9px] cursor-pointer mb-0.5"
+            class="conv-item flex items-start gap-2.5 p-2.5 rounded-[9px] cursor-pointer mb-0.5 group"
             :class="{ 'conv-item--active': activeConvId === conv.id }"
             @click="handleSelect(conv.id)"
         >
@@ -105,6 +112,13 @@ const handleSelect = (id: number) => {
             <div class="text-[12px] truncate mt-0.5" style="color: var(--home-text-muted)">{{ conv.preview }}</div>
             <div class="text-[11px] mt-0.5 opacity-65" style="color: var(--home-text-muted)">{{ conv.time }}</div>
           </div>
+          <button
+              class="conv-item-delete icon-btn icon-btn--sm opacity-0 group-hover:opacity-100 shrink-0"
+              :title="t('assistant.deleteConv')"
+              @click="handleDelete($event, conv.id)"
+          >
+            <span class="i-mdi-delete-outline"></span>
+          </button>
         </div>
 
         <div v-if="filtered.length === 0" class="flex flex-col items-center gap-2 py-8 px-4 text-[13px]"
@@ -200,6 +214,22 @@ const handleSelect = (id: number) => {
   height: 34px;
   border-radius: 9px;
   font-size: 17px;
+}
+
+.icon-btn--sm {
+  width: 24px;
+  height: 24px;
+  font-size: 14px;
+}
+
+.conv-item-delete {
+  transition: opacity 0.18s;
+}
+
+.conv-item-delete:hover {
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.08);
 }
 
 .conv-item {

@@ -430,6 +430,8 @@
     "newChat": "新建对话",
     "searchPlaceholder": "搜索历史对话...",
     "recentChats": "历史对话",
+    "deleteConv": "删除对话",
+    "confirmDeleteConv": "确定删除该对话吗？删除后无法恢复。",
     "noConvFound": "未找到相关对话",
     "footerTip": "由大模型提供支持",
     "welcomeTitle": "你好，我是 MHFL 智能助手",
