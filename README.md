@@ -16,10 +16,10 @@
 
 | | Stack |
 |---|--------|
-| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/vuejs/vuejs-original.svg" width="20"/> **Frontend** | Vue 3, TypeScript, Element Plus, ECharts, Pinia, UnoCSS, Vite |
-| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/spring/spring-original.svg" width="20"/> **Java Backend** | Spring Boot 3.5.10, Spring Security, JWT, WebSocket, MyBatis Plus, MySQL, Redis |
-| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/fastapi/fastapi-original.svg" width="20"/> **Python Backend** | FastAPI, PyTorch, Redis |
-| 🐳 **Infrastructure** | MySQL (3306), Redis (6379), RabbitMQ (5672/15672) |
+| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/vuejs/vuejs-original.svg" width="20" style="vertical-align: middle"/> **Frontend** | Vue 3, TypeScript, Element Plus, ECharts, Pinia, UnoCSS, Vite |
+| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/spring/spring-original.svg" width="20" style="vertical-align: middle"/> **Java Backend** | Spring Boot 3.5.10, Spring Security, JWT, WebSocket, MyBatis Plus, MySQL, Redis |
+| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/fastapi/fastapi-original.svg" width="20" style="vertical-align: middle"/> **Python Backend** | FastAPI, PyTorch, Redis |
+| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/docker/docker-original.svg" width="20" style="vertical-align: middle"/> **Infrastructure** | MySQL (3306), Redis (6379), RabbitMQ (5672/15672) |
 
 ---
 
@@ -43,7 +43,7 @@ MHFL-VS/
 - [x] Profile & avatar upload (local storage)
 - [x] Admin: create/delete users, list with keyword search & pagination
 
-### ⚙️ Backend (Spring Boot)
+### <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/spring/spring-original.svg" width="18" style="vertical-align: middle"/> Backend (Spring Boot)
 - [x] Dataset & Algorithm CRUD (admin only)
 - [x] Task CRUD: create, list, detail, start, stop, delete, set recommend
 - [x] Round/Client APIs: list rounds, clients latest, client detail
@@ -52,7 +52,7 @@ MHFL-VS/
 - [x] Dashboard: platform stats, task stats, charts, system health
 - [x] Resource proxy: system resources (CPU/Memory/GPU) via FastAPI
 
-### 🖥 Frontend (Vue3)
+### <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/vuejs/vuejs-original.svg" width="18" style="vertical-align: middle"/> Frontend (Vue3)
 - [x] Home layout: Header, Sidebar, Footer, children routes
 - [x] Dashboard: stat cards, charts (status pie, 7-day trend), recent tasks, system health
 - [x] Task management: list, create, start, stop, delete, detail
@@ -63,7 +63,7 @@ MHFL-VS/
 - [x] Recommended page: CIFAR-100 / Tiny-ImageNet switch (mock data)
 - [x] Smart Assistant page: chat UI, conversation history, streaming replies (mock AI)
 
-### 🐍 Python (FastAPI)
+### <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/fastapi/fastapi-original.svg" width="18" style="vertical-align: middle"/> Python (FastAPI)
 - [x] Health check, resource APIs (GPU, CPU, memory)
 - [x] Training API: start, stop (with multiprocessing)
 - [x] Redis publish: Round, Client, Status callbacks
