@@ -16,9 +16,9 @@
 
 | | Stack |
 |---|--------|
-| 🖥 **Frontend** | Vue 3, TypeScript, Element Plus, ECharts, Pinia, UnoCSS, Vite |
-| ☕ **Java Backend** | Spring Boot 3.5.10, Spring Security, JWT, WebSocket, MyBatis Plus, MySQL, Redis |
-| 🐍 **Python Backend** | FastAPI, PyTorch, Redis |
+| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/vuejs/vuejs-original.svg" width="20"/> **Frontend** | Vue 3, TypeScript, Element Plus, ECharts, Pinia, UnoCSS, Vite |
+| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/spring/spring-original.svg" width="20"/> **Java Backend** | Spring Boot 3.5.10, Spring Security, JWT, WebSocket, MyBatis Plus, MySQL, Redis |
+| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/fastapi/fastapi-original.svg" width="20"/> **Python Backend** | FastAPI, PyTorch, Redis |
 | 🐳 **Infrastructure** | MySQL (3306), Redis (6379), RabbitMQ (5672/15672) |
 
 ---
