@@ -62,6 +62,7 @@ MHFL-VS/
 - [x] i18n (EN/ZH), light/dark theme
 - [x] Admin: members, datasets, algorithms (full CRUD)
 - [x] Recommended page: CIFAR-100 / Tiny-ImageNet switch (mock data)
+- [x] Smart Assistant page: chat UI, conversation history, streaming replies (mock AI)
 
 ### Python (FastAPI)
 - [x] Health check, resource APIs (GPU, CPU, memory)
@@ -74,9 +75,8 @@ MHFL-VS/
 
 ## To Do
 
-- [ ] **Backend** — Recommended task API; analytics endpoints
-- [ ] **Frontend** — Recommended page: real API; analytics & export
-- [ ] **Python** — GPU resource monitoring during training
+- [ ] **Backend** — Recommended task API; analytics endpoints; Smart Assistant API (LLM proxy)
+- [ ] **Frontend** — Recommended page: real API; analytics & export; Smart Assistant: connect to real LLM
 
 ---
 
