@@ -76,7 +76,7 @@ MHFL-VS/
 ## To Do
 
 - [ ] **Backend** — Recommended task API; analytics endpoints; Smart Assistant API (LLM proxy)
-- [ ] **Frontend** — Recommended page: real API; analytics & export; Smart Assistant: connect to real LLM
+- [ ] **Frontend** — Recommended page: real API; analytics & export; Smart Assistant: connect to backend API
 
 ---
 
