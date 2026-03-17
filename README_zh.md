@@ -16,9 +16,9 @@
 
 | | 技术 |
 |---|--------|
-| 🖥️ **前端** | Vue 3、TypeScript、Element Plus、ECharts、Pinia、UnoCSS、Vite |
-| ⚙️ **Java 后端** | Spring Boot 3.5.10、Spring Security、JWT、WebSocket、MyBatis Plus、MySQL、Redis |
-| 🐍 **Python 后端** | FastAPI、PyTorch、Redis |
+| 🖥️ **前端** | Vue, Vite, TypeScript, Element-Plus, ECharts, Pinia, UnoCSS |
+| ⚙️ **Java 后端** | Spring Boot, Spring Security, MyBatis Plus, WebSocket |
+| 🐍 **Python 后端** | FastAPI, PyTorch |
 | 🐳 **基础设施** | MySQL (3306)、Redis (6379)、RabbitMQ (5672/15672) |
 
 ---

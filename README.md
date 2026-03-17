@@ -14,11 +14,11 @@
 
 ## 🛠 Tech Stack
 
-| | Stack |
-|---|--------|
-| 🖥️ **Frontend** | Vue 3, TypeScript, Element Plus, ECharts, Pinia, UnoCSS, Vite |
-| ⚙️ **Java Backend** | Spring Boot 3.5.10, Spring Security, JWT, WebSocket, MyBatis Plus, MySQL, Redis |
-| 🐍 **Python Backend** | FastAPI, PyTorch, Redis |
+| | Stack                                                       |
+|---|-------------------------------------------------------------|
+| 🖥️ **Frontend** | Vue, Vite, TypeScript, Element-Plus, ECharts, Pinia, UnoCSS |
+| ⚙️ **Java Backend** | Spring Boot, Spring Security, MyBatis Plus, WebSocket |
+| 🐍 **Python Backend** | FastAPI, PyTorch |
 | 🐳 **Infrastructure** | MySQL (3306), Redis (6379), RabbitMQ (5672/15672) |
 
 ---
