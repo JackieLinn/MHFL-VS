@@ -16,10 +16,10 @@
 
 | | 技术 |
 |---|--------|
-| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/vuejs/vuejs-original.svg" width="20" style="vertical-align: middle"/> **前端** | Vue 3、TypeScript、Element Plus、ECharts、Pinia、UnoCSS、Vite |
-| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/spring/spring-original.svg" width="20" style="vertical-align: middle"/> **Java 后端** | Spring Boot 3.5.10、Spring Security、JWT、WebSocket、MyBatis Plus、MySQL、Redis |
-| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/fastapi/fastapi-original.svg" width="20" style="vertical-align: middle"/> **Python 后端** | FastAPI、PyTorch、Redis |
-| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/docker/docker-original.svg" width="20" style="vertical-align: middle"/> **基础设施** | MySQL (3306)、Redis (6379)、RabbitMQ (5672/15672) |
+| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/vuejs/vuejs-original.svg" width="20" height="20" style="vertical-align: -0.25em"/> **前端** | Vue 3、TypeScript、Element Plus、ECharts、Pinia、UnoCSS、Vite |
+| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/spring/spring-original.svg" width="20" height="20" style="vertical-align: -0.25em"/> **Java 后端** | Spring Boot 3.5.10、Spring Security、JWT、WebSocket、MyBatis Plus、MySQL、Redis |
+| <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/fastapi/fastapi-original.svg" width="20" height="20" style="vertical-align: -0.25em"/> **Python 后端** | FastAPI、PyTorch、Redis |
+| 🐳 **基础设施** | MySQL (3306)、Redis (6379)、RabbitMQ (5672/15672) |
 
 ---
 
@@ -43,7 +43,7 @@ MHFL-VS/
 - [x] 个人资料与头像上传（本地存储）
 - [x] 管理员：导入/删除用户、列表关键字搜索与分页
 
-### <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/spring/spring-original.svg" width="18" style="vertical-align: middle"/> 后端（Spring Boot）
+### <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/spring/spring-original.svg" width="18" height="18" style="vertical-align: -0.25em"/> 后端（Spring Boot）
 - [x] 数据集与算法管理（管理员 CRUD）
 - [x] 任务管理：创建、列表、详情、启动、停止、删除、设为推荐
 - [x] Round/Client 接口：轮次列表、客户端最新、客户端详情
@@ -52,7 +52,7 @@ MHFL-VS/
 - [x] Dashboard：平台概览、任务统计、图表、系统健康检查
 - [x] 资源代理：系统资源（CPU/内存/GPU）通过 FastAPI 获取
 
-### <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/vuejs/vuejs-original.svg" width="18" style="vertical-align: middle"/> 前端（Vue3）
+### <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/vuejs/vuejs-original.svg" width="18" height="18" style="vertical-align: -0.25em"/> 前端（Vue3）
 - [x] 首页布局：Header、Sidebar、Footer、子路由
 - [x] 仪表盘：统计卡片、图表（状态饼图、近 7 天趋势）、最近任务、系统健康
 - [x] 任务管理：列表、创建、启动、停止、删除、详情
@@ -63,7 +63,7 @@ MHFL-VS/
 - [x] 推荐展示页：CIFAR-100 / Tiny-ImageNet 切换（当前为模拟数据）
 - [x] 智能小助手页面：对话 UI、历史会话、流式回复（当前为模拟 AI）
 
-### <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/fastapi/fastapi-original.svg" width="18" style="vertical-align: middle"/> Python（FastAPI）
+### <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/fastapi/fastapi-original.svg" width="18" height="18" style="vertical-align: -0.25em"/> Python（FastAPI）
 - [x] 健康检查、资源监控接口（GPU、CPU、内存）
 - [x] 训练接口：启动、停止（多进程）
 - [x] Redis 发布：Round、Client、Status 回调
