@@ -114,3 +114,39 @@ create table client
 )
     comment '客户端表';
 
+create table conversation
+(
+    id            bigint auto_increment comment '会话 ID'
+        primary key,
+    uid           bigint             not null comment '用户 ID（外键）',
+    title         varchar(255) default '新对话' comment '会话标题',
+    summary       text               null comment '历史摘要',
+    message_count int      default 0  not null comment '消息总数',
+    create_time   datetime           not null comment '创建时间',
+    update_time   datetime           not null comment '更新时间',
+    delete_time   datetime           null comment '删除时间',
+    is_deleted    tinyint  default 0  not null comment '删除标记',
+    constraint conversation_account_id_fk
+        foreign key (uid) references account (id)
+)
+    comment '智能助手会话表';
+
+create table message
+(
+    id            bigint auto_increment comment '消息 ID'
+        primary key,
+    cid           bigint             not null comment '会话 ID（外键）',
+    role          varchar(20)        not null comment 'user/assistant',
+    content       longtext           not null comment '消息内容',
+    sequence_num  int                not null comment '会话内顺序号',
+    sources_json  json               null comment '引用来源 JSON',
+    feedback      tinyint  default 0 not null comment '0正常 1点赞 -1点踩',
+    create_time   datetime           not null comment '创建时间',
+    update_time   datetime           not null comment '更新时间',
+    delete_time   datetime           null comment '删除时间',
+    is_deleted    tinyint  default 0 not null comment '删除标记',
+    constraint message_conversation_id_fk
+        foreign key (cid) references conversation (id)
+)
+    comment '智能助手消息表';
+
