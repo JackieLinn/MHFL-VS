@@ -13,6 +13,18 @@ class Settings(BaseSettings):
     REDIS_MAX_CONNECTIONS: int = 100
     REDIS_SOCKET_TIMEOUT: int = 5
 
+    # 智能助手配置（需在 .env 中配置 OPENAI_API_KEY）
+    ASSISTANT_MODEL: str = "gpt-4o-mini"
+    ASSISTANT_EMBEDDING_MODEL: str = "text-embedding-3-small"
+    ASSISTANT_KB_DIR: str = "assistant/knowledge/raw"
+    ASSISTANT_CHROMA_DIR: str = "assistant/knowledge/chroma_db"
+    ASSISTANT_TOP_K: int = 8
+    ASSISTANT_RERANK_TOP_N: int = 4
+    ASSISTANT_CHUNK_SIZE: int = 400
+    ASSISTANT_CHUNK_OVERLAP: int = 50
+    ASSISTANT_ENABLE_RERANK: bool = False
+    ASSISTANT_ENABLE_MULTI_QUERY: bool = False
+
     model_config = SettingsConfigDict(
         env_file=BASE_DIR / ".env",
         env_file_encoding="utf-8",

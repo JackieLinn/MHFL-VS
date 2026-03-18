@@ -4,7 +4,7 @@ FastAPI应用入口文件
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import health, resource, train
+from routers import health, resource, train, assistant
 import logging
 
 # 配置日志
@@ -50,6 +50,7 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(resource.router)
 app.include_router(train.router)
+app.include_router(assistant.router)
 
 if __name__ == "__main__":
     import uvicorn
