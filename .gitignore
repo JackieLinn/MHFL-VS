@@ -12,6 +12,7 @@ mhfl-algo/data/*
 mhfl-algo/.env
 mhfl-algo/results/*
 !mhfl-algo/results/README.md
+mhfl-algo/assistant/prompts
 
 ### mhfl-server ###
 mhfl-server/target
