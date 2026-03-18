@@ -11,6 +11,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(BASE_DIR))
 
+from tqdm import tqdm
 from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
@@ -51,14 +52,15 @@ def build_kb(clear_first: bool = True) -> tuple[int, int, list[Path]]:
         persist_directory=str(chroma_dir),
     )
 
-    docs, ids, metadatas = [], [], []
+    total_chunks = 0
     failed_files: list[Path] = []
     md_files = list(kb_dir.rglob("*.md"))
 
-    for md_path in md_files:
+    for md_path in tqdm(md_files, desc="Building KB", unit="file"):
         try:
             text = md_path.read_text(encoding="utf-8")
             splits = md_splitter.split_text(text)
+            docs, ids, metadatas = [], [], []
             for s in splits:
                 sub = splitter.split_documents([s])
                 for d in sub:
@@ -72,19 +74,19 @@ def build_kb(clear_first: bool = True) -> tuple[int, int, list[Path]]:
                     docs.append(d)
                     ids.append(doc_id)
                     metadatas.append(d.metadata)
+            if docs:
+                vectorstore.add_documents(docs, ids=ids, metadatas=metadatas)
+                total_chunks += len(docs)
         except Exception as e:
-            print(f"Failed: {md_path}: {e}")
+            tqdm.write(f"Failed: {md_path}: {e}")
             failed_files.append(md_path)
 
-    if docs:
-        vectorstore.add_documents(docs, ids=ids, metadatas=metadatas)
-
     success_count = len(md_files) - len(failed_files)
-    print(f"Built: {len(docs)} chunks from {success_count} files")
+    print(f"Built: {total_chunks} chunks from {success_count} files")
     if failed_files:
         print(f"Failed: {[str(p.relative_to(kb_dir)) for p in failed_files]}")
 
-    return success_count, len(docs), failed_files
+    return success_count, total_chunks, failed_files
 
 
 if __name__ == "__main__":

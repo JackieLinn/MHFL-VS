@@ -11,10 +11,13 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(BASE_DIR))
 
+from tqdm import tqdm
 from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
 from config.settings import settings
+
+BATCH_SIZE = 10
 
 
 def _get_embeddings() -> OpenAIEmbeddings:
@@ -49,7 +52,11 @@ def _split_and_add(vectorstore: Chroma, md_path: Path, kb_dir: Path) -> int:
             ids.append(doc_id)
             metadatas.append(d.metadata)
     if docs:
-        vectorstore.add_documents(docs, ids=ids, metadatas=metadatas)
+        for i in tqdm(range(0, len(docs), BATCH_SIZE), desc="Embedding", unit="batch"):
+            batch_docs = docs[i: i + BATCH_SIZE]
+            batch_ids = ids[i: i + BATCH_SIZE]
+            batch_metas = metadatas[i: i + BATCH_SIZE]
+            vectorstore.add_documents(batch_docs, ids=batch_ids, metadatas=batch_metas)
     return len(docs)
 
 
