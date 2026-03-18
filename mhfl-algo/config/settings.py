@@ -13,7 +13,9 @@ class Settings(BaseSettings):
     REDIS_MAX_CONNECTIONS: int = 100
     REDIS_SOCKET_TIMEOUT: int = 5
 
-    # 智能助手配置（需在 .env 中配置 OPENAI_API_KEY）
+    # 智能助手配置（.env 中配置，OPENAI_API_KEY 必填）
+    OPENAI_API_KEY: str = ""
+    OPENAI_API_BASE: str | None = None
     ASSISTANT_MODEL: str = "gpt-4o-mini"
     ASSISTANT_EMBEDDING_MODEL: str = "text-embedding-3-small"
     ASSISTANT_KB_DIR: str = "assistant/knowledge/raw"
