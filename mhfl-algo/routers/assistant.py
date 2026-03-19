@@ -7,9 +7,8 @@ import logging
 
 from fastapi import APIRouter
 
-from assistant.schemas import ChatRequest, ChatResponse
 from services.assistant_service import chat as assistant_chat
-from utils.schemas import ApiResponse
+from utils.schemas import ApiResponse, ChatRequest, ChatResponse
 
 router = APIRouter(prefix="/api/assistant", tags=["智能助手"])
 logger = logging.getLogger(__name__)

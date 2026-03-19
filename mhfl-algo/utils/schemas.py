@@ -3,7 +3,7 @@ FastAPI响应模型定义
 与SpringBoot的ApiResponse格式保持一致，便于统一处理
 """
 from typing import Generic, TypeVar, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 T = TypeVar('T')
 
@@ -109,3 +109,17 @@ class HealthStatus(BaseModel):
     status: str  # "healthy" | "unhealthy"
     service: str  # 服务名称
     version: Optional[str] = None
+
+
+# 智能助手模型
+class ChatRequest(BaseModel):
+    """聊天请求体"""
+    conversation_id: Optional[int] = None
+    message: str = Field(..., min_length=1, max_length=16000)
+    context_data: Optional[dict] = None
+
+
+class ChatResponse(BaseModel):
+    """聊天响应体"""
+    content: str
+    sources: list[str] = []
