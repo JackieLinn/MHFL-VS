@@ -32,8 +32,8 @@ def build_kb(clear_first: bool = True) -> tuple[int, int, list[Path]]:
         shutil.rmtree(chroma_dir)
         chroma_dir.mkdir(parents=True, exist_ok=True)
 
-    # 支持自定义 API 地址（如国内中转）
-    embed_kwargs: dict = {"model": settings.ASSISTANT_EMBEDDING_MODEL}
+    # 显式传入 api_key，避免依赖 os.environ
+    embed_kwargs: dict = {"model": settings.ASSISTANT_EMBEDDING_MODEL, "api_key": settings.OPENAI_API_KEY}
     if settings.OPENAI_API_BASE:
         embed_kwargs["base_url"] = settings.OPENAI_API_BASE
     embeddings = OpenAIEmbeddings(**embed_kwargs)
@@ -75,7 +75,7 @@ def build_kb(clear_first: bool = True) -> tuple[int, int, list[Path]]:
                     ids.append(doc_id)
                     metadatas.append(d.metadata)
             if docs:
-                vectorstore.add_documents(docs, ids=ids, metadatas=metadatas)
+                vectorstore.add_documents(docs, ids=ids)
                 total_chunks += len(docs)
         except Exception as e:
             tqdm.write(f"Failed: {md_path}: {e}")

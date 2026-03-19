@@ -17,7 +17,7 @@ _BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 def _get_embeddings() -> OpenAIEmbeddings:
-    embed_kwargs: dict = {"model": settings.ASSISTANT_EMBEDDING_MODEL}
+    embed_kwargs: dict = {"model": settings.ASSISTANT_EMBEDDING_MODEL, "api_key": settings.OPENAI_API_KEY}
     if settings.OPENAI_API_BASE:
         embed_kwargs["base_url"] = settings.OPENAI_API_BASE
     return OpenAIEmbeddings(**embed_kwargs)

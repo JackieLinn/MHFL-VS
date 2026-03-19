@@ -21,7 +21,7 @@ BATCH_SIZE = 10
 
 
 def _get_embeddings() -> OpenAIEmbeddings:
-    embed_kwargs: dict = {"model": settings.ASSISTANT_EMBEDDING_MODEL}
+    embed_kwargs: dict = {"model": settings.ASSISTANT_EMBEDDING_MODEL, "api_key": settings.OPENAI_API_KEY}
     if settings.OPENAI_API_BASE:
         embed_kwargs["base_url"] = settings.OPENAI_API_BASE
     return OpenAIEmbeddings(**embed_kwargs)
@@ -38,7 +38,7 @@ def _split_and_add(vectorstore: Chroma, md_path: Path, kb_dir: Path) -> int:
         chunk_overlap=getattr(settings, "ASSISTANT_CHUNK_OVERLAP", 50),
     )
     splits = md_splitter.split_text(text)
-    docs, ids, metadatas = [], [], []
+    docs, ids = [], []
     for s in splits:
         for d in splitter.split_documents([s]):
             doc_id = f"{md_path.stem}_{len(ids):04d}"
@@ -50,13 +50,11 @@ def _split_and_add(vectorstore: Chroma, md_path: Path, kb_dir: Path) -> int:
             })
             docs.append(d)
             ids.append(doc_id)
-            metadatas.append(d.metadata)
     if docs:
         for i in tqdm(range(0, len(docs), BATCH_SIZE), desc="Embedding", unit="batch"):
             batch_docs = docs[i: i + BATCH_SIZE]
             batch_ids = ids[i: i + BATCH_SIZE]
-            batch_metas = metadatas[i: i + BATCH_SIZE]
-            vectorstore.add_documents(batch_docs, ids=batch_ids, metadatas=batch_metas)
+            vectorstore.add_documents(batch_docs, ids=batch_ids)
     return len(docs)
 
 
