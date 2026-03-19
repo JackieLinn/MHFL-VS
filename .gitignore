@@ -16,6 +16,7 @@ mhfl-algo/assistant/source
 mhfl-algo/assistant/knowledge/raw/*.md
 mhfl-algo/assistant/knowledge/chroma_db
 !mhfl-algo/assistant/knowledge/chroma_db/.gitkeep
+mhfl-algo/cache
 
 ### mhfl-server ###
 mhfl-server/target
