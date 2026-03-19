@@ -3,6 +3,7 @@ package ynu.jackielinn.server.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.security.concurrent.DelegatingSecurityContextExecutor;
 
 import java.util.concurrent.Executor;
 
@@ -37,5 +38,25 @@ public class AsyncConfiguration {
         executor.setAwaitTerminationSeconds(60);
         executor.initialize();
         return executor;
+    }
+
+    /**
+     * 智能助手流式聊天专用线程池，用于异步消费 Python 流并转发 SSE。
+     * 核心 2、最大 8、队列 50。
+     *
+     * @return 用于流式聊天的 Executor
+     */
+    @Bean(name = "assistantChatStreamExecutor")
+    public Executor assistantChatStreamExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(2);
+        executor.setMaxPoolSize(8);
+        executor.setQueueCapacity(50);
+        executor.setThreadNamePrefix("assistant-chat-stream-");
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(30);
+        executor.initialize();
+        // 传播 SecurityContext 到异步线程，避免 SSE 流式响应时 Access Denied
+        return new DelegatingSecurityContextExecutor(executor);
     }
 }

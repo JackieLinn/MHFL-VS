@@ -1,12 +1,24 @@
 <script setup lang="ts">
-import {ref, computed, nextTick} from 'vue'
+import {ref, computed, nextTick, onMounted} from 'vue'
 import {useI18n} from 'vue-i18n'
-import {ElMessageBox} from 'element-plus'
+import {ElMessage, ElMessageBox} from 'element-plus'
 import AssistantSidebar from './components/AssistantSidebar.vue'
 import AssistantTopbar from './components/AssistantTopbar.vue'
 import AssistantWelcome from './components/AssistantWelcome.vue'
 import AssistantMessageList from './components/AssistantMessageList.vue'
 import AssistantInput from './components/AssistantInput.vue'
+import {
+  createConversation,
+  listConversations,
+  getConversationDetail,
+  deleteConversation,
+  updateConversationTitle,
+  chatStream,
+  updateMessageFeedback,
+  type ConversationVO,
+  type ConversationDetailVO,
+  type MessageVO,
+} from '@/api/assistant'
 
 interface Message {
   id: number
@@ -16,12 +28,12 @@ interface Message {
   streaming?: boolean
 }
 
-interface Conversation {
-  id: number
-  title: string
-  preview: string
+/** 页面内会话详情状态，messages 统一为 Message[] 便于流式追加 */
+type ConversationDetailState = Omit<ConversationDetailVO, 'messages'> & { messages: Message[] }
+
+interface ConversationWithTime extends ConversationVO {
   time: string
-  messages: Message[]
+  messages?: Message[]
 }
 
 type MsgFeedback = Record<number, 'liked' | 'disliked' | null>
@@ -29,129 +41,36 @@ type MsgFeedback = Record<number, 'liked' | 'disliked' | null>
 const {t} = useI18n()
 
 // ===== 工具 =====
-const nowTime = () => {
-  const d = new Date()
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
-}
-let msgIdCounter = 1000
-
-// ===== AI 回复池（模拟）=====
-const aiReplies = {
-  fedavg: 'FedAvg 通过对所有客户端模型参数加权平均来聚合全局模型，适合**同构模型 + 轻度 Non-IID** 场景，通信内容是完整模型参数。\n\n主要优势：实现简单、通信轮次少、适合大规模部署。但在高度 Non-IID 场景下，客户端梯度方向差异过大，容易导致全局模型收敛缓慢甚至发散。\n\n如需在异构设备上部署，建议配合 FedProto 使用。',
-  fedproto: 'FedProto 专为**模型异构**场景设计，每个客户端上传各类别的特征原型（Prototype），服务器聚合原型后分发，客户端只需对齐特征空间，无需相同模型结构。\n\n核心优势：\n- 支持客户端使用不同大小/结构的模型\n- 通信量远小于传输完整参数\n- 在高度 Non-IID 下鲁棒性更强\n\n本平台的 CIFAR-100 + Non-IID 场景推荐优先使用 FedProto。',
-  noniid: '推荐从**中度 Non-IID** 开始实验：`classes_per_node=10, low_prob=0.1`。\n\n这个组合在 CIFAR-100 上表现稳定，收敛曲线通常比较平滑，之后再根据结果决定是否加强异质性。\n\n参数说明：\n- `classes_per_node`：每个节点拥有的类别数，越小异质性越强\n- `low_prob`：稀少类别的采样概率，越小分布越不均匀\n\n建议先跑 50~100 轮观察 loss 趋势，再决定是否调整。',
-  gpu: 'CIFAR-100 训练约需 **3GB 显存**，Tiny-ImageNet 约需 **5.5GB**。\n\n可在仪表盘首页实时查看当前 GPU 使用率，显存不足时建议：\n1. 降低 `fraction`（减少并发客户端）\n2. 开启混合精度训练（AMP），可节省约 40~50% 显存\n3. 逐步降低 batch size：64 → 32 → 16',
-  epochs: '`num_steps` 是**全局通信轮数**（服务器-客户端迭代次数），`epochs` 是每个客户端在每轮本地训练的轮次。\n\n建议 `num_steps=200, epochs=5` 作为标准配置起点。\n\n增加 `num_steps` 比增加 `epochs` 更稳定：前者增加全局协作次数，后者增加本地自适应程度——过多 epochs 会加剧 Non-IID 漂移问题。',
-  fallback: '这是个好问题！目前我的知识库主要覆盖联邦学习相关内容，如算法对比、参数配置、训练调优等。\n\n你可以尝试问我：\n- 各算法（FedAvg、FedProto、FedSSA、LG-FedAvg）的区别\n- Non-IID 参数如何配置\n- GPU 显存不足的解决方案\n- num_steps 与 epochs 的选择策略\n\n或者直接前往**推荐展示**页面，查看经过验证的成功案例和参数配置！'
+const formatTime = (dateStr: string): string => {
+  if (!dateStr) return ''
+  const d = new Date(dateStr.replace(' ', 'T'))
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const yesterday = new Date(today.getTime() - 86400000)
+  const dDate = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+  const h = String(d.getHours()).padStart(2, '0')
+  const m = String(d.getMinutes()).padStart(2, '0')
+  if (dDate.getTime() === today.getTime()) return `${t('common.today')} ${h}:${m}`
+  if (dDate.getTime() === yesterday.getTime()) return `${t('common.yesterday')} ${h}:${m}`
+  return dateStr.slice(0, 16).replace('T', ' ')
 }
 
-const getAiReply = (input: string): string => {
-  const lower = input.toLowerCase()
-  if (lower.includes('fedavg') && !lower.includes('fedproto')) return aiReplies.fedavg
-  if (lower.includes('fedproto')) return aiReplies.fedproto
-  if (lower.includes('non-iid') || lower.includes('noniid') || lower.includes('异质') || lower.includes('classes_per_node')) return aiReplies.noniid
-  if (lower.includes('gpu') || lower.includes('显存') || lower.includes('imagenet')) return aiReplies.gpu
-  if (lower.includes('epoch') || lower.includes('num_step') || lower.includes('轮')) return aiReplies.epochs
-  return aiReplies.fallback
-}
+const toMessage = (m: MessageVO): Message => ({
+  id: m.id,
+  role: m.role as 'user' | 'assistant',
+  content: m.content,
+  time: formatTime(m.createTime),
+})
 
-// ===== 历史会话数据 =====
-const conversations = ref<Conversation[]>([
-  {
-    id: 1, title: 'FedAvg 与 FedProto 对比',
-    preview: 'FedAvg 通过对所有客户端模型参数求加权平均来聚合...', time: '今天 14:32',
-    messages: [
-      {id: 1, role: 'user', content: '请帮我比较一下 FedAvg 和 FedProto 算法的区别和适用场景。', time: '14:30'},
-      {
-        id: 2,
-        role: 'assistant',
-        time: '14:31',
-        content: `**FedAvg（联邦平均）**\n\nFedAvg 是最经典的联邦学习算法，核心思路是：服务器将全局模型分发给客户端，客户端本地训练若干 epoch 后上传**模型参数**，服务器加权平均后得到新的全局模型。\n\n适用场景：\n- 客户端模型结构**相同**（同构场景）\n- 数据分布较均匀（IID 或轻度 Non-IID）\n\n---\n\n**FedProto（联邦原型）**\n\nFedProto 专为**模型异构**场景设计，客户端上传各类别的特征原型（Prototype），服务器聚合原型再分发，客户端以原型为正则化目标。\n\n适用场景：\n- 客户端模型结构**不同**（异构场景）\n- 数据 Non-IID 较为严重\n\n---\n\n| 维度 | FedAvg | FedProto |\n|------|--------|----------|\n| 模型同构性 | 要求同构 | 支持异构 |\n| 通信内容 | 模型参数 | 类别原型 |\n| Non-IID 鲁棒性 | 一般 | 较强 |`
-      },
-      {id: 3, role: 'user', content: '在 CIFAR-100 + 高度 Non-IID 下，推荐用哪个？', time: '14:31'},
-      {
-        id: 4,
-        role: 'assistant',
-        time: '14:32',
-        content: '在 CIFAR-100 + 高度 Non-IID 的场景下，推荐使用 **FedProto**。\n\n原因：CIFAR-100 有 100 个类别，Non-IID 时每个节点只见到少数类别，FedAvg 的全局平均会导致模型遗忘局部分布。FedProto 的原型对齐机制能在特征空间建立共识，`classes_per_node` 较小时通常比 FedAvg 高出 5~15 个百分点。'
-      }
-    ]
-  },
-  {
-    id: 2, title: 'Non-IID 参数配置建议',
-    preview: '推荐 classes_per_node 设置为 5~10，low_prob 建议...', time: '今天 10:15',
-    messages: [
-      {
-        id: 1,
-        role: 'user',
-        content: '我想做一个 Non-IID 实验，classes_per_node 和 low_prob 应该怎么配置？',
-        time: '10:13'
-      },
-      {
-        id: 2,
-        role: 'assistant',
-        time: '10:14',
-        content: '**`classes_per_node`（每节点类别数）**\n\n- `100`：近似 IID\n- `10`：中度 Non-IID（推荐入门）\n- `5`：高度 Non-IID\n- `2`：极端 Non-IID\n\n**`low_prob`（稀少类别采样概率）**\n\n- `0.0`：只有主要类别数据\n- `0.1`：推荐值，保留少量稀少类别\n- `0.5`：接近均匀\n\n| 场景 | classes_per_node | low_prob |\n|------|-----------------|----------|\n| 轻度 | 20 | 0.3 |\n| 中度 | 10 | 0.1 |\n| 重度 | 5 | 0.05 |'
-      },
-      {id: 3, role: 'user', content: '谢谢，我先用中度配置跑一轮试试。', time: '10:15'},
-      {
-        id: 4,
-        role: 'assistant',
-        time: '10:15',
-        content: '好的！中度配置是个不错的起点，祝实验顺利！\n\n跑完可以把训练曲线给我看，我帮你分析 loss/accuracy 趋势。'
-      }
-    ]
-  },
-  {
-    id: 3, title: 'Tiny-ImageNet 显存不足问题',
-    preview: 'Tiny-ImageNet 训练需要约 5.5GB 显存，建议...', time: '昨天 16:44',
-    messages: [
-      {id: 1, role: 'user', content: 'Tiny-ImageNet 跑的时候显存不够，有什么解决方案？', time: '16:40'},
-      {
-        id: 2,
-        role: 'assistant',
-        time: '16:42',
-        content: 'Tiny-ImageNet（64×64）显存需求约是 CIFAR-100（32×32）的 2 倍。解决方案：\n\n**1. 减小 batch size**：64 → 32 → 16 逐步尝试\n\n**2. 降低 fraction**：`0.1` → `0.05`，减少并发客户端数\n\n**3. 混合精度训练（AMP）**：节省约 40~50% 显存，训练速度也会加快，推荐优先尝试\n\n**4. 梯度检查点**：以时间换空间，节省 30~50% 显存\n\n系统要求 Tiny-ImageNet 至少 **5.5GB 空闲显存**，可在仪表盘查看当前 GPU 状态。'
-      },
-      {id: 3, role: 'user', content: '好的，我用混合精度训练试试，谢谢！', time: '16:44'},
-      {
-        id: 4,
-        role: 'assistant',
-        time: '16:44',
-        content: '混合精度是最推荐的方案，几乎无精度损失，显存和速度都有明显改善，好好试试！'
-      }
-    ]
-  },
-  {
-    id: 4, title: '联邦学习入门介绍',
-    preview: '联邦学习是一种分布式机器学习范式，允许多个参与方...', time: '3天前',
-    messages: [
-      {id: 1, role: 'user', content: '能简单介绍一下联邦学习是什么吗？', time: '09:10'},
-      {
-        id: 2,
-        role: 'assistant',
-        time: '09:11',
-        content: '**联邦学习（Federated Learning）** 是 Google 于 2016 年提出的分布式机器学习范式。\n\n**核心思想**：数据不离开本地，模型到数据所在地训练，只上传**模型更新**（参数/梯度），保护隐私的同时协同训练全局模型。\n\n**标准流程**：服务器下发全局模型 → 客户端本地训练 → 上传更新 → 服务器聚合 → 重复直到收敛\n\n**主要挑战**：Non-IID 数据、通信效率、模型异构\n\n本平台（MHFL-VS）专注**模型异构**联邦学习，支持 FedAvg、FedProto、FedSSA、LG-FedAvg，欢迎探索！'
-      }
-    ]
-  },
-  {
-    id: 5, title: 'num_steps 和 epochs 的区别',
-    preview: 'num_steps 是全局通信轮数，epochs 是每个客户端本地训练...', time: '5天前',
-    messages: [
-      {id: 1, role: 'user', content: 'num_steps 和 epochs 有什么区别？', time: '11:05'},
-      {
-        id: 2,
-        role: 'assistant',
-        time: '11:06',
-        content: '**`num_steps`（全局轮数）**：服务器与客户端的通信轮次，代表联邦迭代次数。建议 100~500，默认 200。\n\n**`epochs`（本地训练轮次）**：每个客户端每轮本地训练的 epoch 数。建议 1~10，过多会加剧 Non-IID 问题，默认 5。\n\n| 需求 | num_steps | epochs |\n|------|-----------|--------|\n| 快速验证 | 50 | 3 |\n| 标准训练 | 200 | 5 |\n| 充分收敛 | 500 | 5 |\n\n增加 `num_steps` 比增加 `epochs` 更稳定，前者增加全局协作，后者增加本地自适应。'
-      }
-    ]
-  }
-])
+const toConversation = (c: ConversationVO): ConversationWithTime => ({
+  ...c,
+  time: formatTime(c.updateTime),
+})
 
-// ===== 页面状态 =====
-const activeConvId = ref<number | null>(1)
+// ===== 数据 =====
+const conversations = ref<ConversationWithTime[]>([])
+const activeConvId = ref<number | null>(null)
+const activeConvDetail = ref<ConversationDetailState | null>(null)
 const inputText = ref('')
 const isSending = ref(false)
 const sidebarCollapsed = ref(false)
@@ -159,40 +78,113 @@ const streamingMsgId = ref<number | null>(null)
 const copiedMsgId = ref<number | null>(null)
 const msgFeedback = ref<MsgFeedback>({})
 const searchKeyword = ref('')
+const loadingList = ref(false)
+const loadingDetail = ref(false)
 
-// 子组件引用
 const msgListRef = ref<InstanceType<typeof AssistantMessageList> | null>(null)
 const inputRef = ref<InstanceType<typeof AssistantInput> | null>(null)
 
 // ===== 计算属性 =====
-const activeConv = computed(() =>
-    conversations.value.find(c => c.id === activeConvId.value) ?? null
-)
+const activeConv = computed(() => {
+  const detail = activeConvDetail.value
+  if (!detail) return null
+  const listItem = conversations.value.find(c => c.id === detail.id)
+  return {
+    id: detail.id,
+    title: detail.title,
+    preview: listItem?.preview ?? '',
+    time: formatTime(detail.updateTime),
+    messages: detail.messages,
+  }
+})
 
 const topbarTitle = computed(() =>
     activeConv.value ? activeConv.value.title : t('pages.assistant.title')
 )
 const topbarDesc = computed(() =>
     activeConv.value
-        ? t('assistant.msgCount', {count: activeConv.value.messages.length})
+        ? t('assistant.msgCount', {count: activeConv.value.messages?.length ?? 0})
         : t('pages.assistant.desc')
 )
 
 const showWelcome = computed(() =>
-    !activeConv.value || activeConv.value.messages.length === 0
+    !activeConv.value || (activeConv.value.messages?.length ?? 0) === 0
 )
+
+const hasNoConversations = computed(() =>
+    !loadingList.value && conversations.value.length === 0 && activeConvId.value === null
+)
+
+const sidebarConversations = computed(() =>
+    conversations.value.map(c => ({id: c.id, title: c.title, preview: c.preview, time: formatTime(c.updateTime)}))
+)
+
+// ===== 加载 =====
+const loadList = () => {
+  loadingList.value = true
+  listConversations(
+      (data) => {
+        conversations.value = data.map(toConversation)
+        const first = data[0]
+        if (first && !activeConvId.value) {
+          activeConvId.value = first.id
+          loadDetail(first.id)
+        }
+        loadingList.value = false
+      },
+      () => {
+        loadingList.value = false
+      }
+  )
+}
+
+const loadDetail = (id: number) => {
+  loadingDetail.value = true
+  getConversationDetail(
+      id,
+      (data) => {
+        activeConvDetail.value = {...data, messages: data.messages.map(toMessage)}
+        msgFeedback.value = {}
+        data.messages.forEach(m => {
+          if (m.feedback === 1) msgFeedback.value[m.id] = 'liked'
+          else if (m.feedback === -1) msgFeedback.value[m.id] = 'disliked'
+        })
+        loadingDetail.value = false
+        nextTick(() => msgListRef.value?.scrollToBottom())
+      },
+      () => {
+        loadingDetail.value = false
+      }
+  )
+}
+
+onMounted(() => {
+  loadList()
+})
 
 // ===== 侧边栏操作 =====
 const newChat = () => {
-  const id = Date.now()
-  conversations.value.unshift({id, title: '新对话', preview: '', time: '刚刚', messages: []})
-  activeConvId.value = id
-  inputText.value = ''
+  createConversation(
+      (data) => {
+        activeConvId.value = data.id
+        activeConvDetail.value = {
+          id: data.id,
+          title: '新建对话',
+          messageCount: 0,
+          createTime: '',
+          updateTime: '',
+          messages: [] as Message[],
+        }
+        inputText.value = ''
+      },
+      () => {
+      }
+  )
 }
 
 const selectConv = (id: number) => {
   activeConvId.value = id
-  nextTick(() => msgListRef.value?.scrollToBottom())
+  loadDetail(id)
 }
 
 const editConv = (id: number, currentTitle: string) => {
@@ -201,12 +193,25 @@ const editConv = (id: number, currentTitle: string) => {
     cancelButtonText: t('common.cancel'),
     inputValue: currentTitle,
     inputPlaceholder: t('assistant.editConvTitlePlaceholder')
-  }).then(({ value }) => {
-    const trimmed = (value ?? '').trim()
+  }).then((result) => {
+    const value = (result as { value?: string }).value ?? ''
+    const trimmed = value.trim()
     if (!trimmed) return
-    const conv = conversations.value.find(c => c.id === id)
-    if (conv) conv.title = trimmed.length > 30 ? trimmed.slice(0, 30) + '...' : trimmed
-  }).catch(() => {})
+    updateConversationTitle(
+        id,
+        trimmed.length > 30 ? trimmed.slice(0, 30) + '...' : trimmed,
+        () => {
+          const c = conversations.value.find(x => x.id === id)
+          if (c) c.title = trimmed.length > 30 ? trimmed.slice(0, 30) + '...' : trimmed
+          if (activeConvDetail.value?.id === id) {
+            activeConvDetail.value = {...activeConvDetail.value!, title: c?.title ?? trimmed}
+          }
+        },
+        () => {
+        }
+    )
+  }).catch(() => {
+  })
 }
 
 const deleteConv = (id: number) => {
@@ -215,74 +220,110 @@ const deleteConv = (id: number) => {
     cancelButtonText: t('common.cancel'),
     type: 'warning'
   }).then(() => {
-    const idx = conversations.value.findIndex(c => c.id === id)
-    if (idx === -1) return
-    conversations.value.splice(idx, 1)
-    if (activeConvId.value === id) {
-      activeConvId.value = conversations.value[0]?.id ?? null
-      nextTick(() => msgListRef.value?.scrollToBottom())
-    }
-  }).catch(() => {})
+    deleteConversation(
+        id,
+        () => {
+          const idx = conversations.value.findIndex(c => c.id === id)
+          if (idx >= 0) conversations.value.splice(idx, 1)
+          if (activeConvId.value === id) {
+            activeConvId.value = conversations.value[0]?.id ?? null
+            activeConvDetail.value = activeConvId.value ? null : activeConvDetail.value
+            if (activeConvId.value) loadDetail(activeConvId.value)
+            else activeConvDetail.value = null
+          }
+        },
+        () => {
+        }
+    )
+  }).catch(() => {
+  })
 }
 
-// ===== 流式输出 =====
-const streamText = (convId: number, msgId: number, fullText: string) => {
-  const conv = conversations.value.find(c => c.id === convId)
-  if (!conv) return
-  const msg = conv.messages.find(m => m.id === msgId)
-  if (!msg) return
-
-  streamingMsgId.value = msgId
-  let index = 0
-
-  const tick = () => {
-    if (index >= fullText.length) {
-      msg.streaming = false
-      streamingMsgId.value = null
-      isSending.value = false
-      conv.preview = fullText.slice(0, 40)
-      nextTick(() => msgListRef.value?.scrollToBottom())
-      return
-    }
-    const step = Math.min(Math.floor(Math.random() * 3) + 1, fullText.length - index)
-    msg.content += fullText.slice(index, index + step)
-    index += step
-    nextTick(() => msgListRef.value?.scrollToBottom())
-    setTimeout(tick, 18)
-  }
-  setTimeout(tick, 18)
-}
-
-// ===== 发送消息 =====
+// ===== 发送消息（流式） =====
 const sendMessage = () => {
   const text = inputText.value.trim()
   if (!text || isSending.value) return
-  if (!activeConv.value) newChat()
 
-  const conv = conversations.value.find(c => c.id === activeConvId.value)
-  if (!conv) return
-
-  conv.messages.push({id: ++msgIdCounter, role: 'user', content: text, time: nowTime()})
-  if (conv.title === '新对话' && conv.messages.filter(m => m.role === 'user').length === 1)
-    conv.title = text.length > 18 ? text.slice(0, 18) + '...' : text
-  conv.preview = text
-
-  inputText.value = ''
-  nextTick(() => inputRef.value?.resetHeight())
-  isSending.value = true
-  nextTick(() => msgListRef.value?.scrollToBottom())
-
-  const convId = activeConvId.value!
-  setTimeout(() => {
-    const conv2 = conversations.value.find(c => c.id === convId)
-    if (!conv2) return
-    const aiMsgId = ++msgIdCounter
-    conv2.messages.push({id: aiMsgId, role: 'assistant', content: '', time: nowTime(), streaming: true})
-    nextTick(() => {
-      msgListRef.value?.scrollToBottom()
-      streamText(convId, aiMsgId, getAiReply(text))
+  const ensureCid = (): Promise<number> => {
+    if (activeConvId.value) return Promise.resolve(activeConvId.value)
+    return new Promise((resolve, reject) => {
+      createConversation(
+          (data) => {
+            activeConvId.value = data.id
+            activeConvDetail.value = {
+              id: data.id,
+              title: '新建对话',
+              messageCount: 0,
+              createTime: '',
+              updateTime: '',
+              messages: [] as Message[],
+            }
+            resolve(data.id)
+          },
+          (msg) => reject(new Error(msg))
+      )
     })
-  }, 600)
+  }
+
+  ensureCid().then(cid => {
+    const detail = activeConvDetail.value!
+    const userMsg: Message = {
+      id: -Date.now(),
+      role: 'user',
+      content: text,
+      time: formatTime(new Date().toISOString()),
+    }
+    detail.messages = [...(detail.messages || []), userMsg]
+    if (detail.title === '新建对话') {
+      detail.title = text.length > 18 ? text.slice(0, 18) + '...' : text
+    }
+
+    inputText.value = ''
+    nextTick(() => inputRef.value?.resetHeight())
+    isSending.value = true
+    nextTick(() => msgListRef.value?.scrollToBottom())
+
+    const assistantMsgId = -Date.now() - 1
+    const assistantMsg: Message = {
+      id: assistantMsgId,
+      role: 'assistant',
+      content: '',
+      time: formatTime(new Date().toISOString()),
+      streaming: true,
+    }
+    detail.messages = [...detail.messages, assistantMsg]
+    streamingMsgId.value = assistantMsgId
+    nextTick(() => msgListRef.value?.scrollToBottom())
+
+    chatStream(
+        {cid, message: text},
+        {
+          onDelta: (content) => {
+            assistantMsg.content += content
+            nextTick(() => msgListRef.value?.scrollToBottom())
+          },
+          onDone: (fullContent) => {
+            assistantMsg.content = fullContent
+            assistantMsg.streaming = false
+            streamingMsgId.value = null
+            isSending.value = false
+            loadList()
+            loadDetail(cid)
+            nextTick(() => msgListRef.value?.scrollToBottom())
+          },
+          onError: (msg) => {
+            assistantMsg.content = msg
+            assistantMsg.streaming = false
+            streamingMsgId.value = null
+            isSending.value = false
+            ElMessage.warning(msg)
+            nextTick(() => msgListRef.value?.scrollToBottom())
+          },
+        }
+    )
+  }).catch(msg => {
+    ElMessage.warning(msg)
+  })
 }
 
 // ===== 消息操作 =====
@@ -298,26 +339,29 @@ const copyMessage = async (msgId: number, content: string) => {
 }
 
 const toggleLike = (msgId: number) => {
-  msgFeedback.value = {
-    ...msgFeedback.value,
-    [msgId]: msgFeedback.value[msgId] === 'liked' ? null : 'liked'
-  }
+  const next = msgFeedback.value[msgId] === 'liked' ? null : 'liked'
+  const code = next === 'liked' ? 1 : 0
+  updateMessageFeedback(msgId, code, () => {
+    msgFeedback.value = {...msgFeedback.value, [msgId]: next}
+  }, () => {
+  })
 }
 
 const toggleDislike = (msgId: number) => {
-  msgFeedback.value = {
-    ...msgFeedback.value,
-    [msgId]: msgFeedback.value[msgId] === 'disliked' ? null : 'disliked'
-  }
+  const next = msgFeedback.value[msgId] === 'disliked' ? null : 'disliked'
+  const code = next === 'disliked' ? -1 : 0
+  updateMessageFeedback(msgId, code, () => {
+    msgFeedback.value = {...msgFeedback.value, [msgId]: next}
+  }, () => {
+  })
 }
 </script>
 
 <template>
   <div class="flex h-full overflow-hidden" style="background: var(--home-bg)">
 
-    <!-- 左侧历史侧边栏 -->
     <AssistantSidebar
-        :conversations="conversations"
+        :conversations="sidebarConversations"
         :active-conv-id="activeConvId"
         :collapsed="sidebarCollapsed"
         :is-sending="isSending"
@@ -330,15 +374,26 @@ const toggleDislike = (msgId: number) => {
         @update:search-keyword="searchKeyword = $event"
     />
 
-    <!-- 右侧主体 -->
     <main class="flex flex-col flex-1 overflow-hidden min-w-0">
 
-      <!-- 顶部标题栏 -->
       <AssistantTopbar :title="topbarTitle" :desc="topbarDesc"/>
 
-      <!-- 欢迎屏 -->
+      <!-- 暂无聊天记录 -->
+      <div v-if="hasNoConversations" class="flex-1 flex flex-col items-center justify-center gap-3 px-8 py-10">
+        <span class="i-mdi-chat-sleep-outline text-[48px] opacity-40" style="color: var(--home-text-muted)"></span>
+        <p class="text-base" style="color: var(--home-text-muted)">{{ t('assistant.noChatHistory') }}</p>
+        <button
+            class="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            style="background: rgba(99, 102, 241, 0.15); color: #6366f1; border: 1px solid rgba(99, 102, 241, 0.3)"
+            @click="newChat"
+        >
+          {{ t('assistant.newChat') }}
+        </button>
+      </div>
+
+      <!-- 欢迎屏（有会话但无消息） -->
       <AssistantWelcome
-          v-if="showWelcome"
+          v-else-if="showWelcome"
           @ask="(text) => { inputText = text; nextTick(() => sendMessage()) }"
       />
 
@@ -346,7 +401,7 @@ const toggleDislike = (msgId: number) => {
       <AssistantMessageList
           v-else
           ref="msgListRef"
-          :messages="activeConv!.messages"
+          :messages="activeConv?.messages ?? []"
           :streaming-msg-id="streamingMsgId"
           :is-sending="isSending"
           :copied-msg-id="copiedMsgId"
@@ -356,7 +411,6 @@ const toggleDislike = (msgId: number) => {
           @dislike="toggleDislike"
       />
 
-      <!-- 输入框 -->
       <AssistantInput
           ref="inputRef"
           v-model="inputText"

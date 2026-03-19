@@ -1,6 +1,13 @@
 """
 FastAPI应用入口文件
 """
+import os
+
+# 设置 tiktoken 缓存目录为 mhfl-algo/cache，避免首次运行时下载 BPE 失败（IncompleteRead）
+_cache_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cache")
+os.makedirs(_cache_dir, exist_ok=True)
+os.environ.setdefault("TIKTOKEN_CACHE_DIR", _cache_dir)
+
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware

@@ -1,5 +1,6 @@
 package ynu.jackielinn.server.service;
 
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import ynu.jackielinn.server.dto.request.ChatRequestRO;
 import ynu.jackielinn.server.dto.request.FeedbackRO;
 import ynu.jackielinn.server.dto.request.SaveMessageRO;
@@ -65,6 +66,15 @@ public interface AssistantService {
      * @return 助手回复
      */
     ChatResponseVO chat(Long uid, ChatRequestRO ro);
+
+    /**
+     * 流式聊天。存 user 消息 -> WebClient 调 Python 流式接口 -> 转发 SSE -> 流结束后存 assistant 消息、更新 conversation。
+     *
+     * @param uid 当前用户 id
+     * @param ro  聊天请求（cid、message）
+     * @return SseEmitter，用于向前端推送 SSE
+     */
+    SseEmitter chatStream(Long uid, ChatRequestRO ro);
 
     /**
      * 更新消息反馈（点赞/点踩）。仅能对 assistant 消息操作，校验会话归属。

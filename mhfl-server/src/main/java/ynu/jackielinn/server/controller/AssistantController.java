@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import ynu.jackielinn.server.common.BaseController;
 import ynu.jackielinn.server.common.RestResponse;
@@ -16,6 +17,7 @@ import ynu.jackielinn.server.dto.request.FeedbackRO;
 import ynu.jackielinn.server.dto.request.UpdateTitleRO;
 import ynu.jackielinn.server.dto.response.*;
 import ynu.jackielinn.server.service.AssistantService;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
 
@@ -181,6 +183,30 @@ public class AssistantController extends BaseController {
         } catch (RuntimeException e) {
             return RestResponse.failure(500, e.getMessage());
         }
+    }
+
+    /**
+     * 流式聊天。代理到 Python /api/assistant/chat/stream，逐 chunk 推送 SSE。
+     *
+     * @param ro      聊天请求（cid、message）
+     * @param request 用于获取当前用户 id
+     * @return SseEmitter，推送 data: {type, content}
+     */
+    @Operation(summary = "流式聊天接口", description = "SSE 流式输出，data 格式：{type:delta|done|error, content}")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "SSE 流"),
+            @ApiResponse(responseCode = "401", description = "未登录或 token 过期")
+    })
+    @PostMapping(value = "/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter chatStream(
+            @RequestBody @Valid ChatRequestRO ro,
+            HttpServletRequest request) {
+        Long uid = (Long) request.getAttribute("id");
+        if (uid == null) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.UNAUTHORIZED, "未登录或登录已过期");
+        }
+        return assistantService.chatStream(uid, ro);
     }
 
     /**

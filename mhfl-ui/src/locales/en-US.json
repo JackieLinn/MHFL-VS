@@ -1,6 +1,8 @@
 {
   "common": {
     "user": "User",
+    "today": "Today",
+    "yesterday": "Yesterday",
     "confirm": "Confirm",
     "cancel": "Cancel",
     "logout": "Logout",
@@ -435,6 +437,7 @@
     "deleteConv": "Delete conversation",
     "confirmDeleteConv": "Delete this conversation? This action cannot be undone.",
     "noConvFound": "No conversations found",
+    "noChatHistory": "No chat history yet",
     "footerTip": "Powered by LLM",
     "welcomeTitle": "Hi, I'm MHFL Smart Assistant",
     "welcomeSub": "I can help you with federated learning questions, algorithm recommendations, and training result analysis. Let's get started!",

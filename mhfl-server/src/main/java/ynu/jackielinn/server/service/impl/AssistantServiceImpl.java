@@ -8,12 +8,17 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import ynu.jackielinn.server.common.Feedback;
 import ynu.jackielinn.server.dto.request.ChatRequestRO;
 import ynu.jackielinn.server.dto.request.FeedbackRO;
@@ -26,10 +31,14 @@ import ynu.jackielinn.server.mapper.ConversationMapper;
 import ynu.jackielinn.server.mapper.MessageMapper;
 import ynu.jackielinn.server.service.AssistantService;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Executor;
 
 @Slf4j
 @Service
@@ -49,6 +58,12 @@ public class AssistantServiceImpl implements AssistantService {
 
     @Resource
     private RestTemplate restTemplate;
+
+    @Resource(name = "assistantWebClient")
+    private WebClient assistantWebClient;
+
+    @Resource(name = "assistantChatStreamExecutor")
+    private Executor assistantChatStreamExecutor;
 
     /**
      * 创建或复用空会话。先查当前用户是否有 message_count=0 的会话，有则返回其 id，否则新建。
@@ -237,6 +252,116 @@ public class AssistantServiceImpl implements AssistantService {
                 .build());
 
         return resp;
+    }
+
+    /**
+     * 流式聊天。存 user 消息 -> WebClient 调 Python 流式接口 -> 解析 SSE 转发 -> 流结束后存 assistant 消息、更新 conversation。
+     *
+     * @param uid 当前用户 id
+     * @param ro  聊天请求（cid、message）
+     * @return SseEmitter，用于向前端推送 SSE
+     */
+    @Override
+    public SseEmitter chatStream(Long uid, ChatRequestRO ro) {
+        SseEmitter emitter = new SseEmitter(300_000L);
+        SecurityContext ctx = SecurityContextHolder.getContext();
+        assistantChatStreamExecutor.execute(() -> {
+            try {
+                SecurityContextHolder.setContext(ctx);
+                Conversation conv = getOrCreateConversation(ro.getCid(), uid);
+                Long cid = conv.getId();
+                Integer seq = getNextSequenceNum(cid);
+
+                saveMessage(SaveMessageRO.builder()
+                        .cid(cid)
+                        .role("user")
+                        .content(ro.getMessage())
+                        .sequenceNum(seq)
+                        .feedback(Feedback.NONE)
+                        .build());
+
+                StringBuilder buffer = new StringBuilder();
+                final Long cidFinal = cid;
+                final Conversation convFinal = conv;
+                final int seqFinal = seq != null ? seq : 1;
+
+                Map<String, Object> body = new HashMap<>();
+                body.put("message", ro.getMessage());
+                body.put("context_data", null);
+                assistantWebClient.post()
+                        .uri("/api/assistant/chat/stream")
+                        .bodyValue(body)
+                        .retrieve()
+                        .bodyToFlux(DataBuffer.class)
+                        .subscribe(
+                                dataBuffer -> {
+                                    SecurityContextHolder.setContext(ctx);
+                                    buffer.append(dataBuffer.toString(StandardCharsets.UTF_8));
+                                    int idx;
+                                    while ((idx = buffer.indexOf("\n\n")) >= 0) {
+                                        String event = buffer.substring(0, idx).trim();
+                                        buffer.delete(0, idx + 2);
+                                        if (event.startsWith("data: ")) {
+                                            String json = event.substring(6);
+                                            try {
+                                                JSONObject obj = JSON.parseObject(json);
+                                                String type = obj.getString("type");
+                                                String content = obj.getString("content");
+                                                if ("delta".equals(type)) {
+                                                    emitter.send(SseEmitter.event().data(json));
+                                                } else if ("done".equals(type)) {
+                                                    saveMessage(SaveMessageRO.builder()
+                                                            .cid(cidFinal)
+                                                            .role("assistant")
+                                                            .content(content != null ? content : "")
+                                                            .sequenceNum(seqFinal + 1)
+                                                            .sourcesJson("[]")
+                                                            .feedback(Feedback.NONE)
+                                                            .build());
+                                                    int newCount = (convFinal.getMessageCount() == null ? 0 : convFinal.getMessageCount()) + 2;
+                                                    String newTitle = convFinal.getTitle();
+                                                    if (DEFAULT_TITLE.equals(convFinal.getTitle())) {
+                                                        String msg = ro.getMessage();
+                                                        newTitle = msg.length() > TITLE_MAX_LEN ? msg.substring(0, TITLE_MAX_LEN) + "..." : msg;
+                                                    }
+                                                    updateConversation(UpdateConversationRO.builder()
+                                                            .id(cidFinal)
+                                                            .messageCount(newCount)
+                                                            .title(newTitle)
+                                                            .build());
+                                                    emitter.send(SseEmitter.event().data(json));
+                                                    emitter.complete();
+                                                } else if ("error".equals(type)) {
+                                                    emitter.completeWithError(new RuntimeException(content != null ? content : "智能助手服务异常"));
+                                                }
+                                            } catch (Exception e) {
+                                                log.warn("Parse SSE event failed: {}", e.getMessage());
+                                            }
+                                        }
+                                    }
+                                },
+                                err -> {
+                                    SecurityContextHolder.setContext(ctx);
+                                    log.error("Assistant chat stream error", err);
+                                    emitter.completeWithError(err);
+                                },
+                                () -> {
+                                    SecurityContextHolder.setContext(ctx);
+                                    try {
+                                        emitter.complete();
+                                    } catch (Exception e) {
+                                        log.debug("Emitter already completed: {}", e.getMessage());
+                                    }
+                                }
+                        );
+            } catch (Exception e) {
+                log.error("Assistant chatStream failed", e);
+                emitter.completeWithError(e);
+            } finally {
+                SecurityContextHolder.clearContext();
+            }
+        });
+        return emitter;
     }
 
     /**

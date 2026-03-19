@@ -1,6 +1,8 @@
 {
   "common": {
     "user": "用户",
+    "today": "今天",
+    "yesterday": "昨天",
     "confirm": "确认",
     "cancel": "取消",
     "logout": "退出登录",
@@ -435,6 +437,7 @@
     "deleteConv": "删除对话",
     "confirmDeleteConv": "确定删除该对话吗？删除后无法恢复。",
     "noConvFound": "未找到相关对话",
+    "noChatHistory": "暂无聊天记录",
     "footerTip": "由大模型提供支持",
     "welcomeTitle": "你好，我是 MHFL 智能助手",
     "welcomeSub": "我可以帮你解答联邦学习相关问题、推荐算法配置、分析训练结果，快来试试吧！",
