@@ -295,16 +295,25 @@ const sendMessage = () => {
     streamingMsgId.value = assistantMsgId
     nextTick(() => msgListRef.value?.scrollToBottom())
 
+    const updateAssistantMessage = (updater: (current: Message) => Message) => {
+      const currentDetail = activeConvDetail.value
+      if (!currentDetail) return
+      const idx = currentDetail.messages.findIndex(m => m.id === assistantMsgId)
+      if (idx < 0) return
+      const current = currentDetail.messages[idx]
+      if (!current) return
+      currentDetail.messages[idx] = updater(current)
+    }
+
     chatStream(
         {cid, message: text},
         {
           onDelta: (content) => {
-            assistantMsg.content += content
+            updateAssistantMessage((current) => ({...current, content: `${current.content}${content}`}))
             nextTick(() => msgListRef.value?.scrollToBottom())
           },
           onDone: (fullContent) => {
-            assistantMsg.content = fullContent
-            assistantMsg.streaming = false
+            updateAssistantMessage((current) => ({...current, content: fullContent, streaming: false}))
             streamingMsgId.value = null
             isSending.value = false
             loadList()
@@ -312,8 +321,11 @@ const sendMessage = () => {
             nextTick(() => msgListRef.value?.scrollToBottom())
           },
           onError: (msg) => {
-            assistantMsg.content = msg
-            assistantMsg.streaming = false
+            updateAssistantMessage((current) => ({
+              ...current,
+              content: current.content || msg,
+              streaming: false
+            }))
             streamingMsgId.value = null
             isSending.value = false
             ElMessage.warning(msg)

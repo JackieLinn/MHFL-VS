@@ -8,11 +8,12 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -31,7 +32,6 @@ import ynu.jackielinn.server.mapper.ConversationMapper;
 import ynu.jackielinn.server.mapper.MessageMapper;
 import ynu.jackielinn.server.service.AssistantService;
 
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
 @Service
@@ -280,83 +281,55 @@ public class AssistantServiceImpl implements AssistantService {
                         .feedback(Feedback.NONE)
                         .build());
 
-                StringBuilder buffer = new StringBuilder();
                 final Long cidFinal = cid;
                 final Conversation convFinal = conv;
                 final int seqFinal = seq != null ? seq : 1;
+                final AtomicBoolean completed = new AtomicBoolean(false);
 
                 Map<String, Object> body = new HashMap<>();
                 body.put("message", ro.getMessage());
                 body.put("context_data", null);
                 assistantWebClient.post()
                         .uri("/api/assistant/chat/stream")
+                        .accept(MediaType.TEXT_EVENT_STREAM)
                         .bodyValue(body)
                         .retrieve()
-                        .bodyToFlux(DataBuffer.class)
+                        .bodyToFlux(new ParameterizedTypeReference<ServerSentEvent<String>>() {
+                        })
                         .subscribe(
-                                dataBuffer -> {
+                                event -> {
                                     SecurityContextHolder.setContext(ctx);
-                                    buffer.append(dataBuffer.toString(StandardCharsets.UTF_8));
-                                    int idx;
-                                    while ((idx = buffer.indexOf("\n\n")) >= 0) {
-                                        String event = buffer.substring(0, idx).trim();
-                                        buffer.delete(0, idx + 2);
-                                        if (event.startsWith("data: ")) {
-                                            String json = event.substring(6);
-                                            try {
-                                                JSONObject obj = JSON.parseObject(json);
-                                                String type = obj.getString("type");
-                                                String content = obj.getString("content");
-                                                if ("delta".equals(type)) {
-                                                    emitter.send(SseEmitter.event().data(json));
-                                                } else if ("done".equals(type)) {
-                                                    saveMessage(SaveMessageRO.builder()
-                                                            .cid(cidFinal)
-                                                            .role("assistant")
-                                                            .content(content != null ? content : "")
-                                                            .sequenceNum(seqFinal + 1)
-                                                            .sourcesJson("[]")
-                                                            .feedback(Feedback.NONE)
-                                                            .build());
-                                                    int newCount = (convFinal.getMessageCount() == null ? 0 : convFinal.getMessageCount()) + 2;
-                                                    String newTitle = convFinal.getTitle();
-                                                    if (DEFAULT_TITLE.equals(convFinal.getTitle())) {
-                                                        String msg = ro.getMessage();
-                                                        newTitle = msg.length() > TITLE_MAX_LEN ? msg.substring(0, TITLE_MAX_LEN) + "..." : msg;
-                                                    }
-                                                    updateConversation(UpdateConversationRO.builder()
-                                                            .id(cidFinal)
-                                                            .messageCount(newCount)
-                                                            .title(newTitle)
-                                                            .build());
-                                                    emitter.send(SseEmitter.event().data(json));
-                                                    emitter.complete();
-                                                } else if ("error".equals(type)) {
-                                                    emitter.completeWithError(new RuntimeException(content != null ? content : "智能助手服务异常"));
-                                                }
-                                            } catch (Exception e) {
-                                                log.warn("Parse SSE event failed: {}", e.getMessage());
-                                            }
-                                        }
+                                    String data = event.data();
+                                    if (data != null && !data.isBlank()) {
+                                        handleSseEvent(data, emitter, cidFinal, convFinal, seqFinal, ro.getMessage(), completed);
                                     }
                                 },
                                 err -> {
                                     SecurityContextHolder.setContext(ctx);
                                     log.error("Assistant chat stream error", err);
-                                    emitter.completeWithError(err);
+                                    if (!completed.get()) {
+                                        sendTerminalEvent(emitter, "error", "Assistant stream proxy error");
+                                        completed.set(true);
+                                        emitter.complete();
+                                    }
                                 },
                                 () -> {
                                     SecurityContextHolder.setContext(ctx);
                                     try {
-                                        emitter.complete();
+                                        if (!completed.get()) {
+                                            sendTerminalEvent(emitter, "error", "Assistant stream ended before done event");
+                                            completed.set(true);
+                                            emitter.complete();
+                                        }
                                     } catch (Exception e) {
-                                        log.debug("Emitter already completed: {}", e.getMessage());
+                                        log.debug("Emitter completion handling failed: {}", e.getMessage());
                                     }
                                 }
                         );
             } catch (Exception e) {
                 log.error("Assistant chatStream failed", e);
-                emitter.completeWithError(e);
+                sendTerminalEvent(emitter, "error", "Assistant chat stream failed");
+                emitter.complete();
             } finally {
                 SecurityContextHolder.clearContext();
             }
@@ -502,6 +475,80 @@ public class AssistantServiceImpl implements AssistantService {
     @Override
     public Conversation getConversationById(Long id) {
         return conversationMapper.selectById(id);
+    }
+
+    private void handleSseEvent(String json,
+                                SseEmitter emitter,
+                                Long cid,
+                                Conversation conv,
+                                int seq,
+                                String userMessage,
+                                AtomicBoolean completed) {
+        try {
+            JSONObject obj = JSON.parseObject(json);
+            String type = obj.getString("type");
+            if ("delta".equals(type)) {
+                emitter.send(SseEmitter.event().data(json));
+                return;
+            }
+            if ("done".equals(type)) {
+                persistAssistantReply(cid, conv, seq, userMessage, obj);
+                emitter.send(SseEmitter.event().data(json));
+                completed.set(true);
+                emitter.complete();
+                return;
+            }
+            if ("error".equals(type)) {
+                completed.set(true);
+                String message = obj.getString("content");
+                sendTerminalEvent(emitter, "error", message != null ? message : "Assistant stream error");
+                emitter.complete();
+            }
+        } catch (Exception e) {
+            log.warn("Parse SSE event failed: {}", e.getMessage());
+        }
+    }
+
+    private void persistAssistantReply(Long cid,
+                                       Conversation conv,
+                                       int seq,
+                                       String userMessage,
+                                       JSONObject donePayload) {
+        String content = donePayload.getString("content");
+        String sourcesJson = "[]";
+        JSONArray arr = donePayload.getJSONArray("sources");
+        if (arr != null) {
+            sourcesJson = arr.toJSONString();
+        }
+        saveMessage(SaveMessageRO.builder()
+                .cid(cid)
+                .role("assistant")
+                .content(content != null ? content : "")
+                .sequenceNum(seq + 1)
+                .sourcesJson(sourcesJson)
+                .feedback(Feedback.NONE)
+                .build());
+        int newCount = (conv.getMessageCount() == null ? 0 : conv.getMessageCount()) + 2;
+        String newTitle = conv.getTitle();
+        if (DEFAULT_TITLE.equals(conv.getTitle())) {
+            newTitle = userMessage.length() > TITLE_MAX_LEN ? userMessage.substring(0, TITLE_MAX_LEN) + "..." : userMessage;
+        }
+        updateConversation(UpdateConversationRO.builder()
+                .id(cid)
+                .messageCount(newCount)
+                .title(newTitle)
+                .build());
+    }
+
+    private void sendTerminalEvent(SseEmitter emitter, String type, String message) {
+        try {
+            JSONObject payload = new JSONObject();
+            payload.put("type", type);
+            payload.put("content", message);
+            emitter.send(SseEmitter.event().data(payload.toJSONString()));
+        } catch (Exception ex) {
+            log.debug("Send terminal SSE event failed: {}", ex.getMessage());
+        }
     }
 
     /**

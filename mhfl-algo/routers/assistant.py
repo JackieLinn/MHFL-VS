@@ -62,12 +62,13 @@ async def chat_stream(req: ChatRequest):
         try:
             docs = retrieve(req.message)
             system, user = build_rag_prompt(req.message, docs)
+            sources = list({d.metadata.get("source", "") for d in docs if d.metadata.get("source", "")})
             llm = _get_llm_streaming()
             async for chunk in llm.astream([{"role": "system", "content": system}, {"role": "user", "content": user}]):
                 if chunk.content:
                     full += chunk.content
                     yield f"data: {json.dumps({'type': 'delta', 'content': chunk.content}, ensure_ascii=False)}\n\n"
-            yield f"data: {json.dumps({'type': 'done', 'content': full}, ensure_ascii=False)}\n\n"
+            yield f"data: {json.dumps({'type': 'done', 'content': full, 'sources': sources}, ensure_ascii=False)}\n\n"
         except Exception as e:
             logger.exception("Assistant chat_stream failed: %s", e)
             err_msg = _classify_error(str(e))[1]
