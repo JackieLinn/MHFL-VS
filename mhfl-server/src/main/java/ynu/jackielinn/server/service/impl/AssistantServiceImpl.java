@@ -17,6 +17,8 @@ import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -24,6 +26,8 @@ import reactor.core.Disposable;
 import ynu.jackielinn.server.common.Feedback;
 import ynu.jackielinn.server.dto.request.ChatRequestRO;
 import ynu.jackielinn.server.dto.request.FeedbackRO;
+import ynu.jackielinn.server.dto.request.ListAlgorithmRO;
+import ynu.jackielinn.server.dto.request.ListDatasetRO;
 import ynu.jackielinn.server.dto.request.SaveMessageRO;
 import ynu.jackielinn.server.dto.request.UpdateConversationRO;
 import ynu.jackielinn.server.dto.response.*;
@@ -31,7 +35,10 @@ import ynu.jackielinn.server.entity.Conversation;
 import ynu.jackielinn.server.entity.Message;
 import ynu.jackielinn.server.mapper.ConversationMapper;
 import ynu.jackielinn.server.mapper.MessageMapper;
+import ynu.jackielinn.server.service.AlgorithmService;
 import ynu.jackielinn.server.service.AssistantService;
+import ynu.jackielinn.server.service.DashboardService;
+import ynu.jackielinn.server.service.DatasetService;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -71,6 +78,15 @@ public class AssistantServiceImpl implements AssistantService {
 
     @Resource(name = "assistantChatStreamExecutor")
     private Executor assistantChatStreamExecutor;
+
+    @Resource
+    private DashboardService dashboardService;
+
+    @Resource
+    private AlgorithmService algorithmService;
+
+    @Resource
+    private DatasetService datasetService;
 
     /**
      * 创建或复用空会话。先查当前用户是否有 message_count=0 的会话，有则返回其 id，否则新建。
@@ -231,8 +247,10 @@ public class AssistantServiceImpl implements AssistantService {
                 .feedback(Feedback.NONE)
                 .build());
 
-        // 2. 调 Python
-        ChatResponseVO resp = callPythonChat(ro.getMessage());
+        // 2. 意图分类 -> 预取业务数据 -> 调 Python
+        ClassifyResult classifyResult = callPythonClassify(ro.getMessage());
+        Map<String, Object> contextData = buildContextData(uid, classifyResult);
+        ChatResponseVO resp = callPythonChat(ro.getMessage(), contextData);
 
         // 3. 存 assistant 消息
         String sourcesJson = resp.getSources() != null ? JSON.toJSONString(resp.getSources()) : "[]";
@@ -317,9 +335,12 @@ public class AssistantServiceImpl implements AssistantService {
                 final Conversation convFinal = conv;
                 final int seqFinal = seq != null ? seq : 1;
 
+                ClassifyResult classifyResult = callPythonClassify(ro.getMessage());
+                Map<String, Object> contextData = buildContextData(uid, classifyResult);
+
                 Map<String, Object> body = new HashMap<>();
                 body.put("message", ro.getMessage());
-                body.put("context_data", null);
+                body.put("context_data", contextData);
                 Disposable disposable = assistantWebClient.post()
                         .uri("/api/assistant/chat/stream")
                         .accept(MediaType.TEXT_EVENT_STREAM)
@@ -702,19 +723,100 @@ public class AssistantServiceImpl implements AssistantService {
     }
 
     /**
-     * 调用 Python FastAPI /api/assistant/chat 获取非流式回复。
+     * 调用 Python FastAPI /api/assistant/classify 进行意图分类。
      *
      * @param message 用户消息内容
+     * @return 分类结果（needs_tasks、needs_algorithms、needs_datasets），异常时返回全 false
+     */
+    private ClassifyResult callPythonClassify(String message) {
+        String url = pythonFastApiUrl + "/api/assistant/classify";
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        JSONObject body = new JSONObject();
+        body.put("message", message);
+        HttpEntity<String> entity = new HttpEntity<>(body.toJSONString(), headers);
+        try {
+            ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
+            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+                return new ClassifyResult(false, false, false);
+            }
+            JSONObject json = JSON.parseObject(response.getBody());
+            Integer code = json.getInteger("code");
+            if (code == null || code != 200) {
+                return new ClassifyResult(false, false, false);
+            }
+            JSONObject data = json.getJSONObject("data");
+            if (data == null) {
+                return new ClassifyResult(false, false, false);
+            }
+            boolean needsTasks = Boolean.TRUE.equals(data.getBoolean("needs_tasks"));
+            boolean needsAlgorithms = Boolean.TRUE.equals(data.getBoolean("needs_algorithms"));
+            boolean needsDatasets = Boolean.TRUE.equals(data.getBoolean("needs_datasets"));
+            return new ClassifyResult(needsTasks, needsAlgorithms, needsDatasets);
+        } catch (Exception e) {
+            log.warn("Assistant classify failed, using empty context: {}", e.getMessage());
+            return new ClassifyResult(false, false, false);
+        }
+    }
+
+    /**
+     * 根据意图分类结果预取业务数据，仅返回 VO，不返回实体。
+     *
+     * @param uid            当前用户 id
+     * @param classifyResult 意图分类结果
+     * @return context_data Map，供 Python 拼入 prompt
+     */
+    private Map<String, Object> buildContextData(Long uid, ClassifyResult classifyResult) {
+        Map<String, Object> ctx = new HashMap<>();
+        boolean isAdmin = isAdmin();
+
+        if (classifyResult.needsTasks()) {
+            List<TaskVO> recentTasks = dashboardService.getRecentTasks(uid, isAdmin);
+            ctx.put("recentTasks", recentTasks.size() > 5 ? recentTasks.subList(0, 5) : recentTasks);
+            DashboardStatCardsVO taskStats = dashboardService.getStatCards(uid, isAdmin);
+            ctx.put("taskStats", taskStats);
+        }
+        if (classifyResult.needsAlgorithms()) {
+            List<AlgorithmVO> algorithms = algorithmService.listAlgorithms(
+                    ListAlgorithmRO.builder().all(true).build()).getRecords();
+            ctx.put("algorithms", algorithms);
+        }
+        if (classifyResult.needsDatasets()) {
+            List<DatasetVO> datasets = datasetService.listDatasets(
+                    ListDatasetRO.builder().all(true).build()).getRecords();
+            ctx.put("datasets", datasets);
+        }
+        return ctx;
+    }
+
+    /**
+     * 判断当前用户是否为管理员。
+     */
+    private boolean isAdmin() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) {
+            return false;
+        }
+        return auth.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch("ROLE_admin"::equals);
+    }
+
+    /**
+     * 调用 Python FastAPI /api/assistant/chat 获取非流式回复。
+     *
+     * @param message     用户消息内容
+     * @param contextData 预取的业务数据（可为空）
      * @return 助手回复（content、sources）
      * @throws RuntimeException 调用失败或响应格式异常时
      */
-    private ChatResponseVO callPythonChat(String message) {
+    private ChatResponseVO callPythonChat(String message, Map<String, Object> contextData) {
         String url = pythonFastApiUrl + "/api/assistant/chat";
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         JSONObject body = new JSONObject();
         body.put("message", message);
-        body.put("context_data", null);
+        body.put("context_data", contextData != null ? contextData : Collections.emptyMap());
         HttpEntity<String> entity = new HttpEntity<>(body.toJSONString(), headers);
 
         ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
@@ -775,5 +877,11 @@ public class AssistantServiceImpl implements AssistantService {
             log.warn("Parse sources_json failed: {}", e.getMessage());
             return Collections.emptyList();
         }
+    }
+
+    /**
+     * 意图分类结果，用于决定预取哪些业务数据。
+     */
+    private record ClassifyResult(boolean needsTasks, boolean needsAlgorithms, boolean needsDatasets) {
     }
 }

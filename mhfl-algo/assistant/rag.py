@@ -47,13 +47,13 @@ def _get_llm() -> ChatOpenAI:
     return ChatOpenAI(**llm_kwargs)
 
 
-def answer(query: str) -> tuple[str, list[str]]:
+def answer(query: str, context_data: dict | None = None) -> tuple[str, list[str]]:
     """RAG 回答：检索 -> [rerank] -> 拼 prompt -> 调 LLM -> 返回 (content, sources)"""
     docs = get_docs_for_query(query)
-    if not docs:
+    if not docs and not context_data:
         return "未找到相关文档，请换一种问法或联系管理员。", []
-    system, user = build_rag_prompt(query, docs)
+    system, user = build_rag_prompt(query, docs, context_data)
     llm = _get_llm()
     resp = llm.invoke([{"role": "system", "content": system}, {"role": "user", "content": user}])
-    sources = list({d.metadata.get("source", "") for d in docs})
+    sources = list({d.metadata.get("source", "") for d in docs}) if docs else []
     return resp.content, sources

@@ -112,6 +112,18 @@ class HealthStatus(BaseModel):
 
 
 # 智能助手模型
+class ClassifyRequest(BaseModel):
+    """意图分类请求体"""
+    message: str = Field(..., min_length=1, max_length=8000)
+
+
+class ClassifyResponse(BaseModel):
+    """意图分类响应"""
+    needs_tasks: bool = False
+    needs_algorithms: bool = False
+    needs_datasets: bool = False
+
+
 class ChatRequest(BaseModel):
     """聊天请求体"""
     conversation_id: Optional[int] = None

@@ -14,4 +14,4 @@ def chat(message: str, context_data: dict | None = None) -> tuple[str, list[str]
     """
     if not settings.OPENAI_API_KEY or not settings.OPENAI_API_KEY.strip():
         raise ValueError("API key invalid or not configured")
-    return rag_answer(message)
+    return rag_answer(message, context_data)

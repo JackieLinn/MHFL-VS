@@ -13,11 +13,12 @@ from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from openai import AsyncOpenAI
 
+from assistant.classifier import classify_intent
 from assistant.prompt import build_rag_prompt
 from assistant.rag import get_docs_for_query
 from config.settings import settings
 from services.assistant_service import chat as assistant_chat
-from utils.schemas import ApiResponse, ChatRequest, ChatResponse
+from utils.schemas import ApiResponse, ChatRequest, ChatResponse, ClassifyRequest, ClassifyResponse
 
 router = APIRouter(prefix="/api/assistant", tags=["智能助手"])
 logger = logging.getLogger(__name__)
@@ -31,6 +32,17 @@ def _get_openai_client() -> AsyncOpenAI:
     if settings.OPENAI_API_BASE:
         kwargs["base_url"] = settings.OPENAI_API_BASE
     return AsyncOpenAI(**kwargs)
+
+
+@router.post("/classify")
+async def classify(req: ClassifyRequest):
+    """根据用户问题判断需要预取哪些业务数据（任务、算法、数据集）"""
+    try:
+        result = classify_intent(req.message)
+        return ApiResponse.success(data=ClassifyResponse(**result))
+    except Exception as e:
+        logger.exception("Assistant classify failed: %s", e)
+        return ApiResponse.success(data=ClassifyResponse())
 
 
 def _classify_error(msg: str) -> tuple[int, str]:
@@ -70,7 +82,7 @@ async def chat_stream(req: ChatRequest):
         full_parts: list[str] = []
         try:
             docs = get_docs_for_query(req.message)
-            system, user = build_rag_prompt(req.message, docs)
+            system, user = build_rag_prompt(req.message, docs, req.context_data)
             sources = list({d.metadata.get("source", "") for d in docs if d.metadata.get("source", "")})
             client = _get_openai_client()
 
