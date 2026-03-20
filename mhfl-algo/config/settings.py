@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     ASSISTANT_CHUNK_OVERLAP: int = 50
     ASSISTANT_ENABLE_RERANK: bool = False
     ASSISTANT_ENABLE_MULTI_QUERY: bool = False
+    ASSISTANT_STREAM_TIMEOUT_SECONDS: int = 900
 
     model_config = SettingsConfigDict(
         env_file=BASE_DIR / ".env",

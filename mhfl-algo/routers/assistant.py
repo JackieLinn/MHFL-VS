@@ -1,14 +1,17 @@
 """
-智能助手 FastAPI 路由
-- POST /api/assistant/chat: 非流式聊天
-- POST /api/assistant/chat/stream: 流式聊天（步骤 9）
+Assistant FastAPI router.
+- POST /api/assistant/chat: non-streaming chat
+- POST /api/assistant/chat/stream: SSE streaming chat
 """
+
+from __future__ import annotations
+
 import json
 import logging
 
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
-from langchain_openai import ChatOpenAI
+from openai import AsyncOpenAI
 
 from assistant.prompt import build_rag_prompt
 from assistant.retriever import retrieve
@@ -20,16 +23,17 @@ router = APIRouter(prefix="/api/assistant", tags=["智能助手"])
 logger = logging.getLogger(__name__)
 
 
-def _get_llm_streaming():
-    """获取流式 LLM 实例"""
-    llm_kwargs = {"model": settings.ASSISTANT_MODEL, "temperature": 0, "api_key": settings.OPENAI_API_KEY}
+def _get_openai_client() -> AsyncOpenAI:
+    kwargs: dict[str, str | int] = {
+        "api_key": settings.OPENAI_API_KEY,
+        "timeout": settings.ASSISTANT_STREAM_TIMEOUT_SECONDS,
+    }
     if settings.OPENAI_API_BASE:
-        llm_kwargs["base_url"] = settings.OPENAI_API_BASE
-    return ChatOpenAI(**llm_kwargs, streaming=True)
+        kwargs["base_url"] = settings.OPENAI_API_BASE
+    return AsyncOpenAI(**kwargs)
 
 
 def _classify_error(msg: str) -> tuple[int, str]:
-    """根据异常信息返回 (code, user_message)"""
     msg_lower = msg.lower()
     if "api key" in msg_lower or "authentication" in msg_lower or "invalid" in msg_lower:
         return 401, "API 密钥无效或未配置，请检查 OPENAI_API_KEY"
@@ -55,20 +59,47 @@ async def chat(req: ChatRequest):
 
 @router.post("/chat/stream")
 async def chat_stream(req: ChatRequest):
-    """流式聊天：每 chunk 发 data: {type:delta, content}，结束发 data: {type:done, content}"""
+    """
+    True backend streaming with SSE events:
+    - delta: incremental token text
+    - done: full content + sources
+    - error: terminal error
+    """
 
     async def gen():
-        full = ""
+        full_parts: list[str] = []
         try:
             docs = retrieve(req.message)
             system, user = build_rag_prompt(req.message, docs)
             sources = list({d.metadata.get("source", "") for d in docs if d.metadata.get("source", "")})
-            llm = _get_llm_streaming()
-            async for chunk in llm.astream([{"role": "system", "content": system}, {"role": "user", "content": user}]):
-                if chunk.content:
-                    full += chunk.content
-                    yield f"data: {json.dumps({'type': 'delta', 'content': chunk.content}, ensure_ascii=False)}\n\n"
-            yield f"data: {json.dumps({'type': 'done', 'content': full, 'sources': sources}, ensure_ascii=False)}\n\n"
+            client = _get_openai_client()
+
+            # Start event helps frontend mark stream as connected quickly.
+            yield f"data: {json.dumps({'type': 'start'}, ensure_ascii=False)}\n\n"
+
+            stream = await client.chat.completions.create(
+                model=settings.ASSISTANT_MODEL,
+                temperature=0,
+                stream=True,
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": user},
+                ],
+            )
+
+            async for event in stream:
+                if not event.choices:
+                    continue
+                delta = event.choices[0].delta.content
+                if not delta:
+                    continue
+                full_parts.append(delta)
+                yield f"data: {json.dumps({'type': 'delta', 'content': delta}, ensure_ascii=False)}\n\n"
+
+            full = "".join(full_parts)
+            yield (
+                f"data: {json.dumps({'type': 'done', 'content': full, 'sources': sources}, ensure_ascii=False)}\n\n"
+            )
         except Exception as e:
             logger.exception("Assistant chat_stream failed: %s", e)
             err_msg = _classify_error(str(e))[1]
@@ -77,5 +108,9 @@ async def chat_stream(req: ChatRequest):
     return StreamingResponse(
         gen(),
         media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
     )

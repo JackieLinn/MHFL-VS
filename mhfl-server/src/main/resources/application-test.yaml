@@ -46,6 +46,14 @@ python:
   fastapi:
     url: ${PYTHON_FASTAPI_URL:http://localhost:8000}
 
+assistant:
+  stream:
+    emitter-timeout-ms: 900000
+    connect-timeout-ms: 10000
+    response-timeout-ms: 900000
+    read-timeout-seconds: 900
+    write-timeout-seconds: 120
+
 logging:
   level:
     root: info

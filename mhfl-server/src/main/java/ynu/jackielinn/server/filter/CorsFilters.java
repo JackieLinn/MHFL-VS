@@ -48,5 +48,11 @@ public class CorsFilters extends HttpFilter {
         response.addHeader("Access-Control-Allow-Origin", request.getHeader("Origin"));
         response.addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, DELETE, PUT");
         response.addHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
+        String uri = request.getRequestURI();
+        if (uri != null && uri.startsWith("/api/assistant/chat/stream")) {
+            response.setHeader("Cache-Control", "no-cache");
+            response.setHeader("Connection", "keep-alive");
+            response.setHeader("X-Accel-Buffering", "no");
+        }
     }
 }

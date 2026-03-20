@@ -1,7 +1,9 @@
 /**
  * Assistant APIs
  */
-import {del, get, post, put} from '@/utils'
+import {del, get, post, put, takeAccessToken} from '@/utils'
+
+const API_BASE = 'http://localhost:8088'
 
 export interface CreateConversationVO {
     id: number
@@ -101,63 +103,138 @@ export interface StreamCallbacks {
     onError: (message: string) => void
 }
 
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
-
-const clamp = (value: number, min: number, max: number) => {
-    if (value < min) return min
-    if (value > max) return max
-    return value
+interface StreamEventPayload {
+    type?: 'start' | 'delta' | 'done' | 'error' | string
+    content?: string
 }
 
-const emitSimulatedStream = async (
-    fullText: string,
-    callbacks: StreamCallbacks
-) => {
-    const text = fullText ?? ''
-    if (!text) {
-        callbacks.onDone('')
-        return
-    }
+const normalizeSseChunk = (chunk: string) =>
+    chunk.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
 
-    const chars = Array.from(text)
-    const baseTickMs = 26
-    const minDurationMs = clamp(chars.length * 24, 1800, 10000)
-    const totalTicks = Math.max(1, Math.floor(minDurationMs / baseTickMs))
-    const charsPerTick = clamp(Math.ceil(chars.length / totalTicks), 1, 4)
+const parseSseEventBlock = (eventBlock: string): StreamEventPayload | null => {
+    const dataLines = eventBlock
+        .split('\n')
+        .filter((line) => line.startsWith('data:'))
+        .map((line) => line.slice(5).trim())
 
-    await sleep(120)
-    for (let i = 0; i < chars.length; i += charsPerTick) {
-        const part = chars.slice(i, i + charsPerTick).join('')
-        callbacks.onDelta(part)
-        const lastChar = chars[Math.min(i + charsPerTick - 1, chars.length - 1)] ?? ''
-        const pause = /[，。！？；：,.!?;:]/.test(lastChar) ? 90 : baseTickMs
-        await sleep(pause)
+    if (!dataLines.length) return null
+
+    const jsonText = dataLines.join('\n')
+    if (!jsonText) return null
+
+    try {
+        return JSON.parse(jsonText) as StreamEventPayload
+    } catch {
+        return null
     }
-    callbacks.onDone(text)
 }
 
 /**
- * Stable streaming UX:
- * - Call non-stream chat endpoint for reliable DB persistence
- * - Render content incrementally on frontend
+ * Real backend stream chain:
+ * frontend -> SpringBoot /api/assistant/chat/stream -> FastAPI /api/assistant/chat/stream
  */
 export const chatStream = async (
     ro: ChatRequestRO,
     callbacks: StreamCallbacks
 ): Promise<void> => {
-    await new Promise<void>((resolve) => {
-        chat(
-            ro,
-            async (data) => {
-                await emitSimulatedStream(data?.content ?? '', callbacks)
-                resolve()
+    const token = takeAccessToken()
+    if (!token) {
+        callbacks.onError('未登录或登录已过期')
+        return
+    }
+
+    let doneReceived = false
+    let buffer = ''
+    let fullFromDelta = ''
+
+    try {
+        const res = await fetch(`${API_BASE}/api/assistant/chat/stream`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'text/event-stream',
+                'Authorization': `Bearer ${token}`,
             },
-            (message) => {
-                callbacks.onError(message || 'Network error')
-                resolve()
+            body: JSON.stringify({
+                cid: ro.cid ?? null,
+                message: ro.message,
+            }),
+        })
+
+        if (!res.ok) {
+            const text = await res.text()
+            let msg = `请求失败 (${res.status})`
+            try {
+                const parsed = JSON.parse(text)
+                if (parsed?.message) msg = parsed.message
+            } catch {
+                // ignore JSON parse failure
             }
-        )
-    })
+            callbacks.onError(msg)
+            return
+        }
+
+        const reader = res.body?.getReader()
+        if (!reader) {
+            callbacks.onError('无法读取流式响应')
+            return
+        }
+
+        const decoder = new TextDecoder()
+        const consumePayload = (payload: StreamEventPayload | null) => {
+            if (!payload?.type) return
+
+            if (payload.type === 'start') return
+
+            if (payload.type === 'delta') {
+                const delta = payload.content ?? ''
+                fullFromDelta += delta
+                callbacks.onDelta(delta)
+                return
+            }
+
+            if (payload.type === 'done') {
+                doneReceived = true
+                const full = payload.content ?? fullFromDelta
+                callbacks.onDone(full)
+                return
+            }
+
+            if (payload.type === 'error') {
+                callbacks.onError(payload.content ?? '智能助手流式输出异常')
+            }
+        }
+
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+            const {done, value} = await reader.read()
+            if (done) break
+
+            buffer += normalizeSseChunk(decoder.decode(value, {stream: true}))
+
+            let sep = buffer.indexOf('\n\n')
+            while (sep >= 0) {
+                const eventBlock = buffer.slice(0, sep)
+                buffer = buffer.slice(sep + 2)
+                consumePayload(parseSseEventBlock(eventBlock))
+                sep = buffer.indexOf('\n\n')
+            }
+        }
+
+        const tail = normalizeSseChunk(buffer + decoder.decode()).trim()
+        if (tail) {
+            consumePayload(parseSseEventBlock(tail))
+        }
+
+        if (!doneReceived) {
+            callbacks.onError('流式响应未正常结束')
+        }
+    } catch (e) {
+        if (!doneReceived) {
+            const message = e instanceof Error ? e.message : '网络错误'
+            callbacks.onError(message)
+        }
+    }
 }
 
 export const updateMessageFeedback = (

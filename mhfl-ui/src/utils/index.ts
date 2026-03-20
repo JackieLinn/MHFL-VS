@@ -30,7 +30,7 @@ const authItemName = "access_token";
 // =========================================================================
 const instance: AxiosInstance = axios.create({
     baseURL: 'http://localhost:8088',
-    timeout: 10000,
+    timeout: 60000,
     // 让所有状态码都进入 then，方便统一处理
     validateStatus: () => true
 });

@@ -24,14 +24,26 @@ public class WebClientConfiguration {
     @Value("${python.fastapi.url:http://localhost:8000}")
     private String pythonFastApiUrl;
 
+    @Value("${assistant.stream.connect-timeout-ms:10000}")
+    private int assistantStreamConnectTimeoutMs;
+
+    @Value("${assistant.stream.response-timeout-ms:900000}")
+    private long assistantStreamResponseTimeoutMs;
+
+    @Value("${assistant.stream.read-timeout-seconds:900}")
+    private long assistantStreamReadTimeoutSeconds;
+
+    @Value("${assistant.stream.write-timeout-seconds:120}")
+    private long assistantStreamWriteTimeoutSeconds;
+
     @Bean
     public WebClient assistantWebClient() {
         HttpClient httpClient = HttpClient.create()
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10_000)
-                .responseTimeout(Duration.ofMinutes(5))
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, assistantStreamConnectTimeoutMs)
+                .responseTimeout(Duration.ofMillis(assistantStreamResponseTimeoutMs))
                 .doOnConnected(conn -> {
-                    conn.addHandlerLast(new ReadTimeoutHandler(5, TimeUnit.MINUTES));
-                    conn.addHandlerLast(new WriteTimeoutHandler(60, TimeUnit.SECONDS));
+                    conn.addHandlerLast(new ReadTimeoutHandler(assistantStreamReadTimeoutSeconds, TimeUnit.SECONDS));
+                    conn.addHandlerLast(new WriteTimeoutHandler(assistantStreamWriteTimeoutSeconds, TimeUnit.SECONDS));
                 });
 
         return WebClient.builder()

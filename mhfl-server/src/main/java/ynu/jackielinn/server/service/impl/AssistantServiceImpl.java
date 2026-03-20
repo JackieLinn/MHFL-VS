@@ -20,6 +20,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import reactor.core.Disposable;
 import ynu.jackielinn.server.common.Feedback;
 import ynu.jackielinn.server.dto.request.ChatRequestRO;
 import ynu.jackielinn.server.dto.request.FeedbackRO;
@@ -40,16 +41,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
 @Service
 public class AssistantServiceImpl implements AssistantService {
 
     private static final String DEFAULT_TITLE = "新建对话";
+
     private static final int TITLE_MAX_LEN = 18;
 
     @Value("${python.fastapi.url:http://localhost:8000}")
     private String pythonFastApiUrl;
+
+    @Value("${assistant.stream.emitter-timeout-ms:900000}")
+    private Long assistantStreamEmitterTimeoutMs;
 
     @Resource
     private ConversationMapper conversationMapper;
@@ -264,8 +270,34 @@ public class AssistantServiceImpl implements AssistantService {
      */
     @Override
     public SseEmitter chatStream(Long uid, ChatRequestRO ro) {
-        SseEmitter emitter = new SseEmitter(300_000L);
+        SseEmitter emitter = new SseEmitter(assistantStreamEmitterTimeoutMs);
         SecurityContext ctx = SecurityContextHolder.getContext();
+        AtomicBoolean completed = new AtomicBoolean(false);
+        AtomicReference<Disposable> disposableRef = new AtomicReference<>();
+
+        emitter.onCompletion(() -> {
+            Disposable d = disposableRef.getAndSet(null);
+            if (d != null && !d.isDisposed()) {
+                d.dispose();
+            }
+        });
+        emitter.onTimeout(() -> {
+            Disposable d = disposableRef.getAndSet(null);
+            if (d != null && !d.isDisposed()) {
+                d.dispose();
+            }
+            if (!completed.getAndSet(true)) {
+                sendTerminalEvent(emitter, "error", "Assistant stream timeout");
+            }
+            emitter.complete();
+        });
+        emitter.onError(ex -> {
+            Disposable d = disposableRef.getAndSet(null);
+            if (d != null && !d.isDisposed()) {
+                d.dispose();
+            }
+        });
+
         assistantChatStreamExecutor.execute(() -> {
             try {
                 SecurityContextHolder.setContext(ctx);
@@ -284,12 +316,11 @@ public class AssistantServiceImpl implements AssistantService {
                 final Long cidFinal = cid;
                 final Conversation convFinal = conv;
                 final int seqFinal = seq != null ? seq : 1;
-                final AtomicBoolean completed = new AtomicBoolean(false);
 
                 Map<String, Object> body = new HashMap<>();
                 body.put("message", ro.getMessage());
                 body.put("context_data", null);
-                assistantWebClient.post()
+                Disposable disposable = assistantWebClient.post()
                         .uri("/api/assistant/chat/stream")
                         .accept(MediaType.TEXT_EVENT_STREAM)
                         .bodyValue(body)
@@ -298,38 +329,59 @@ public class AssistantServiceImpl implements AssistantService {
                         })
                         .subscribe(
                                 event -> {
-                                    SecurityContextHolder.setContext(ctx);
-                                    String data = event.data();
-                                    if (data != null && !data.isBlank()) {
-                                        handleSseEvent(data, emitter, cidFinal, convFinal, seqFinal, ro.getMessage(), completed);
+                                    try {
+                                        SecurityContextHolder.setContext(ctx);
+                                        String data = event.data();
+                                        if (!completed.get() && data != null && !data.isBlank()) {
+                                            handleSseEvent(data, emitter, cidFinal, convFinal, seqFinal, ro.getMessage(), completed);
+                                        }
+                                    } finally {
+                                        SecurityContextHolder.clearContext();
                                     }
                                 },
                                 err -> {
-                                    SecurityContextHolder.setContext(ctx);
-                                    log.error("Assistant chat stream error", err);
-                                    if (!completed.get()) {
-                                        sendTerminalEvent(emitter, "error", "Assistant stream proxy error");
-                                        completed.set(true);
-                                        emitter.complete();
+                                    try {
+                                        SecurityContextHolder.setContext(ctx);
+                                        log.error("Assistant chat stream error", err);
+                                        if (!completed.getAndSet(true)) {
+                                            sendTerminalEvent(emitter, "error", "Assistant stream proxy error");
+                                            emitter.complete();
+                                        }
+                                        Disposable d = disposableRef.getAndSet(null);
+                                        if (d != null && !d.isDisposed()) {
+                                            d.dispose();
+                                        }
+                                    } finally {
+                                        SecurityContextHolder.clearContext();
                                     }
                                 },
                                 () -> {
-                                    SecurityContextHolder.setContext(ctx);
                                     try {
-                                        if (!completed.get()) {
-                                            sendTerminalEvent(emitter, "error", "Assistant stream ended before done event");
-                                            completed.set(true);
-                                            emitter.complete();
+                                        SecurityContextHolder.setContext(ctx);
+                                        try {
+                                            if (!completed.getAndSet(true)) {
+                                                sendTerminalEvent(emitter, "error", "Assistant stream ended before done event");
+                                                emitter.complete();
+                                            }
+                                        } catch (Exception e) {
+                                            log.debug("Emitter completion handling failed: {}", e.getMessage());
                                         }
-                                    } catch (Exception e) {
-                                        log.debug("Emitter completion handling failed: {}", e.getMessage());
+                                        Disposable d = disposableRef.getAndSet(null);
+                                        if (d != null && !d.isDisposed()) {
+                                            d.dispose();
+                                        }
+                                    } finally {
+                                        SecurityContextHolder.clearContext();
                                     }
                                 }
                         );
+                disposableRef.set(disposable);
             } catch (Exception e) {
                 log.error("Assistant chatStream failed", e);
-                sendTerminalEvent(emitter, "error", "Assistant chat stream failed");
-                emitter.complete();
+                if (!completed.getAndSet(true)) {
+                    sendTerminalEvent(emitter, "error", "Assistant chat stream failed");
+                    emitter.complete();
+                }
             } finally {
                 SecurityContextHolder.clearContext();
             }
@@ -477,6 +529,21 @@ public class AssistantServiceImpl implements AssistantService {
         return conversationMapper.selectById(id);
     }
 
+    /**
+     * 处理来自 Python 流式接口的单条 SSE 事件，并转发给前端。
+     * 支持事件类型：start / delta / done / error。
+     * - done：落库 assistant 消息并更新会话，再结束 emitter
+     * - error：发送终态错误事件并结束 emitter
+     * 若事件不是标准 JSON，则按 delta 文本兜底转发，避免中断流式展示。
+     *
+     * @param json        SSE 事件原始数据（可能带 data: 前缀）
+     * @param emitter     当前 SSE 发射器
+     * @param cid         会话 id
+     * @param conv        会话实体
+     * @param seq         user 消息 sequence_num
+     * @param userMessage 用户原始提问
+     * @param completed   流是否已完成标记，避免重复 complete
+     */
     private void handleSseEvent(String json,
                                 SseEmitter emitter,
                                 Long cid,
@@ -484,31 +551,77 @@ public class AssistantServiceImpl implements AssistantService {
                                 int seq,
                                 String userMessage,
                                 AtomicBoolean completed) {
+        String payload = json == null ? "" : json.trim();
+        if (payload.isBlank()) {
+            return;
+        }
+        if (payload.startsWith("data:")) {
+            payload = payload.substring(5).trim();
+        }
+
+        JSONObject obj = null;
         try {
-            JSONObject obj = JSON.parseObject(json);
+            obj = JSON.parseObject(payload);
+        } catch (Exception ignored) {
+            // fallback below
+        }
+        if (obj == null || obj.getString("type") == null) {
+            try {
+                JSONObject fallback = new JSONObject();
+                fallback.put("type", "delta");
+                fallback.put("content", payload);
+                emitter.send(SseEmitter.event().data(fallback.toJSONString()));
+            } catch (Exception ex) {
+                log.debug("Forward fallback delta failed: {}", ex.getMessage());
+            }
+            return;
+        }
+
+        try {
             String type = obj.getString("type");
+            String normalized = obj.toJSONString();
             if ("delta".equals(type)) {
-                emitter.send(SseEmitter.event().data(json));
+                emitter.send(SseEmitter.event().data(normalized));
+                return;
+            }
+            if ("start".equals(type)) {
+                emitter.send(SseEmitter.event().data(normalized));
                 return;
             }
             if ("done".equals(type)) {
                 persistAssistantReply(cid, conv, seq, userMessage, obj);
-                emitter.send(SseEmitter.event().data(json));
+                emitter.send(SseEmitter.event().data(normalized));
                 completed.set(true);
                 emitter.complete();
                 return;
             }
             if ("error".equals(type)) {
-                completed.set(true);
-                String message = obj.getString("content");
-                sendTerminalEvent(emitter, "error", message != null ? message : "Assistant stream error");
-                emitter.complete();
+                if (!completed.getAndSet(true)) {
+                    String message = obj.getString("content");
+                    sendTerminalEvent(emitter, "error", message != null ? message : "Assistant stream error");
+                    emitter.complete();
+                }
             }
         } catch (Exception e) {
-            log.warn("Parse SSE event failed: {}", e.getMessage());
+            log.warn("Handle SSE event failed: {}", e.getMessage());
+            if (!completed.getAndSet(true)) {
+                sendTerminalEvent(emitter, "error", "Assistant stream event handling failed");
+                emitter.complete();
+            }
         }
     }
 
+    /**
+     * 在流式对话收到 done 事件后，落库 assistant 消息并更新会话统计信息。
+     * 这里会写入消息内容、sources_json，并将 message_count +2（user + assistant）。
+     * 若当前会话标题仍为默认值，则用首条用户问题截断后更新标题。
+     *
+     * @param cid         会话 id
+     * @param conv        当前会话实体
+     * @param seq         user 消息的 sequence_num
+     * @param userMessage 用户问题文本（用于首条标题生成）
+     * @param donePayload Python done 事件负载，包含 content/sources
+     */
     private void persistAssistantReply(Long cid,
                                        Conversation conv,
                                        int seq,
@@ -540,6 +653,14 @@ public class AssistantServiceImpl implements AssistantService {
                 .build());
     }
 
+    /**
+     * 向前端发送终态 SSE 事件（如 error），用于显式结束流式状态。
+     * 事件体格式：{"type":"...","content":"..."}。
+     *
+     * @param emitter 当前 SSE 发射器
+     * @param type    事件类型（error / done 等）
+     * @param message 终态提示信息
+     */
     private void sendTerminalEvent(SseEmitter emitter, String type, String message) {
         try {
             JSONObject payload = new JSONObject();
