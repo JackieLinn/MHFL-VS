@@ -14,11 +14,20 @@ from fastapi.responses import StreamingResponse
 from openai import AsyncOpenAI
 
 from assistant.classifier import classify_intent
+from assistant.memory import generate_summary
 from assistant.prompt import build_rag_prompt
 from assistant.rag import get_docs_for_query
 from config.settings import settings
 from services.assistant_service import chat as assistant_chat
-from utils.schemas import ApiResponse, ChatRequest, ChatResponse, ClassifyRequest, ClassifyResponse
+from utils.schemas import (
+    ApiResponse,
+    ChatRequest,
+    ChatResponse,
+    ClassifyRequest,
+    ClassifyResponse,
+    SummarizeRequest,
+    SummarizeResponse,
+)
 
 router = APIRouter(prefix="/api/assistant", tags=["智能助手"])
 logger = logging.getLogger(__name__)
@@ -58,11 +67,27 @@ def _classify_error(msg: str) -> tuple[int, str]:
     return 500, "智能助手服务异常，请稍后重试"
 
 
+@router.post("/summarize")
+async def summarize(req: SummarizeRequest):
+    """增量摘要：prev_summary + 新 2 条消息 -> 新摘要，限制 300 字"""
+    try:
+        summary = generate_summary(req.prev_summary, req.messages)
+        return ApiResponse.success(data=SummarizeResponse(summary=summary))
+    except Exception as e:
+        logger.exception("Assistant summarize failed: %s", e)
+        return ApiResponse.success(data=SummarizeResponse(summary=req.prev_summary or ""))
+
+
 @router.post("/chat")
 async def chat(req: ChatRequest):
     try:
         needs_kb = req.needs_kb if req.needs_kb is not None else True
-        content, sources = assistant_chat(req.message, req.context_data, needs_kb)
+        content, sources = assistant_chat(
+            req.message,
+            context_data=req.context_data,
+            needs_kb=needs_kb,
+            memory_context=req.memory_context,
+        )
         return ApiResponse.success(data=ChatResponse(content=content, sources=sources))
     except Exception as e:
         logger.exception("Assistant chat failed: %s", e)
@@ -96,7 +121,8 @@ async def chat_stream(req: ChatRequest):
                 return
 
             use_context_data = req.context_data if has_context_data else None
-            system, user = build_rag_prompt(req.message, docs, use_context_data)
+            memory_ctx = req.memory_context if req.memory_context else None
+            system, user = build_rag_prompt(req.message, docs, use_context_data, memory_ctx)
             sources = list({d.metadata.get("source", "") for d in docs if d.metadata.get("source", "")})
             client = _get_openai_client()
 

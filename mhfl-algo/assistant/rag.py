@@ -51,11 +51,10 @@ def answer(
         query: str,
         context_data: dict | None = None,
         needs_kb: bool = True,
+        memory_context: str | None = None,
 ) -> tuple[str, list[str]]:
     """
-    根据 needs_kb 编排回答（步骤 14）：
-    - needs_kb=True: 做 RAG 检索，context_data 有则一并注入
-    - needs_kb=False: 跳过 RAG；有 context_data 则仅用业务数据；无则返回兜底
+    根据 needs_kb 编排回答（步骤 14）；memory_context 为历史记忆（步骤 15）。
     """
     has_context_data = bool(context_data)
     do_rag = needs_kb
@@ -69,7 +68,7 @@ def answer(
         return "未获取到相关业务数据，请尝试提问知识库类问题（如「FedAvg 是什么」）。", []
 
     use_context_data = context_data if has_context_data else None
-    system, user = build_rag_prompt(query, docs, use_context_data)
+    system, user = build_rag_prompt(query, docs, use_context_data, memory_context)
     llm = _get_llm()
     resp = llm.invoke([{"role": "system", "content": system}, {"role": "user", "content": user}])
     sources = list({d.metadata.get("source", "") for d in docs}) if docs else []

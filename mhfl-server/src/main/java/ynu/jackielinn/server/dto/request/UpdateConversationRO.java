@@ -27,4 +27,7 @@ public class UpdateConversationRO {
 
     @Schema(description = "会话标题")
     private String title;
+
+    @Schema(description = "历史摘要（步骤 15）")
+    private String summary;
 }

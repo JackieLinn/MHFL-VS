@@ -11,9 +11,16 @@ _BUSINESS_DATA_DESC = """[业务数据说明]
 """
 
 
-def build_rag_prompt(query: str, docs: list, context_data: dict | None = None) -> tuple[str, str]:
-    """拼装 RAG 的 system 与 user，返回 (system, user)。context_data 为 SpringBoot 预取的业务数据。"""
+def build_rag_prompt(
+        query: str,
+        docs: list,
+        context_data: dict | None = None,
+        memory_context: str | None = None,
+) -> tuple[str, str]:
+    """拼装 RAG 的 system 与 user，返回 (system, user)。memory_context 为历史摘要+最近对话（步骤 15）。"""
     parts: list[str] = []
+    if memory_context and memory_context.strip():
+        parts.append(f"[历史记忆]\n{memory_context.strip()}\n")
     if docs:
         context = "\n\n".join([
             f"[文档{i + 1}]\n来源: {d.metadata.get('source', '')}\n内容:\n{d.page_content}"
@@ -23,7 +30,7 @@ def build_rag_prompt(query: str, docs: list, context_data: dict | None = None) -
     if context_data:
         parts.append(_BUSINESS_DATA_DESC)
         parts.append("[业务数据]\n" + json.dumps(context_data, ensure_ascii=False, indent=2))
-    full_ctx = "\n\n".join(parts) if parts else "（无检索文档与业务数据）"
+    full_ctx = "\n\n".join(parts) if parts else "（无历史记忆、检索文档与业务数据）"
     system = """你是 MHFL-VS 平台的智能助手。请仅依据下方检索到的上下文和业务数据回答，不知道则明确说明。
 不要编造项目中不存在的接口或字段。回答末尾请列出参考文档。"""
     user = f"上下文：\n{full_ctx}\n\n用户问题：{query}"

@@ -131,9 +131,21 @@ class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=16000)
     context_data: Optional[dict] = None
     needs_kb: Optional[bool] = None
+    memory_context: Optional[str] = None
 
 
 class ChatResponse(BaseModel):
     """聊天响应体"""
     content: str
     sources: list[str] = []
+
+
+class SummarizeRequest(BaseModel):
+    """摘要请求体"""
+    prev_summary: Optional[str] = None
+    messages: list[dict] = []
+
+
+class SummarizeResponse(BaseModel):
+    """摘要响应体"""
+    summary: str

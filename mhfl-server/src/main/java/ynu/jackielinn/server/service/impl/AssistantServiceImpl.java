@@ -247,10 +247,13 @@ public class AssistantServiceImpl implements AssistantService {
                 .feedback(Feedback.NONE)
                 .build());
 
-        // 2. 意图分类 -> 预取业务数据 -> 调 Python（步骤 14：传 needs_kb 做编排）
+        int currentCount = (conv.getMessageCount() == null ? 0 : conv.getMessageCount()) + 1;
+        String memoryContext = buildMemoryContextAndMaybeUpdateSummary(cid, conv, currentCount);
+
+        // 2. 意图分类 -> 预取业务数据 -> 调 Python（步骤 14/15）
         ClassifyResult classifyResult = callPythonClassify(ro.getMessage());
         Map<String, Object> contextData = buildContextData(uid, classifyResult);
-        ChatResponseVO resp = callPythonChat(ro.getMessage(), contextData, classifyResult.needsKb());
+        ChatResponseVO resp = callPythonChat(ro.getMessage(), contextData, classifyResult.needsKb(), memoryContext);
 
         // 3. 存 assistant 消息
         String sourcesJson = resp.getSources() != null ? JSON.toJSONString(resp.getSources()) : "[]";
@@ -335,6 +338,9 @@ public class AssistantServiceImpl implements AssistantService {
                 final Conversation convFinal = conv;
                 final int seqFinal = seq != null ? seq : 1;
 
+                int currentCount = (conv.getMessageCount() == null ? 0 : conv.getMessageCount()) + 1;
+                String memoryContext = buildMemoryContextAndMaybeUpdateSummary(cid, conv, currentCount);
+
                 ClassifyResult classifyResult = callPythonClassify(ro.getMessage());
                 Map<String, Object> contextData = buildContextData(uid, classifyResult);
 
@@ -342,6 +348,7 @@ public class AssistantServiceImpl implements AssistantService {
                 body.put("message", ro.getMessage());
                 body.put("context_data", contextData);
                 body.put("needs_kb", classifyResult.needsKb());
+                body.put("memory_context", memoryContext != null ? memoryContext : "");
                 Disposable disposable = assistantWebClient.post()
                         .uri("/api/assistant/chat/stream")
                         .accept(MediaType.TEXT_EVENT_STREAM)
@@ -525,6 +532,9 @@ public class AssistantServiceImpl implements AssistantService {
         }
         if (ro.getTitle() != null) {
             entity.setTitle(ro.getTitle());
+        }
+        if (ro.getSummary() != null) {
+            entity.setSummary(ro.getSummary());
         }
         conversationMapper.updateById(entity);
     }
@@ -792,6 +802,108 @@ public class AssistantServiceImpl implements AssistantService {
     }
 
     /**
+     * 构建 memory_context 并在满足条件时更新摘要（步骤 15）。
+     * 触发：message_count >= 8 且 message_count % 2 == 0 且 message_count > 8。
+     * 摘要：已有摘要则 prev_summary + 新 2 条 -> 新摘要；否则仅新消息生成。限制 300 字。
+     *
+     * @param cid          会话 id
+     * @param conv         会话实体（会原地更新 summary 并写库）
+     * @param currentCount 当前消息总数（已含刚存的 user 消息）
+     * @return memory_context 字符串，供 Python 拼入 prompt
+     */
+    private String buildMemoryContextAndMaybeUpdateSummary(Long cid, Conversation conv, int currentCount) {
+        List<Message> allMessages = messageMapper.selectList(
+                new LambdaQueryWrapper<Message>().eq(Message::getCid, cid).orderByAsc(Message::getSequenceNum));
+        if (allMessages.isEmpty()) {
+            return "";
+        }
+
+        if (currentCount >= 8 && currentCount % 2 == 0 && currentCount > 8) {
+            int olderCount = currentCount - 8;
+            if (olderCount > 0 && olderCount <= allMessages.size()) {
+                String prevSummary = conv.getSummary();
+                List<Map<String, Object>> toSummarize;
+                if (prevSummary != null && !prevSummary.isBlank()) {
+                    toSummarize = toMessageMaps(allMessages.subList(olderCount - 2, olderCount));
+                } else {
+                    toSummarize = toMessageMaps(allMessages.subList(0, olderCount));
+                }
+                String newSummary = callPythonSummarize(prevSummary, toSummarize);
+                if (newSummary != null && !newSummary.isBlank()) {
+                    conv.setSummary(newSummary);
+                    updateConversation(UpdateConversationRO.builder().id(cid).summary(newSummary).build());
+                }
+            }
+        }
+
+        StringBuilder sb = new StringBuilder();
+        if (conv.getSummary() != null && !conv.getSummary().isBlank()) {
+            sb.append("[历史摘要]\n").append(conv.getSummary()).append("\n\n");
+        }
+        sb.append("[最近对话]\n");
+        int excludeLast = 1;
+        int recentSize = Math.min(8, allMessages.size() - excludeLast);
+        if (recentSize <= 0) {
+            return sb.toString();
+        }
+        int recentStart = allMessages.size() - excludeLast - recentSize;
+        if (recentStart < 0) {
+            recentStart = 0;
+        }
+        List<Message> recent = allMessages.subList(recentStart, allMessages.size() - excludeLast);
+        for (Message m : recent) {
+            String role = "user".equals(m.getRole()) ? "user" : "assistant";
+            String content = m.getContent() != null ? m.getContent() : "";
+            sb.append(role).append(": ").append(content).append("\n");
+        }
+        return sb.toString();
+    }
+
+    private List<Map<String, Object>> toMessageMaps(List<Message> messages) {
+        List<Map<String, Object>> list = new ArrayList<>(messages.size());
+        for (Message m : messages) {
+            Map<String, Object> map = new HashMap<>();
+            map.put("role", m.getRole());
+            map.put("content", m.getContent());
+            list.add(map);
+        }
+        return list;
+    }
+
+    /**
+     * 调用 Python FastAPI /api/assistant/summarize 生成增量摘要。
+     */
+    private String callPythonSummarize(String prevSummary, List<Map<String, Object>> messages) {
+        String url = pythonFastApiUrl + "/api/assistant/summarize";
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        JSONObject body = new JSONObject();
+        body.put("prev_summary", prevSummary != null ? prevSummary : "");
+        body.put("messages", messages);
+        HttpEntity<String> entity = new HttpEntity<>(body.toJSONString(), headers);
+        try {
+            ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
+            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+                return prevSummary;
+            }
+            JSONObject json = JSON.parseObject(response.getBody());
+            Integer code = json.getInteger("code");
+            if (code == null || code != 200) {
+                return prevSummary;
+            }
+            JSONObject data = json.getJSONObject("data");
+            if (data == null) {
+                return prevSummary;
+            }
+            String summary = data.getString("summary");
+            return summary != null ? summary : prevSummary;
+        } catch (Exception e) {
+            log.warn("Assistant summarize failed: {}", e.getMessage());
+            return prevSummary;
+        }
+    }
+
+    /**
      * 判断当前用户是否为管理员。
      */
     private boolean isAdmin() {
@@ -813,7 +925,7 @@ public class AssistantServiceImpl implements AssistantService {
      * @return 助手回复（content、sources）
      * @throws RuntimeException 调用失败或响应格式异常时
      */
-    private ChatResponseVO callPythonChat(String message, Map<String, Object> contextData, boolean needsKb) {
+    private ChatResponseVO callPythonChat(String message, Map<String, Object> contextData, boolean needsKb, String memoryContext) {
         String url = pythonFastApiUrl + "/api/assistant/chat";
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -821,6 +933,7 @@ public class AssistantServiceImpl implements AssistantService {
         body.put("message", message);
         body.put("context_data", contextData != null ? contextData : Collections.emptyMap());
         body.put("needs_kb", needsKb);
+        body.put("memory_context", memoryContext != null ? memoryContext : "");
         HttpEntity<String> entity = new HttpEntity<>(body.toJSONString(), headers);
 
         ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);

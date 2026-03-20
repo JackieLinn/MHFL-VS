@@ -8,14 +8,15 @@ from assistant.rag import answer as rag_answer
 
 
 def chat(
-    message: str,
-    context_data: dict | None = None,
-    needs_kb: bool = True,
+        message: str,
+        context_data: dict | None = None,
+        needs_kb: bool = True,
+        memory_context: str | None = None,
 ) -> tuple[str, list[str]]:
     """
     非流式聊天：根据 needs_kb 编排 -> 拼 prompt -> 调 LLM -> 返回 (content, sources)
-    context_data 为 SpringBoot 预取的业务数据；needs_kb 决定是否做知识库检索（步骤 14）
+    memory_context 为历史摘要+最近对话（步骤 15）
     """
     if not settings.OPENAI_API_KEY or not settings.OPENAI_API_KEY.strip():
         raise ValueError("API key invalid or not configured")
-    return rag_answer(message, context_data, needs_kb)
+    return rag_answer(message, context_data, needs_kb, memory_context)
