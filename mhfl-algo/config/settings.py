@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     ASSISTANT_CHUNK_SIZE: int = 400
     ASSISTANT_CHUNK_OVERLAP: int = 50
     ASSISTANT_ENABLE_RERANK: bool = True
-    ASSISTANT_ENABLE_MULTI_QUERY: bool = False
+    ASSISTANT_ENABLE_MULTI_QUERY: bool = True
     ASSISTANT_STREAM_TIMEOUT_SECONDS: int = 900
 
     model_config = SettingsConfigDict(
