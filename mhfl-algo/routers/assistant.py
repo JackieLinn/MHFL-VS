@@ -15,6 +15,7 @@ from openai import AsyncOpenAI
 
 from assistant.prompt import build_rag_prompt
 from assistant.retriever import retrieve
+from assistant.rerank import rerank
 from config.settings import settings
 from services.assistant_service import chat as assistant_chat
 from utils.schemas import ApiResponse, ChatRequest, ChatResponse
@@ -70,6 +71,8 @@ async def chat_stream(req: ChatRequest):
         full_parts: list[str] = []
         try:
             docs = retrieve(req.message)
+            if settings.ASSISTANT_ENABLE_RERANK and docs:
+                docs = rerank(req.message, docs)
             system, user = build_rag_prompt(req.message, docs)
             sources = list({d.metadata.get("source", "") for d in docs if d.metadata.get("source", "")})
             client = _get_openai_client()

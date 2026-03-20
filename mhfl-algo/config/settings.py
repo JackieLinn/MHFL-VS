@@ -22,12 +22,12 @@ class Settings(BaseSettings):
     ASSISTANT_CHROMA_DIR: str = "assistant/knowledge/chroma_db"
     ASSISTANT_TOP_K: int = 8
     ASSISTANT_ENABLE_HYBRID: bool = True
-    ASSISTANT_HYBRID_TOP_K: int = 10
+    ASSISTANT_HYBRID_TOP_K: int = 12
     ASSISTANT_BM25_K: int = 8
-    ASSISTANT_RERANK_TOP_N: int = 4
+    ASSISTANT_RERANK_TOP_N: int = 10
     ASSISTANT_CHUNK_SIZE: int = 400
     ASSISTANT_CHUNK_OVERLAP: int = 50
-    ASSISTANT_ENABLE_RERANK: bool = False
+    ASSISTANT_ENABLE_RERANK: bool = True
     ASSISTANT_ENABLE_MULTI_QUERY: bool = False
     ASSISTANT_STREAM_TIMEOUT_SECONDS: int = 900
 

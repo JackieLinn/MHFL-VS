@@ -1,9 +1,10 @@
 """
 RAG 问答链
-- answer(): 检索 -> 拼 prompt -> 调 LLM -> 返回 content + sources（步骤 6）
+- answer(): 检索 -> [rerank] -> 拼 prompt -> 调 LLM -> 返回 content + sources（步骤 6 / 11）
 """
 from assistant.prompt import build_rag_prompt
 from assistant.retriever import retrieve
+from assistant.rerank import rerank
 from langchain_openai import ChatOpenAI
 
 from config.settings import settings
@@ -17,8 +18,10 @@ def _get_llm() -> ChatOpenAI:
 
 
 def answer(query: str) -> tuple[str, list[str]]:
-    """RAG 回答：检索 -> 拼 prompt -> 调 LLM -> 返回 (content, sources)"""
+    """RAG 回答：检索 -> [rerank] -> 拼 prompt -> 调 LLM -> 返回 (content, sources)"""
     docs = retrieve(query)
+    if settings.ASSISTANT_ENABLE_RERANK and docs:
+        docs = rerank(query, docs)
     if not docs:
         return "未找到相关文档，请换一种问法或联系管理员。", []
     system, user = build_rag_prompt(query, docs)
