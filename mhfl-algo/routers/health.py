@@ -1,18 +1,21 @@
 """
-健康检查接口
+健康检查接口（异步，避免阻塞事件循环）
 用于检查FastAPI服务是否正常运行，SpringBoot可以定期调用此接口来监控服务状态
 """
+import asyncio
+import logging
+
 from fastapi import APIRouter
-from utils.schemas import ApiResponse, HealthStatus
+
 from config.redis_conn import get_redis_client
 from utils.resource_checker import check_gpu
-import logging
+from utils.schemas import ApiResponse, HealthStatus
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/health", tags=["健康检查"])
 
 
-def check_redis_connection() -> tuple[bool, str]:
+def _check_redis_connection() -> tuple[bool, str]:
     """
     检查Redis连接是否正常
     
@@ -28,7 +31,7 @@ def check_redis_connection() -> tuple[bool, str]:
         return False, f"Redis连接失败: {str(e)}"
 
 
-def check_gpu_available() -> tuple[bool, str]:
+def _check_gpu_available() -> tuple[bool, str]:
     """
     检查GPU是否可用（可选检查，没有GPU不影响服务健康）
     
@@ -82,8 +85,7 @@ async def health_check():
         "message": "服务异常：Redis连接失败"
     }
     """
-    # 检查Redis连接（必需）
-    redis_ok, redis_error = check_redis_connection()
+    redis_ok, redis_error = await asyncio.to_thread(_check_redis_connection)
     if not redis_ok:
         return ApiResponse(
             code=503,
@@ -95,8 +97,7 @@ async def health_check():
             message=f"服务异常：{redis_error}"
         )
 
-    # 检查GPU（可选，不影响健康状态）
-    gpu_ok, gpu_info = check_gpu_available()
+    gpu_ok, gpu_info = await asyncio.to_thread(_check_gpu_available)
 
     # 如果Redis正常，即使GPU不可用也返回健康
     status = "healthy"

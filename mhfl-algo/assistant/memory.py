@@ -20,7 +20,7 @@ def _get_summary_llm() -> ChatOpenAI:
     return ChatOpenAI(**llm_kwargs)
 
 
-def generate_summary(prev_summary: str | None, new_messages: list[dict]) -> str:
+async def generate_summary(prev_summary: str | None, new_messages: list[dict]) -> str:
     """
     生成或更新摘要。若已有摘要，则 prev_summary + new_messages（2 条）-> 新摘要；
     否则仅根据 new_messages 生成。输出限制在 SUMMARY_MAX_CHARS 字以内。
@@ -55,7 +55,7 @@ def generate_summary(prev_summary: str | None, new_messages: list[dict]) -> str:
 
     try:
         llm = _get_summary_llm()
-        resp = llm.invoke(prompt)
+        resp = await llm.ainvoke(prompt)
         summary = (resp.content or "").strip()
         if len(summary) > SUMMARY_MAX_CHARS:
             summary = summary[:SUMMARY_MAX_CHARS]

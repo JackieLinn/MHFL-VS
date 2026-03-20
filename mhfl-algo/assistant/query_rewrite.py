@@ -27,7 +27,7 @@ def _strip_line_prefix(line: str) -> str:
     return re.sub(r"^\d+[\.\)]\s*", "", line).strip()
 
 
-def rewrite_queries(question: str, n: int = 3) -> list[str]:
+async def rewrite_queries(question: str, n: int = 3) -> list[str]:
     """
     对用户问题生成 n 个不同表述的改写，用于多路检索。
     返回 [原问题, 改写1, 改写2, ...]，最多 n+1 个。
@@ -42,7 +42,7 @@ def rewrite_queries(question: str, n: int = 3) -> list[str]:
 
     try:
         llm = _get_rewrite_llm()
-        resp = llm.invoke(prompt)
+        resp = await llm.ainvoke(prompt)
         content = (resp.content or "").strip()
     except Exception:
         return [question]

@@ -1,6 +1,8 @@
 """
-资源检查接口路由
+资源检查接口路由（异步，避免阻塞事件循环）
 """
+import asyncio
+
 from fastapi import APIRouter
 from utils.schemas import ApiResponse, SystemResources, GPUInfo, CPUInfo, MemoryInfo
 from utils.resource_checker import check_gpu as check_gpu_func, check_cpu, check_memory
@@ -15,7 +17,7 @@ async def check_gpu():
     
     返回GPU显存信息（总量、已用、剩余、使用率）
     """
-    gpu_dict = check_gpu_func(0)
+    gpu_dict = await asyncio.to_thread(check_gpu_func, 0)
 
     if gpu_dict is None:
         return ApiResponse.failure(
@@ -38,19 +40,14 @@ async def get_system_resources():
     返回CPU、内存、GPU的实时使用情况
     用于前端实时监控展示
     """
-    # 检查CPU
-    cpu_dict = check_cpu()
+    cpu_dict, memory_dict, gpu_dict = await asyncio.gather(
+        asyncio.to_thread(check_cpu),
+        asyncio.to_thread(check_memory),
+        asyncio.to_thread(check_gpu_func, 0),
+    )
     cpu_info = CPUInfo(**cpu_dict)
-
-    # 检查内存
-    memory_dict = check_memory()
     memory_info = MemoryInfo(**memory_dict)
-
-    # 检查GPU（可选）
-    gpu_dict = check_gpu_func(0)
-    gpu_info = None
-    if gpu_dict is not None:
-        gpu_info = GPUInfo(**gpu_dict)
+    gpu_info = GPUInfo(**gpu_dict) if gpu_dict is not None else None
 
     system_resources = SystemResources(
         cpu=cpu_info,

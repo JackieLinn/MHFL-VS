@@ -1,9 +1,10 @@
 """
-训练相关接口路由
+训练相关接口路由（异步，避免阻塞事件循环）
 
 每任务在独立子进程中运行，保证同一配置+同一随机种子在多任务并发下可复现；
 停止信号通过 multiprocessing.Manager().Event() 跨进程传递。
 """
+import asyncio
 import logging
 import multiprocessing
 import threading
@@ -143,7 +144,7 @@ async def start_training(request: TrainStartRequest):
         if request.task_id in running_trainers:
             return ApiResponse.failure(400, f"任务 {request.task_id} 正在运行中")
 
-    gpu_info = check_gpu(0)
+    gpu_info = await asyncio.to_thread(check_gpu, 0)
     if gpu_info is None:
         return ApiResponse.failure(503, "GPU 不可用或未检测到 GPU")
 

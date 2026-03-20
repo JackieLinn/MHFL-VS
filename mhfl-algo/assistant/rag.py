@@ -1,29 +1,32 @@
 """
-RAG 问答链
+RAG 问答链（异步，避免阻塞事件循环）
 - get_docs_for_query(): 统一检索入口，支持多查询改写（步骤 12）
 - answer(): 根据 needs_kb 编排：kb_only / data_only / both（步骤 6 / 11 / 14）
 """
+import asyncio
+
 from langchain_core.documents import Document
+from langchain_openai import ChatOpenAI
 
 from assistant.prompt import build_rag_prompt
 from assistant.query_rewrite import rewrite_queries
 from assistant.rerank import rerank
 from assistant.retriever import hybrid_retrieve, retrieve
-from langchain_openai import ChatOpenAI
 
 from config.settings import settings
 
 
-def get_docs_for_query(query: str) -> list[Document]:
+async def get_docs_for_query(query: str) -> list[Document]:
     """
     统一检索入口：根据 ASSISTANT_ENABLE_MULTI_QUERY 选择单查询或多查询，
     再根据 ASSISTANT_ENABLE_RERANK 决定是否 rerank。
     """
     if settings.ASSISTANT_ENABLE_MULTI_QUERY:
-        queries = rewrite_queries(query, n=3)
+        queries = await rewrite_queries(query, n=3)
         all_docs: list[Document] = []
         for q in queries:
-            all_docs.extend(hybrid_retrieve(q, k=5))
+            docs_chunk = await asyncio.to_thread(hybrid_retrieve, q, 5)
+            all_docs.extend(docs_chunk)
         seen: set[str] = set()
         deduped: list[Document] = []
         for d in all_docs:
@@ -33,10 +36,10 @@ def get_docs_for_query(query: str) -> list[Document]:
                 deduped.append(d)
         docs = deduped[: settings.ASSISTANT_HYBRID_TOP_K]
     else:
-        docs = retrieve(query)
+        docs = await asyncio.to_thread(retrieve, query)
 
     if settings.ASSISTANT_ENABLE_RERANK and docs:
-        docs = rerank(query, docs)
+        docs = await asyncio.to_thread(rerank, query, docs)
     return docs
 
 
@@ -47,7 +50,7 @@ def _get_llm() -> ChatOpenAI:
     return ChatOpenAI(**llm_kwargs)
 
 
-def answer(
+async def answer(
         query: str,
         context_data: dict | None = None,
         needs_kb: bool = True,
@@ -60,7 +63,7 @@ def answer(
     do_rag = needs_kb
 
     if do_rag:
-        docs = get_docs_for_query(query)
+        docs = await get_docs_for_query(query)
     else:
         docs = []
 
@@ -70,6 +73,6 @@ def answer(
     use_context_data = context_data if has_context_data else None
     system, user = build_rag_prompt(query, docs, use_context_data, memory_context)
     llm = _get_llm()
-    resp = llm.invoke([{"role": "system", "content": system}, {"role": "user", "content": user}])
+    resp = await llm.ainvoke([{"role": "system", "content": system}, {"role": "user", "content": user}])
     sources = list({d.metadata.get("source", "") for d in docs}) if docs else []
     return resp.content, sources

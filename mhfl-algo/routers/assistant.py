@@ -47,7 +47,7 @@ def _get_openai_client() -> AsyncOpenAI:
 async def classify(req: ClassifyRequest):
     """根据用户问题判断需要预取哪些业务数据（任务、算法、数据集）"""
     try:
-        result = classify_intent(req.message)
+        result = await classify_intent(req.message)
         return ApiResponse.success(data=ClassifyResponse(**result))
     except Exception as e:
         logger.exception("Assistant classify failed: %s", e)
@@ -71,7 +71,7 @@ def _classify_error(msg: str) -> tuple[int, str]:
 async def summarize(req: SummarizeRequest):
     """增量摘要：prev_summary + 新 2 条消息 -> 新摘要，限制 300 字"""
     try:
-        summary = generate_summary(req.prev_summary, req.messages)
+        summary = await generate_summary(req.prev_summary, req.messages)
         return ApiResponse.success(data=SummarizeResponse(summary=summary))
     except Exception as e:
         logger.exception("Assistant summarize failed: %s", e)
@@ -82,7 +82,7 @@ async def summarize(req: SummarizeRequest):
 async def chat(req: ChatRequest):
     try:
         needs_kb = req.needs_kb if req.needs_kb is not None else True
-        content, sources = assistant_chat(
+        content, sources = await assistant_chat(
             req.message,
             context_data=req.context_data,
             needs_kb=needs_kb,
@@ -111,7 +111,7 @@ async def chat_stream(req: ChatRequest):
             has_context_data = bool(req.context_data)
 
             if needs_kb:
-                docs = get_docs_for_query(req.message)
+                docs = await get_docs_for_query(req.message)
             else:
                 docs = []
 

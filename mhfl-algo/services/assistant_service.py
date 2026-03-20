@@ -7,7 +7,7 @@ from config.settings import settings
 from assistant.rag import answer as rag_answer
 
 
-def chat(
+async def chat(
         message: str,
         context_data: dict | None = None,
         needs_kb: bool = True,
@@ -19,4 +19,4 @@ def chat(
     """
     if not settings.OPENAI_API_KEY or not settings.OPENAI_API_KEY.strip():
         raise ValueError("API key invalid or not configured")
-    return rag_answer(message, context_data, needs_kb, memory_context)
+    return await rag_answer(message, context_data, needs_kb, memory_context)
