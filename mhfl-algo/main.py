@@ -2,6 +2,9 @@
 FastAPI应用入口文件
 """
 import os
+import warnings
+
+warnings.filterwarnings("ignore", message="pkg_resources is deprecated", category=UserWarning)
 
 # 设置 tiktoken 缓存目录为 mhfl-algo/cache，避免首次运行时下载 BPE 失败（IncompleteRead）
 _cache_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cache")
