@@ -122,6 +122,7 @@ class ClassifyResponse(BaseModel):
     needs_tasks: bool = False
     needs_algorithms: bool = False
     needs_datasets: bool = False
+    needs_kb: bool = True
 
 
 class ChatRequest(BaseModel):
@@ -129,6 +130,7 @@ class ChatRequest(BaseModel):
     conversation_id: Optional[int] = None
     message: str = Field(..., min_length=1, max_length=16000)
     context_data: Optional[dict] = None
+    needs_kb: Optional[bool] = None
 
 
 class ChatResponse(BaseModel):

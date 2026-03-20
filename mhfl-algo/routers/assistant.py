@@ -61,7 +61,8 @@ def _classify_error(msg: str) -> tuple[int, str]:
 @router.post("/chat")
 async def chat(req: ChatRequest):
     try:
-        content, sources = assistant_chat(req.message, req.context_data)
+        needs_kb = req.needs_kb if req.needs_kb is not None else True
+        content, sources = assistant_chat(req.message, req.context_data, needs_kb)
         return ApiResponse.success(data=ChatResponse(content=content, sources=sources))
     except Exception as e:
         logger.exception("Assistant chat failed: %s", e)
@@ -81,8 +82,21 @@ async def chat_stream(req: ChatRequest):
     async def gen():
         full_parts: list[str] = []
         try:
-            docs = get_docs_for_query(req.message)
-            system, user = build_rag_prompt(req.message, docs, req.context_data)
+            needs_kb = req.needs_kb if req.needs_kb is not None else True
+            has_context_data = bool(req.context_data)
+
+            if needs_kb:
+                docs = get_docs_for_query(req.message)
+            else:
+                docs = []
+
+            if not needs_kb and not has_context_data:
+                yield f"data: {json.dumps({'type': 'start'}, ensure_ascii=False)}\n\n"
+                yield f"data: {json.dumps({'type': 'done', 'content': '未获取到相关业务数据，请尝试提问知识库类问题（如「FedAvg 是什么」）。', 'sources': []}, ensure_ascii=False)}\n\n"
+                return
+
+            use_context_data = req.context_data if has_context_data else None
+            system, user = build_rag_prompt(req.message, docs, use_context_data)
             sources = list({d.metadata.get("source", "") for d in docs if d.metadata.get("source", "")})
             client = _get_openai_client()
 

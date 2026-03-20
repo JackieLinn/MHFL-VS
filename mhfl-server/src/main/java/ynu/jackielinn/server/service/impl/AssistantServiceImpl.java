@@ -247,10 +247,10 @@ public class AssistantServiceImpl implements AssistantService {
                 .feedback(Feedback.NONE)
                 .build());
 
-        // 2. 意图分类 -> 预取业务数据 -> 调 Python
+        // 2. 意图分类 -> 预取业务数据 -> 调 Python（步骤 14：传 needs_kb 做编排）
         ClassifyResult classifyResult = callPythonClassify(ro.getMessage());
         Map<String, Object> contextData = buildContextData(uid, classifyResult);
-        ChatResponseVO resp = callPythonChat(ro.getMessage(), contextData);
+        ChatResponseVO resp = callPythonChat(ro.getMessage(), contextData, classifyResult.needsKb());
 
         // 3. 存 assistant 消息
         String sourcesJson = resp.getSources() != null ? JSON.toJSONString(resp.getSources()) : "[]";
@@ -341,6 +341,7 @@ public class AssistantServiceImpl implements AssistantService {
                 Map<String, Object> body = new HashMap<>();
                 body.put("message", ro.getMessage());
                 body.put("context_data", contextData);
+                body.put("needs_kb", classifyResult.needsKb());
                 Disposable disposable = assistantWebClient.post()
                         .uri("/api/assistant/chat/stream")
                         .accept(MediaType.TEXT_EVENT_STREAM)
@@ -726,7 +727,7 @@ public class AssistantServiceImpl implements AssistantService {
      * 调用 Python FastAPI /api/assistant/classify 进行意图分类。
      *
      * @param message 用户消息内容
-     * @return 分类结果（needs_tasks、needs_algorithms、needs_datasets），异常时返回全 false
+     * @return 分类结果（needs_tasks、needs_algorithms、needs_datasets、needs_kb），异常时业务数据全 false、needs_kb 默认 true
      */
     private ClassifyResult callPythonClassify(String message) {
         String url = pythonFastApiUrl + "/api/assistant/classify";
@@ -738,24 +739,25 @@ public class AssistantServiceImpl implements AssistantService {
         try {
             ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
             if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-                return new ClassifyResult(false, false, false);
+                return new ClassifyResult(false, false, false, true);
             }
             JSONObject json = JSON.parseObject(response.getBody());
             Integer code = json.getInteger("code");
             if (code == null || code != 200) {
-                return new ClassifyResult(false, false, false);
+                return new ClassifyResult(false, false, false, true);
             }
             JSONObject data = json.getJSONObject("data");
             if (data == null) {
-                return new ClassifyResult(false, false, false);
+                return new ClassifyResult(false, false, false, true);
             }
             boolean needsTasks = Boolean.TRUE.equals(data.getBoolean("needs_tasks"));
             boolean needsAlgorithms = Boolean.TRUE.equals(data.getBoolean("needs_algorithms"));
             boolean needsDatasets = Boolean.TRUE.equals(data.getBoolean("needs_datasets"));
-            return new ClassifyResult(needsTasks, needsAlgorithms, needsDatasets);
+            boolean needsKb = data.get("needs_kb") == null ? true : Boolean.TRUE.equals(data.getBoolean("needs_kb"));
+            return new ClassifyResult(needsTasks, needsAlgorithms, needsDatasets, needsKb);
         } catch (Exception e) {
             log.warn("Assistant classify failed, using empty context: {}", e.getMessage());
-            return new ClassifyResult(false, false, false);
+            return new ClassifyResult(false, false, false, true);
         }
     }
 
@@ -807,16 +809,18 @@ public class AssistantServiceImpl implements AssistantService {
      *
      * @param message     用户消息内容
      * @param contextData 预取的业务数据（可为空）
+     * @param needsKb     是否需要知识库检索（步骤 14 编排）
      * @return 助手回复（content、sources）
      * @throws RuntimeException 调用失败或响应格式异常时
      */
-    private ChatResponseVO callPythonChat(String message, Map<String, Object> contextData) {
+    private ChatResponseVO callPythonChat(String message, Map<String, Object> contextData, boolean needsKb) {
         String url = pythonFastApiUrl + "/api/assistant/chat";
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         JSONObject body = new JSONObject();
         body.put("message", message);
         body.put("context_data", contextData != null ? contextData : Collections.emptyMap());
+        body.put("needs_kb", needsKb);
         HttpEntity<String> entity = new HttpEntity<>(body.toJSONString(), headers);
 
         ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
@@ -880,8 +884,8 @@ public class AssistantServiceImpl implements AssistantService {
     }
 
     /**
-     * 意图分类结果，用于决定预取哪些业务数据。
+     * 意图分类结果，用于决定预取哪些业务数据及是否做知识库检索（步骤 14）。
      */
-    private record ClassifyResult(boolean needsTasks, boolean needsAlgorithms, boolean needsDatasets) {
+    private record ClassifyResult(boolean needsTasks, boolean needsAlgorithms, boolean needsDatasets, boolean needsKb) {
     }
 }
