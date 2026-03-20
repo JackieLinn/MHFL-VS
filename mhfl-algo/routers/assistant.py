@@ -82,7 +82,7 @@ async def chat_stream(req: ChatRequest):
 
             stream = await client.chat.completions.create(
                 model=settings.ASSISTANT_MODEL,
-                temperature=0,
+                temperature=0.3,
                 stream=True,
                 messages=[
                     {"role": "system", "content": system},

@@ -11,7 +11,7 @@ from config.settings import settings
 
 
 def _get_llm() -> ChatOpenAI:
-    llm_kwargs: dict = {"model": settings.ASSISTANT_MODEL, "temperature": 0, "api_key": settings.OPENAI_API_KEY}
+    llm_kwargs: dict = {"model": settings.ASSISTANT_MODEL, "temperature": 0.3, "api_key": settings.OPENAI_API_KEY}
     if settings.OPENAI_API_BASE:
         llm_kwargs["base_url"] = settings.OPENAI_API_BASE
     return ChatOpenAI(**llm_kwargs)
