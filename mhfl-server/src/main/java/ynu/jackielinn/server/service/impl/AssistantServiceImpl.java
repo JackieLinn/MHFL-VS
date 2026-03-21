@@ -803,8 +803,10 @@ public class AssistantServiceImpl implements AssistantService {
 
     /**
      * 构建 memory_context 并在满足条件时更新摘要（步骤 15）。
-     * 触发：message_count >= 8 且 message_count % 2 == 0 且 message_count > 8。
-     * 摘要：已有摘要则 prev_summary + 新 2 条 -> 新摘要；否则仅新消息生成。限制 300 字。
+     * 规则：每次请求传 summary（可为空）+ 最近 4 轮完整对话；第 5 轮（9 条消息）摘要仍为空，第 6 轮（11 条）起开始压缩。
+     * 触发：currentCount > 9（即第 11、13、15… 条消息时，有需要压缩的历史）。
+     * olderCount = currentCount - 9（排除当前 user 后，超出「最近 8 条」的旧消息数）。
+     * 摘要：已有摘要则 prev_summary + 新 2 条 -> 新摘要覆盖；否则仅新消息生成。限制 300 字。
      *
      * @param cid          会话 id
      * @param conv         会话实体（会原地更新 summary 并写库）
@@ -818,13 +820,14 @@ public class AssistantServiceImpl implements AssistantService {
             return "";
         }
 
-        if (currentCount >= 8 && currentCount % 2 == 0 && currentCount > 8) {
-            int olderCount = currentCount - 8;
+        if (currentCount > 9) {
+            int olderCount = currentCount - 9;
             if (olderCount > 0 && olderCount <= allMessages.size()) {
                 String prevSummary = conv.getSummary();
                 List<Map<String, Object>> toSummarize;
                 if (prevSummary != null && !prevSummary.isBlank()) {
-                    toSummarize = toMessageMaps(allMessages.subList(olderCount - 2, olderCount));
+                    int from = Math.max(0, olderCount - 2);
+                    toSummarize = toMessageMaps(allMessages.subList(from, olderCount));
                 } else {
                     toSummarize = toMessageMaps(allMessages.subList(0, olderCount));
                 }
