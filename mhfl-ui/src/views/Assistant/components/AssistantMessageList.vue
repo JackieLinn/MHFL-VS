@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import {ref} from 'vue'
 import {useI18n} from 'vue-i18n'
+import {marked} from 'marked'
+import markedKatex from 'marked-katex-extension'
+import DOMPurify from 'dompurify'
+import 'katex/dist/katex.min.css'
 
 interface Message {
   id: number
@@ -35,19 +39,24 @@ const scrollToBottom = () => {
   if (listRef.value) listRef.value.scrollTop = listRef.value.scrollHeight
 }
 
+marked.setOptions({gfm: true, breaks: true})
+marked.use(markedKatex({throwOnError: false, nonStandard: true}))
+
+/** 将误用为块级的短公式 $$...$$ 转为行内 $...$，避免符号与冒号/文字分行 */
+const normalizeInlineMath = (raw: string): string => {
+  return raw.replace(/\$\$([^$\n]+?)\$\$/g, (_, content) => {
+    const t = content.trim()
+    if (t.includes('\n') || /\\frac|\\sum|\\int|\\begin|\\\\/.test(t) || t.length > 45)
+      return `$$${content}$$`
+    return `$${t}$`
+  })
+}
+
 const formatContent = (raw: string): string => {
-  return raw
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/`(.*?)`/g, '<code>$1</code>')
-      .replace(/\n\n/g, '</p><p>')
-      .replace(/\n/g, '<br>')
-      .replace(/^/, '<p>')
-      .replace(/$/, '</p>')
-      .replace(/---/g, '<hr>')
-      .replace(/\|(.+)\|/g, (match) => {
-        const cells = match.split('|').filter(c => c.trim() !== '')
-        return '<tr>' + cells.map(c => `<td>${c.trim()}</td>`).join('') + '</tr>'
-      })
+  if (!raw) return ''
+  const normalized = normalizeInlineMath(raw)
+  const html = marked.parse(normalized, {async: false}) as string
+  return DOMPurify.sanitize(html)
 }
 
 defineExpose({scrollToBottom})
@@ -235,7 +244,7 @@ defineExpose({scrollToBottom})
   }
 }
 
-/* 消息内容 :deep */
+/* 消息内容 :deep - Markdown 渲染样式 */
 .msg-content :deep(p) {
   margin-bottom: 8px;
 }
@@ -249,6 +258,10 @@ defineExpose({scrollToBottom})
   font-weight: 700;
 }
 
+.msg-content :deep(em) {
+  font-style: italic;
+}
+
 .msg-content :deep(code) {
   background: rgba(99, 102, 241, .1);
   color: #6366f1;
@@ -258,10 +271,79 @@ defineExpose({scrollToBottom})
   font-family: 'JetBrains Mono', 'Consolas', monospace;
 }
 
+.msg-content :deep(pre) {
+  margin: 10px 0;
+  padding: 12px;
+  background: var(--home-hover-bg);
+  border: 1px solid var(--home-border);
+  border-radius: 6px;
+  overflow-x: auto;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.msg-content :deep(pre code) {
+  background: none;
+  padding: 0;
+  color: var(--home-text-primary);
+  font-size: inherit;
+}
+
 .msg-content :deep(hr) {
   border: none;
   border-top: 1px solid var(--home-border);
   margin: 10px 0;
+}
+
+.msg-content :deep(h1), .msg-content :deep(h2), .msg-content :deep(h3),
+.msg-content :deep(h4), .msg-content :deep(h5), .msg-content :deep(h6) {
+  margin: 12px 0 8px;
+  font-weight: 700;
+  color: var(--home-text-primary);
+  line-height: 1.4;
+}
+
+.msg-content :deep(h1) {
+  font-size: 1.25em;
+}
+
+.msg-content :deep(h2) {
+  font-size: 1.15em;
+}
+
+.msg-content :deep(h3) {
+  font-size: 1.08em;
+}
+
+.msg-content :deep(h4), .msg-content :deep(h5), .msg-content :deep(h6) {
+  font-size: 1em;
+}
+
+.msg-content :deep(ul), .msg-content :deep(ol) {
+  margin: 8px 0;
+  padding-left: 1.5em;
+}
+
+.msg-content :deep(li) {
+  margin: 4px 0;
+  color: var(--home-text-secondary);
+}
+
+.msg-content :deep(blockquote) {
+  margin: 10px 0;
+  padding: 8px 12px;
+  border-left: 4px solid rgba(99, 102, 241, .5);
+  background: rgba(99, 102, 241, .04);
+  color: var(--home-text-secondary);
+}
+
+.msg-content :deep(a) {
+  color: #6366f1;
+  text-decoration: none;
+}
+
+.msg-content :deep(a:hover) {
+  text-decoration: underline;
 }
 
 .msg-content :deep(table) {
@@ -275,15 +357,27 @@ defineExpose({scrollToBottom})
   border-bottom: 1px solid var(--home-border);
 }
 
-.msg-content :deep(td) {
+.msg-content :deep(td), .msg-content :deep(th) {
   padding: 5px 9px;
   color: var(--home-text-secondary);
 }
 
-.msg-content :deep(tr:first-child td) {
+.msg-content :deep(tr:first-child td),
+.msg-content :deep(tr:first-child th) {
   font-weight: 700;
   color: var(--home-text-primary);
   background: rgba(99, 102, 241, .04);
+}
+
+/* KaTeX 数学公式 */
+.msg-content :deep(.katex) {
+  font-size: 1.1em;
+}
+
+.msg-content :deep(.katex-display) {
+  margin: 10px 0;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 /* 参考来源标签（椭圆形，深浅色模式适配） */
