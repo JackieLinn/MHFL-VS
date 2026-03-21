@@ -440,7 +440,8 @@
     "noChatHistory": "No chat history yet",
     "footerTip": "Powered by LLM",
     "welcomeTitle": "Hi, I'm MHFL Smart Assistant",
-    "welcomeSub": "I can help you with federated learning questions, algorithm recommendations, and training result analysis. Let's get started!",
+    "welcomeSub1": "I'm a federated learning assistant powered by RAG and a knowledge base,\ncombined with platform business data for accurate answers.",
+    "welcomeSub2": "I can help you understand federated learning concepts and algorithms,\nand answer questions about experiment configuration. Let's get started!",
     "msgCount": "{count} messages",
     "clearChat": "Clear Chat",
     "exportChat": "Export Chat",
@@ -454,6 +455,10 @@
     "collapseSidebar": "Collapse sidebar",
     "expandSidebar": "Expand sidebar",
     "thinking": "Thinking...",
-    "streaming": "Outputting..."
+    "streaming": "Outputting...",
+    "quickQ1": "Introduction to federated learning basics",
+    "quickQ2": "Compare FedAvg and FedProto algorithms",
+    "quickQ3": "What are my recent training tasks?",
+    "quickQ4": "How to configure Non-IID parameters?"
   }
 }

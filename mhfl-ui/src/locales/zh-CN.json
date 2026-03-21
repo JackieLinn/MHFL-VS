@@ -440,7 +440,8 @@
     "noChatHistory": "暂无聊天记录",
     "footerTip": "由大模型提供支持",
     "welcomeTitle": "你好，我是 MHFL 智能助手",
-    "welcomeSub": "我可以帮你解答联邦学习相关问题、推荐算法配置、分析训练结果，快来试试吧！",
+    "welcomeSub1": "我是基于 RAG 检索增强与知识库的联邦学习智能助手，可结合平台业务数据为你解答。",
+    "welcomeSub2": "我能帮你了解联邦学习概念与算法、解答平台实验配置等问题，快来试试吧！",
     "msgCount": "共 {count} 条消息",
     "clearChat": "清空对话",
     "exportChat": "导出对话",
@@ -454,6 +455,10 @@
     "collapseSidebar": "收起侧边栏",
     "expandSidebar": "展开侧边栏",
     "thinking": "思考中",
-    "streaming": "正在输出"
+    "streaming": "正在输出",
+    "quickQ1": "联邦学习入门概念介绍",
+    "quickQ2": "对比 FedAvg 和 FedProto 算法",
+    "quickQ3": "我最近有哪些训练任务？",
+    "quickQ4": "如何配置 Non-IID 参数？"
   }
 }

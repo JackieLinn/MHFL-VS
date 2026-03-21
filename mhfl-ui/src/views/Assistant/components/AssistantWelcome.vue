@@ -6,10 +6,10 @@ const {t} = useI18n()
 const emit = defineEmits<{ ask: [text: string] }>()
 
 const quickQuestions = [
-  {icon: 'i-mdi-compare', text: '对比 FedAvg 和 FedProto 算法'},
-  {icon: 'i-mdi-chart-line', text: '如何配置 Non-IID 参数？'},
-  {icon: 'i-mdi-memory', text: 'Tiny-ImageNet 显存需求是多少？'},
-  {icon: 'i-mdi-school-outline', text: '联邦学习入门概念介绍'},
+  {icon: 'i-mdi-school-outline', textKey: 'assistant.quickQ1'},
+  {icon: 'i-mdi-compare', textKey: 'assistant.quickQ2'},
+  {icon: 'i-mdi-format-list-bulleted', textKey: 'assistant.quickQ3'},
+  {icon: 'i-mdi-chart-line', textKey: 'assistant.quickQ4'},
 ]
 </script>
 
@@ -21,18 +21,19 @@ const quickQuestions = [
     <h2 class="text-[21px] font-bold text-center" style="color: var(--home-text-primary)">
       {{ t('assistant.welcomeTitle') }}
     </h2>
-    <p class="text-sm text-center max-w-[440px] leading-[1.7]" style="color: var(--home-text-muted)">
-      {{ t('assistant.welcomeSub') }}
-    </p>
-    <div class="grid grid-cols-2 gap-2.5 mt-5 max-w-[540px] w-full">
+    <div class="welcome-desc text-sm text-center max-w-[620px] leading-[1.7] space-y-2 whitespace-pre-line" style="color: var(--home-text-muted)">
+      <p>{{ t('assistant.welcomeSub1') }}</p>
+      <p>{{ t('assistant.welcomeSub2') }}</p>
+    </div>
+    <div class="grid grid-cols-2 gap-2.5 mt-5 w-full max-w-[680px] quick-grid">
       <button
           v-for="q in quickQuestions"
-          :key="q.text"
+          :key="q.textKey"
           class="quick-card flex items-center gap-2.5 px-4 py-3.5 rounded-[11px] text-[13px] text-left cursor-pointer"
-          @click="emit('ask', q.text)"
+          @click="emit('ask', t(q.textKey))"
       >
         <span :class="[q.icon]" class="text-[19px] text-indigo-500 opacity-80 shrink-0"></span>
-        <span class="leading-[1.4]">{{ q.text }}</span>
+        <span class="leading-[1.4] whitespace-nowrap">{{ t(q.textKey) }}</span>
       </button>
     </div>
   </div>
@@ -42,6 +43,10 @@ const quickQuestions = [
 .welcome-avatar {
   background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(139, 92, 246, 0.12));
   border: 1px solid rgba(99, 102, 241, 0.22);
+}
+
+.quick-grid {
+  grid-template-columns: repeat(2, minmax(min-content, 1fr));
 }
 
 .quick-card {
