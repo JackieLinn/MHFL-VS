@@ -21,6 +21,7 @@ import {
 } from '@/api/assistant'
 import {getAccountInfo, type AccountVO} from '@/api/account'
 import {getUserInfo} from '@/api/user'
+import {useAssistantState} from '@/composables/useAssistantState'
 
 interface Message {
   id: number
@@ -72,12 +73,17 @@ const toConversation = (c: ConversationVO): ConversationWithTime => ({
 })
 
 // ===== 数据 =====
+const {
+  activeConvId,
+  sidebarCollapsed,
+  saveActiveCid,
+  getStoredActiveCid,
+} = useAssistantState()
+
 const conversations = ref<ConversationWithTime[]>([])
-const activeConvId = ref<number | null>(null)
 const activeConvDetail = ref<ConversationDetailState | null>(null)
 const inputText = ref('')
 const isSending = ref(false)
-const sidebarCollapsed = ref(false)
 const streamingMsgId = ref<number | null>(null)
 const copiedMsgId = ref<number | null>(null)
 const msgFeedback = ref<MsgFeedback>({})
@@ -142,10 +148,16 @@ const loadList = () => {
   listConversations(
       (data) => {
         conversations.value = data.map(toConversation)
-        const first = data[0]
-        if (first && !activeConvId.value) {
-          activeConvId.value = first.id
-          loadDetail(first.id)
+        const storedId = getStoredActiveCid()
+        const found = storedId != null && data.some(c => c.id === storedId)
+        if (found) {
+          activeConvId.value = storedId!
+          loadDetail(storedId)
+        } else if (activeConvId.value != null && !data.some(c => c.id === activeConvId.value)) {
+          activeConvId.value = data[0]?.id ?? null
+          if (activeConvId.value) loadDetail(activeConvId.value)
+          else activeConvDetail.value = null
+          saveActiveCid(activeConvId.value)
         }
         loadingList.value = false
       },
@@ -191,6 +203,7 @@ const newChat = () => {
   createConversation(
       (data) => {
         activeConvId.value = data.id
+        saveActiveCid(data.id)
         activeConvDetail.value = {
           id: data.id,
           title: '新建对话',
@@ -208,6 +221,7 @@ const newChat = () => {
 
 const selectConv = (id: number) => {
   activeConvId.value = id
+  saveActiveCid(id)
   loadDetail(id)
 }
 
@@ -251,6 +265,7 @@ const deleteConv = (id: number) => {
           if (idx >= 0) conversations.value.splice(idx, 1)
           if (activeConvId.value === id) {
             activeConvId.value = conversations.value[0]?.id ?? null
+            saveActiveCid(activeConvId.value)
             activeConvDetail.value = activeConvId.value ? null : activeConvDetail.value
             if (activeConvId.value) loadDetail(activeConvId.value)
             else activeConvDetail.value = null
@@ -274,6 +289,7 @@ const sendMessage = () => {
       createConversation(
           (data) => {
             activeConvId.value = data.id
+            saveActiveCid(data.id)
             activeConvDetail.value = {
               id: data.id,
               title: '新建对话',
