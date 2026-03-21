@@ -857,7 +857,12 @@ public class AssistantServiceImpl implements AssistantService {
         for (Message m : recent) {
             String role = "user".equals(m.getRole()) ? "user" : "assistant";
             String content = m.getContent() != null ? m.getContent() : "";
-            sb.append(role).append(": ").append(content).append("\n");
+            sb.append(role).append(": ").append(content);
+            if ("assistant".equals(m.getRole())) {
+                Feedback fb = m.getFeedback() != null ? m.getFeedback() : Feedback.NONE;
+                sb.append(" [用户反馈：").append(fb.getDescription()).append("]");
+            }
+            sb.append("\n");
         }
         return sb.toString();
     }
@@ -868,6 +873,10 @@ public class AssistantServiceImpl implements AssistantService {
             Map<String, Object> map = new HashMap<>();
             map.put("role", m.getRole());
             map.put("content", m.getContent());
+            if ("assistant".equals(m.getRole())) {
+                Feedback fb = m.getFeedback() != null ? m.getFeedback() : Feedback.NONE;
+                map.put("feedback", fb.getDescription());
+            }
             list.add(map);
         }
         return list;

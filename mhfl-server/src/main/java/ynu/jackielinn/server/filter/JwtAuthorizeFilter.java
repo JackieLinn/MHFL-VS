@@ -27,6 +27,15 @@ public class JwtAuthorizeFilter extends OncePerRequestFilter {
     private JwtUtils utils;
 
     /**
+     * 在 async re-dispatch（如 SSE emitter.send() 触发）时也执行过滤。
+     * 否则异步派发时 SecurityContext 未设置，会触发 Access Denied。
+     */
+    @Override
+    protected boolean shouldNotFilterAsyncDispatch() {
+        return false;
+    }
+
+    /**
      * 过滤器的核心方法，用于解析请求中的 JWT，并设置用户的认证信息
      *
      * @param request     HTTP 请求对象
