@@ -39,6 +39,8 @@ const scrollToBottom = () => {
   if (listRef.value) listRef.value.scrollTop = listRef.value.scrollHeight
 }
 
+const SOURCES_COLLAPSE_LIMIT = 3
+
 marked.setOptions({gfm: true, breaks: true})
 marked.use(markedKatex({throwOnError: false, nonStandard: true}))
 
@@ -109,15 +111,43 @@ defineExpose({scrollToBottom})
           <span v-if="streamingMsgId === msg.id" class="stream-cursor"></span>
           <!-- 参考来源 -->
           <div class="msg-sources mt-2 pt-2" style="border-top: 1px solid var(--home-border)">
-            <span class="msg-sources-label text-[11px] mr-2" style="color: var(--home-text-muted)">参考：</span>
+            <span class="msg-sources-label text-[11px] mr-2"
+                  style="color: var(--home-text-muted)">{{ t('assistant.sourcesLabel') }}</span>
             <template v-if="(msg.sources ?? []).length">
-              <span
-                  v-for="(s, i) in (msg.sources ?? [])"
-                  :key="i"
-                  class="msg-source-tag"
-              >{{ s }}</span>
+              <template v-for="(s, i) in (msg.sources ?? [])" :key="i">
+                <span
+                    v-if="i < SOURCES_COLLAPSE_LIMIT"
+                    class="msg-source-tag"
+                >{{ s }}</span>
+              </template>
+              <el-popover
+                  v-if="(msg.sources ?? []).length > SOURCES_COLLAPSE_LIMIT"
+                  trigger="click"
+                  placement="top-start"
+                  :width="220"
+                  popper-class="msg-sources-popover"
+              >
+                <template #reference>
+                  <span
+                      class="msg-sources-more"
+                      :title="t('assistant.viewAllSources')"
+                  >
+                    +{{ (msg.sources ?? []).length - SOURCES_COLLAPSE_LIMIT }}
+                  </span>
+                </template>
+                <div class="msg-sources-popover-content">
+                  <div
+                      v-for="(s, i) in (msg.sources ?? [])"
+                      :key="i"
+                      class="msg-sources-popover-item"
+                  >{{ s }}
+                  </div>
+                </div>
+              </el-popover>
             </template>
-            <span v-else class="msg-source-none" style="color: var(--home-text-muted)">无</span>
+            <span v-else class="msg-source-none" style="color: var(--home-text-muted)">{{
+                t('assistant.sourcesNone')
+              }}</span>
           </div>
           <!-- 操作按钮 -->
           <div v-if="!msg.streaming" class="msg-actions flex gap-1 mt-2">
@@ -399,6 +429,29 @@ defineExpose({scrollToBottom})
   color: var(--home-text-secondary);
 }
 
+.msg-sources-more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 20px;
+  padding: 0 8px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 9999px;
+  cursor: pointer;
+  background: var(--home-hover-bg);
+  border: 1px solid var(--home-border);
+  color: var(--home-text-muted);
+  transition: all 0.15s;
+}
+
+.msg-sources-more:hover {
+  border-color: rgba(99, 102, 241, .4);
+  color: #6366f1;
+  background: rgba(99, 102, 241, .06);
+}
+
 .msg-source-none {
   font-size: 11px;
 }
@@ -444,4 +497,28 @@ defineExpose({scrollToBottom})
   background: rgba(245, 158, 11, .08) !important;
 }
 
+</style>
+
+<style>
+/* Popover 悬浮在 body，需全局样式 */
+.msg-sources-popover.el-popper {
+  max-height: 200px;
+}
+
+.msg-sources-popover-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.msg-sources-popover-item {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--home-hover-bg);
+  border: 1px solid var(--home-border);
+  color: var(--home-text-secondary);
+}
 </style>

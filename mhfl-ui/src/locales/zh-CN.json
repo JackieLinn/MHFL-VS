@@ -459,6 +459,9 @@
     "quickQ1": "联邦学习入门概念介绍",
     "quickQ2": "对比 FedAvg 和 FedProto 算法",
     "quickQ3": "我最近有哪些训练任务？",
-    "quickQ4": "如何配置 Non-IID 参数？"
+    "quickQ4": "如何配置 Non-IID 参数？",
+    "viewAllSources": "查看全部参考",
+    "sourcesLabel": "参考：",
+    "sourcesNone": "无"
   }
 }

@@ -459,6 +459,9 @@
     "quickQ1": "Introduction to federated learning basics",
     "quickQ2": "Compare FedAvg and FedProto algorithms",
     "quickQ3": "What are my recent training tasks?",
-    "quickQ4": "How to configure Non-IID parameters?"
+    "quickQ4": "How to configure Non-IID parameters?",
+    "viewAllSources": "View all sources",
+    "sourcesLabel": "Sources: ",
+    "sourcesNone": "None"
   }
 }
