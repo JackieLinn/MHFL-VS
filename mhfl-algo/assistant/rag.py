@@ -60,6 +60,7 @@ async def answer(
     根据 needs_kb 编排回答（步骤 14）；memory_context 为历史记忆（步骤 15）。
     """
     has_context_data = bool(context_data)
+    has_memory = bool(memory_context and str(memory_context or "").strip())
     do_rag = needs_kb
 
     if do_rag:
@@ -67,8 +68,8 @@ async def answer(
     else:
         docs = []
 
-    if not do_rag and not has_context_data:
-        return "未获取到相关业务数据，请尝试提问知识库类问题（如「FedAvg 是什么」）。", []
+    if not do_rag and not has_context_data and not has_memory:
+        return "未获取到相关业务数据，请尝试提问知识库类问题（如「FedAvg 是什么」）或先发起对话。", []
 
     use_context_data = context_data if has_context_data else None
     system, user = build_rag_prompt(query, docs, use_context_data, memory_context)

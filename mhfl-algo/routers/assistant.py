@@ -109,15 +109,16 @@ async def chat_stream(req: ChatRequest):
         try:
             needs_kb = req.needs_kb if req.needs_kb is not None else True
             has_context_data = bool(req.context_data)
+            has_memory = bool(req.memory_context and str(req.memory_context or "").strip())
 
             if needs_kb:
                 docs = await get_docs_for_query(req.message)
             else:
                 docs = []
 
-            if not needs_kb and not has_context_data:
+            if not needs_kb and not has_context_data and not has_memory:
                 yield f"data: {json.dumps({'type': 'start'}, ensure_ascii=False)}\n\n"
-                yield f"data: {json.dumps({'type': 'done', 'content': '未获取到相关业务数据，请尝试提问知识库类问题（如「FedAvg 是什么」）。', 'sources': []}, ensure_ascii=False)}\n\n"
+                yield f"data: {json.dumps({'type': 'done', 'content': '未获取到相关业务数据，请尝试提问知识库类问题（如「FedAvg 是什么」）或先发起对话。', 'sources': []}, ensure_ascii=False)}\n\n"
                 return
 
             use_context_data = req.context_data if has_context_data else None
