@@ -124,7 +124,12 @@ async def chat_stream(req: ChatRequest):
             use_context_data = req.context_data if has_context_data else None
             memory_ctx = req.memory_context if req.memory_context else None
             system, user = build_rag_prompt(req.message, docs, use_context_data, memory_ctx)
-            sources = list({d.metadata.get("source", "") for d in docs if d.metadata.get("source", "")})
+            if docs:
+                sources = list({d.metadata.get("source", "") for d in docs if d.metadata.get("source", "")})
+            else:
+                sources = []
+            if has_context_data:
+                sources = list(sources) + ["BusinessData"]
             client = _get_openai_client()
 
             # Start event helps frontend mark stream as connected quickly.

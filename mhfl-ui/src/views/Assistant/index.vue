@@ -25,6 +25,7 @@ interface Message {
   role: 'user' | 'assistant'
   content: string
   time: string
+  sources?: string[]
   streaming?: boolean
 }
 
@@ -60,6 +61,7 @@ const toMessage = (m: MessageVO): Message => ({
   role: m.role as 'user' | 'assistant',
   content: m.content,
   time: formatTime(m.createTime),
+  sources: m.sources ?? [],
 })
 
 const toConversation = (c: ConversationVO): ConversationWithTime => ({
@@ -289,6 +291,7 @@ const sendMessage = () => {
       role: 'assistant',
       content: '',
       time: formatTime(new Date().toISOString()),
+      sources: [],
       streaming: true,
     }
     detail.messages = [...detail.messages, assistantMsg]

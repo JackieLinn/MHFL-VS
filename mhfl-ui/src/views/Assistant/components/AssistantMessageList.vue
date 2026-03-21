@@ -7,6 +7,7 @@ interface Message {
   role: 'user' | 'assistant'
   content: string
   time: string
+  sources?: string[]
   streaming?: boolean
 }
 
@@ -90,6 +91,18 @@ defineExpose({scrollToBottom})
           <div v-if="msg.content" class="msg-content" v-html="formatContent(msg.content)"></div>
           <span v-else class="stream-cursor-only"></span>
           <span v-if="streamingMsgId === msg.id" class="stream-cursor"></span>
+          <!-- 参考来源 -->
+          <div class="msg-sources mt-2 pt-2" style="border-top: 1px solid var(--home-border)">
+            <span class="msg-sources-label text-[11px] mr-2" style="color: var(--home-text-muted)">参考：</span>
+            <template v-if="(msg.sources ?? []).length">
+              <span
+                  v-for="(s, i) in (msg.sources ?? [])"
+                  :key="i"
+                  class="msg-source-tag"
+              >{{ s }}</span>
+            </template>
+            <span v-else class="msg-source-none" style="color: var(--home-text-muted)">无</span>
+          </div>
           <!-- 操作按钮 -->
           <div v-if="!msg.streaming" class="msg-actions flex gap-1 mt-2">
             <button
@@ -266,6 +279,29 @@ defineExpose({scrollToBottom})
   font-weight: 700;
   color: var(--home-text-primary);
   background: rgba(99, 102, 241, .04);
+}
+
+/* 参考来源标签（椭圆形，深浅色模式适配） */
+.msg-sources {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.msg-source-tag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 500;
+  background: var(--home-hover-bg);
+  border: 1px solid var(--home-border);
+  color: var(--home-text-secondary);
+}
+
+.msg-source-none {
+  font-size: 11px;
 }
 
 /* 操作按钮 */

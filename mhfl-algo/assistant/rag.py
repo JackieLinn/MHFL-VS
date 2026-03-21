@@ -75,5 +75,10 @@ async def answer(
     system, user = build_rag_prompt(query, docs, use_context_data, memory_context)
     llm = _get_llm()
     resp = await llm.ainvoke([{"role": "system", "content": system}, {"role": "user", "content": user}])
-    sources = list({d.metadata.get("source", "") for d in docs}) if docs else []
+    if docs:
+        sources = list({d.metadata.get("source", "") for d in docs})
+    else:
+        sources = []
+    if has_context_data:
+        sources = list(sources) + ["BusinessData"]
     return resp.content, sources
