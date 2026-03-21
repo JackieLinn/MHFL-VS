@@ -73,7 +73,7 @@ onMounted(() => {
           class="recent-item flex items-center justify-between gap-3 py-2.5 px-3 rounded-lg transition-all duration-200 recent-item-theme"
           :class="{ 'cursor-pointer': !!slot }"
           :style="{ '--item-delay': `${index * 0.03}s` }"
-          @click="slot && goTo(`/home/task?taskId=${slot.id}`)"
+          @click="slot && goTo(`/home/task/${slot.id}`)"
       >
         <template v-if="slot">
           <div
