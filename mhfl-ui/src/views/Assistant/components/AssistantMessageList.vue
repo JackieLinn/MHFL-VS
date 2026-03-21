@@ -143,20 +143,18 @@ defineExpose({scrollToBottom})
 
     </template>
 
-    <!-- 思考中动画 -->
+    <!-- 思考中：与「正在输出」徽章样式一致 -->
     <div v-if="isSending && streamingMsgId === null" class="flex items-start gap-2.5">
       <div
           class="msg-avatar msg-avatar--ai flex items-center justify-center w-[34px] h-[34px] rounded-[9px] text-[17px] shrink-0 mt-0.5">
         <span class="i-mdi-robot-outline"></span>
       </div>
       <div
-          class="msg-bubble msg-bubble--ai msg-bubble--typing rounded-[14px] rounded-bl-[4px] flex items-center gap-2 px-4 py-3.5">
-        <span class="typing-dot"></span>
-        <span class="typing-dot"></span>
-        <span class="typing-dot"></span>
-        <span class="typing-label text-[13px]" style="color: var(--home-text-muted)">{{
-            t('assistant.thinking')
-          }}</span>
+          class="msg-bubble msg-bubble--ai rounded-[14px] rounded-bl-[4px] flex items-center gap-2 px-4 py-3">
+        <span class="streaming-badge flex items-center gap-1 text-[11px] font-medium px-1.5 py-px rounded-[10px]">
+          <span class="streaming-dot w-[5px] h-[5px] rounded-full"></span>
+          {{ t('assistant.thinking') }}
+        </span>
       </div>
     </div>
   </div>
@@ -352,32 +350,4 @@ defineExpose({scrollToBottom})
   background: rgba(245, 158, 11, .08) !important;
 }
 
-/* 打字动画 */
-.typing-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #6366f1;
-  opacity: .5;
-  animation: typingBounce 1.2s infinite;
-}
-
-.typing-dot:nth-child(2) {
-  animation-delay: .2s
-}
-
-.typing-dot:nth-child(3) {
-  animation-delay: .4s
-}
-
-@keyframes typingBounce {
-  0%, 60%, 100% {
-    transform: translateY(0);
-    opacity: .35
-  }
-  30% {
-    transform: translateY(-6px);
-    opacity: 1
-  }
-}
 </style>

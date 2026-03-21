@@ -181,7 +181,8 @@ onMounted(() => {
       (data) => {
         accountInfo.value = data
       },
-      () => {}
+      () => {
+      }
   )
 })
 
@@ -307,17 +308,25 @@ const sendMessage = () => {
     nextTick(() => msgListRef.value?.scrollToBottom())
 
     const assistantMsgId = -Date.now() - 1
-    const assistantMsg: Message = {
-      id: assistantMsgId,
-      role: 'assistant',
-      content: '',
-      time: formatTime(new Date().toISOString()),
-      sources: [],
-      streaming: true,
-    }
-    detail.messages = [...detail.messages, assistantMsg]
-    streamingMsgId.value = assistantMsgId
+    streamingMsgId.value = null
     nextTick(() => msgListRef.value?.scrollToBottom())
+
+    const ensureAssistantMessage = (): number => {
+      const currentDetail = activeConvDetail.value
+      if (!currentDetail) return -1
+      const idx = currentDetail.messages.findIndex(m => m.id === assistantMsgId)
+      if (idx >= 0) return idx
+      const assistantMsg: Message = {
+        id: assistantMsgId,
+        role: 'assistant',
+        content: '',
+        time: formatTime(new Date().toISOString()),
+        sources: [],
+        streaming: true,
+      }
+      currentDetail.messages.push(assistantMsg)
+      return currentDetail.messages.length - 1
+    }
 
     const updateAssistantMessage = (updater: (current: Message) => Message) => {
       const currentDetail = activeConvDetail.value
@@ -333,10 +342,15 @@ const sendMessage = () => {
         {cid, message: text},
         {
           onDelta: (content) => {
+            if (streamingMsgId.value === null) {
+              streamingMsgId.value = assistantMsgId
+              ensureAssistantMessage()
+            }
             updateAssistantMessage((current) => ({...current, content: `${current.content}${content}`}))
             nextTick(() => msgListRef.value?.scrollToBottom())
           },
           onDone: (fullContent) => {
+            ensureAssistantMessage()
             updateAssistantMessage((current) => ({...current, content: fullContent, streaming: false}))
             streamingMsgId.value = null
             isSending.value = false
@@ -345,6 +359,7 @@ const sendMessage = () => {
             nextTick(() => msgListRef.value?.scrollToBottom())
           },
           onError: (msg) => {
+            ensureAssistantMessage()
             updateAssistantMessage((current) => ({
               ...current,
               content: current.content || msg,

@@ -32,7 +32,8 @@ def build_rag_prompt(
         parts.append("[业务数据]\n" + json.dumps(context_data, ensure_ascii=False, indent=2))
     full_ctx = "\n\n".join(parts) if parts else "（无历史记忆、检索文档与业务数据）"
     system = """你是 MHFL-VS 平台的智能助手。请仅依据下方检索到的上下文和业务数据回答，不知道则明确说明。
-不要编造项目中不存在的接口或字段。参考来源会在回答下方统一展示，回答正文中无需再列举。
+不要编造项目中不存在的接口或字段。
+【重要】参考来源会在回答下方以标签形式单独展示。禁止在回答正文中写「参考文档」「参考来源」「来源：」等字样，也不要列出任何文档名。直接给出答案即可。
 历史记忆中的助手回复带有 [用户反馈：无反馈/点赞/点踩]，请参考用户对以往回答的反馈来调整回答风格，用户点踩过的内容可避免重复。"""
     user = f"上下文：\n{full_ctx}\n\n用户问题：{query}"
     return system, user
