@@ -2,8 +2,10 @@
 import {ref, onMounted, onBeforeUnmount, watch} from 'vue'
 import {useI18n} from 'vue-i18n'
 import AnalogClock from './AnalogClock.vue'
+import {useSystemHealth} from '@/composables/useSystemHealth'
 
 const {locale} = useI18n()
+const {isAllHealthy, ensurePolling} = useSystemHealth()
 
 withDefaults(defineProps<{
   title: string
@@ -44,6 +46,7 @@ watch(locale, () => {
 onMounted(() => {
   updateLiveClock()
   liveClockTimer = window.setInterval(updateLiveClock, 1000)
+  ensurePolling()
 })
 
 onBeforeUnmount(() => {
@@ -100,9 +103,9 @@ onBeforeUnmount(() => {
           <div class="ph-date">{{ liveDate }} {{ liveWeekday }}</div>
         </div>
       </div>
-      <div class="ph-health-chip">
+      <div class="ph-health-chip" :class="{ 'ph-health-chip--unhealthy': !isAllHealthy }">
         <span class="ph-health-dot"></span>
-        <span>{{ $t('pages.dashboard.healthHealthy') }}</span>
+        <span>{{ isAllHealthy ? $t('pages.dashboard.healthHealthy') : $t('pages.dashboard.healthUnhealthy') }}</span>
       </div>
     </div>
   </div>
@@ -366,10 +369,22 @@ html.dark .ph-clock {
   border: 1px solid rgba(22, 163, 74, 0.22);
 }
 
+.ph-health-chip--unhealthy {
+  color: #dc2626;
+  background: rgba(220, 38, 38, 0.1);
+  border-color: rgba(220, 38, 38, 0.22);
+}
+
 html.dark .ph-health-chip {
   color: #4ade80;
   background: rgba(22, 163, 74, 0.12);
   border-color: rgba(34, 197, 94, 0.3);
+}
+
+html.dark .ph-health-chip--unhealthy {
+  color: #fca5a5;
+  background: rgba(248, 113, 113, 0.12);
+  border-color: rgba(248, 113, 113, 0.3);
 }
 
 .ph-health-dot {
@@ -380,8 +395,18 @@ html.dark .ph-health-chip {
   animation: phHealthPulse 2s ease-in-out infinite;
 }
 
+.ph-health-chip--unhealthy .ph-health-dot {
+  background: #dc2626;
+  animation: phHealthPulseRed 2s ease-in-out infinite;
+}
+
 html.dark .ph-health-dot {
   box-shadow: 0 0 7px rgba(34, 197, 94, 0.6);
+}
+
+html.dark .ph-health-chip--unhealthy .ph-health-dot {
+  background: #f87171;
+  box-shadow: 0 0 7px rgba(248, 113, 113, 0.5);
 }
 
 @keyframes phHealthPulse {
@@ -390,6 +415,15 @@ html.dark .ph-health-dot {
   }
   50% {
     box-shadow: 0 0 0 4px rgba(34, 197, 94, 0);
+  }
+}
+
+@keyframes phHealthPulseRed {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(220, 38, 38, 0);
   }
 }
 

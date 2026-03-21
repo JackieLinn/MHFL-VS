@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import {ref, onMounted, onBeforeUnmount} from 'vue'
+import {onMounted} from 'vue'
 import mysqlIcon from '@/assets/middleware/mysql.svg'
 import redisIcon from '@/assets/middleware/redis.svg'
 import rabbitmqIcon from '@/assets/middleware/rabbitmq.svg'
 import fastapiIcon from '@/assets/middleware/fastapi.svg'
-import {getSystemHealth, type DashboardSystemHealthVO} from '@/api/dashboard'
+import {useSystemHealth} from '@/composables/useSystemHealth'
 
 const systemHealthItems = [
   {key: 'mysql' as const, labelKey: 'pages.dashboard.healthMysql', icon: mysqlIcon},
@@ -13,32 +13,10 @@ const systemHealthItems = [
   {key: 'fastapi' as const, labelKey: 'pages.dashboard.healthFastAPI', icon: fastapiIcon},
 ]
 
-const health = ref<DashboardSystemHealthVO | null>(null)
-const POLL_INTERVAL_MS = 10_000
-let pollTimer: ReturnType<typeof setInterval> | null = null
-
-const fetchHealth = () => {
-  getSystemHealth((data) => {
-    health.value = data
-  }, () => {
-    health.value = {mysql: false, redis: false, rabbitmq: false, fastapi: false}
-  })
-}
-
-const healthyCount = () => {
-  if (!health.value) return 0
-  return [health.value.mysql, health.value.redis, health.value.rabbitmq, health.value.fastapi].filter(Boolean).length
-}
-
-const isHealthy = (key: keyof DashboardSystemHealthVO) => health.value?.[key] ?? false
+const {health, healthyCount, isAllHealthy, isHealthy, total, ensurePolling} = useSystemHealth()
 
 onMounted(() => {
-  fetchHealth()
-  pollTimer = setInterval(fetchHealth, POLL_INTERVAL_MS)
-})
-
-onBeforeUnmount(() => {
-  if (pollTimer) clearInterval(pollTimer)
+  ensurePolling()
 })
 </script>
 
@@ -48,7 +26,9 @@ onBeforeUnmount(() => {
     <div class="flex items-center justify-between mb-2.5">
       <h3 class="card-title text-[15px] font-semibold m-0 text-[var(--home-text-primary)]">
         {{ $t('pages.dashboard.systemHealth') }}</h3>
-      <span class="health-summary-badge">{{ healthyCount() }}/{{ systemHealthItems.length }}</span>
+      <span class="health-summary-badge" :class="{ 'health-summary-badge--unhealthy': !isAllHealthy }">{{
+          healthyCount
+        }}/{{ total }}</span>
     </div>
     <div class="grid grid-cols-2 gap-x-3.5 gap-y-2.5 flex-1 min-h-0 health-grid-inner">
       <div
