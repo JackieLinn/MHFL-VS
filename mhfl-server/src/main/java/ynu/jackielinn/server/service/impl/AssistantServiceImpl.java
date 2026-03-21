@@ -21,6 +21,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import reactor.core.Disposable;
 import ynu.jackielinn.server.common.Feedback;
@@ -117,11 +118,14 @@ public class AssistantServiceImpl implements AssistantService {
      * @return 会话列表
      */
     @Override
-    public List<ConversationVO> listByUserId(Long uid) {
+    public List<ConversationVO> listByUserId(Long uid, String keyword) {
         LambdaQueryWrapper<Conversation> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Conversation::getUid, uid)
                 .gt(Conversation::getMessageCount, 0)
                 .orderByDesc(Conversation::getUpdateTime);
+        if (StringUtils.hasText(keyword)) {
+            wrapper.like(Conversation::getTitle, keyword.trim());
+        }
         List<Conversation> list = conversationMapper.selectList(wrapper);
         List<ConversationVO> result = new ArrayList<>(list.size());
         for (Conversation c : list) {

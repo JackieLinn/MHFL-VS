@@ -33,14 +33,6 @@ const keyword = computed({
   set: (val) => emit('update:searchKeyword', val)
 })
 
-const filtered = computed(() => {
-  const kw = keyword.value.trim().toLowerCase()
-  if (!kw) return props.conversations
-  return props.conversations.filter(c =>
-      c.title.toLowerCase().includes(kw) || c.preview.toLowerCase().includes(kw)
-  )
-})
-
 const handleSelect = (id: number) => {
   if (props.isSending) return
   emit('select', id)
@@ -101,7 +93,7 @@ const handleDelete = (e: MouseEvent, id: number) => {
           {{ t('assistant.recentChats') }}
         </div>
         <div
-            v-for="conv in filtered"
+            v-for="conv in props.conversations"
             :key="conv.id"
             class="conv-item flex items-start gap-2.5 p-2.5 rounded-[9px] cursor-pointer mb-0.5 group"
             :class="{ 'conv-item--active': activeConvId === conv.id }"
@@ -137,7 +129,7 @@ const handleDelete = (e: MouseEvent, id: number) => {
           </div>
         </div>
 
-        <div v-if="filtered.length === 0" class="flex flex-col items-center gap-2 py-8 px-4 text-[13px]"
+        <div v-if="props.conversations.length === 0" class="flex flex-col items-center gap-2 py-8 px-4 text-[13px]"
              style="color: var(--home-text-muted)">
           <span class="i-mdi-chat-sleep-outline text-[26px] opacity-45"></span>
           <span>{{ t('assistant.noConvFound') }}</span>

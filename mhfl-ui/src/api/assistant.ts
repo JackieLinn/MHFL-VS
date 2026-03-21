@@ -59,9 +59,13 @@ export const createConversation = (
 
 export const listConversations = (
     success: (data: ConversationVO[]) => void,
-    failure?: (message: string, code: number, url: string) => void
+    failure?: (message: string, code: number, url: string) => void,
+    keyword?: string
 ) => {
-    get('/api/assistant/conversation/list', success, failure)
+    const url = (keyword?.trim() ?? '') !== ''
+        ? `/api/assistant/conversation/list?keyword=${encodeURIComponent(keyword!.trim())}`
+        : '/api/assistant/conversation/list'
+    get(url, success, failure)
 }
 
 export const getConversationDetail = (

@@ -66,12 +66,14 @@ public class AssistantController extends BaseController {
             @ApiResponse(responseCode = "401", description = "未登录或 token 过期")
     })
     @GetMapping("/conversation/list")
-    public RestResponse<List<ConversationVO>> listConversations(HttpServletRequest request) {
+    public RestResponse<List<ConversationVO>> listConversations(
+            @Parameter(description = "按标题模糊搜索，为空时返回全部") @RequestParam(required = false) String keyword,
+            HttpServletRequest request) {
         Long uid = (Long) request.getAttribute("id");
         if (uid == null) {
             return RestResponse.failure(401, "未登录或登录已过期");
         }
-        List<ConversationVO> list = assistantService.listByUserId(uid);
+        List<ConversationVO> list = assistantService.listByUserId(uid, keyword);
         return RestResponse.success(list);
     }
 

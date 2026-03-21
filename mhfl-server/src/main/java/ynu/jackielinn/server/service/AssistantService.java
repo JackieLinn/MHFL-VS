@@ -23,11 +23,13 @@ public interface AssistantService {
 
     /**
      * 查询当前用户的会话列表。仅返回 message_count > 0 的会话，按 update_time 降序。
+     * keyword 非空时按 title 模糊搜索。
      *
-     * @param uid 当前用户 id
+     * @param uid     当前用户 id
+     * @param keyword 搜索关键字（可为 null/空，为空时返回全部）
      * @return 会话列表
      */
-    List<ConversationVO> listByUserId(Long uid);
+    List<ConversationVO> listByUserId(Long uid, String keyword);
 
     /**
      * 获取会话详情。校验归属后返回，含消息列表。

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {ref, computed, nextTick, onMounted} from 'vue'
+import {ref, computed, nextTick, onMounted, watch} from 'vue'
 import {useI18n} from 'vue-i18n'
 import {ElMessage, ElMessageBox} from 'element-plus'
 import AssistantSidebar from './components/AssistantSidebar.vue'
@@ -143,7 +143,7 @@ const sidebarConversations = computed(() =>
 )
 
 // ===== 加载 =====
-const loadList = () => {
+const loadList = (keyword?: string) => {
   loadingList.value = true
   listConversations(
       (data) => {
@@ -163,9 +163,19 @@ const loadList = () => {
       },
       () => {
         loadingList.value = false
-      }
+      },
+      keyword ?? searchKeyword.value
   )
 }
+
+let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null
+watch(searchKeyword, (kw) => {
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
+  searchDebounceTimer = setTimeout(() => {
+    searchDebounceTimer = null
+    loadList(kw ?? '')
+  }, 300)
+})
 
 const loadDetail = (id: number) => {
   loadingDetail.value = true
