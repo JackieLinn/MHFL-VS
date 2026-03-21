@@ -19,6 +19,8 @@ import {
   type ConversationDetailVO,
   type MessageVO,
 } from '@/api/assistant'
+import {getAccountInfo, type AccountVO} from '@/api/account'
+import {getUserInfo} from '@/api/user'
 
 interface Message {
   id: number
@@ -85,6 +87,19 @@ const loadingDetail = ref(false)
 
 const msgListRef = ref<InstanceType<typeof AssistantMessageList> | null>(null)
 const inputRef = ref<InstanceType<typeof AssistantInput> | null>(null)
+const accountInfo = ref<AccountVO | null>(null)
+
+const defaultAvatarUrl = (name: string) => {
+  const n = (name || 'U').trim() || 'U'
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(n)}&background=6366f1&color=fff&size=68`
+}
+
+const userAvatarUrl = computed(() => {
+  const info = accountInfo.value
+  const name = info?.username || getUserInfo()?.username || 'U'
+  if (info?.avatar) return info.avatar
+  return defaultAvatarUrl(name)
+})
 
 // ===== 计算属性 =====
 const activeConv = computed(() => {
@@ -162,6 +177,12 @@ const loadDetail = (id: number) => {
 
 onMounted(() => {
   loadList()
+  getAccountInfo(
+      (data) => {
+        accountInfo.value = data
+      },
+      () => {}
+  )
 })
 
 // ===== 侧边栏操作 =====
@@ -421,6 +442,7 @@ const toggleDislike = (msgId: number) => {
           :is-sending="isSending"
           :copied-msg-id="copiedMsgId"
           :msg-feedback="msgFeedback"
+          :user-avatar-url="userAvatarUrl"
           @copy="copyMessage"
           @like="toggleLike"
           @dislike="toggleDislike"

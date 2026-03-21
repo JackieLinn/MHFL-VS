@@ -21,6 +21,7 @@ defineProps<{
   isSending: boolean
   copiedMsgId: number | null
   msgFeedback: MsgFeedback
+  userAvatarUrl?: string
 }>()
 
 const emit = defineEmits<{
@@ -59,8 +60,14 @@ defineExpose({scrollToBottom})
       <!-- 用户消息 -->
       <div v-if="msg.role === 'user'" class="flex items-start gap-2.5 flex-row-reverse">
         <div
-            class="msg-avatar msg-avatar--user flex items-center justify-center w-[34px] h-[34px] rounded-[9px] text-[17px] shrink-0 mt-0.5">
-          <span class="i-mdi-account"></span>
+            class="msg-avatar msg-avatar--user flex items-center justify-center w-[34px] h-[34px] rounded-[9px] text-[17px] shrink-0 mt-0.5 overflow-hidden">
+          <img
+              v-if="userAvatarUrl"
+              :src="userAvatarUrl"
+              alt="avatar"
+              class="w-full h-full object-cover"
+          />
+          <span v-else class="i-mdi-account"></span>
         </div>
         <div
             class="msg-bubble msg-bubble--user max-w-[66%] rounded-[14px] rounded-br-[4px] px-4 py-3 text-sm leading-[1.75]">
