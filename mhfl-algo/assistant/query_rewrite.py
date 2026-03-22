@@ -6,6 +6,7 @@ import re
 
 from langchain_openai import ChatOpenAI
 
+from assistant.prompt import get_query_rewrite_prompt
 from config.settings import settings
 
 
@@ -35,10 +36,8 @@ async def rewrite_queries(question: str, n: int = 3) -> list[str]:
     if not question or not str(question).strip():
         return []
 
-    prompt = f"""针对以下用户问题，生成 {n} 个不同表述的改写问题，用于检索相关文档。
-要求：换说法、补全关键词、拆解子问题，覆盖同一意图的多种问法。
-用户问题：{question}
-仅输出 {n} 个问题，每行一个，不要其他内容。"""
+    # 改写提示词从 assistant/knowledge/system/query_rewrite_prompt.md 读取
+    prompt = get_query_rewrite_prompt(question, n)
 
     try:
         llm = _get_rewrite_llm()

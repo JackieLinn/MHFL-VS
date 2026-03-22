@@ -4,6 +4,7 @@
 """
 from langchain_openai import ChatOpenAI
 
+from assistant.prompt import get_summary_prompt
 from config.settings import settings
 
 SUMMARY_TARGET_CHARS = "300-350"
@@ -37,26 +38,8 @@ async def generate_summary(prev_summary: str | None, new_messages: list[dict]) -
         return f"{role}: {content}"
 
     hist = "\n".join([_format_msg(m) for m in new_messages])
-
-    if prev_summary and prev_summary.strip():
-        prompt = f"""请将以下「已有摘要」与「新增对话」合并为一条新摘要。
-要求：保留用户关注点、已讨论模块、关键结论、未解决问题；每条助手回复带有 [用户反馈：无反馈/点赞/点踩]，请在摘要中简要提及用户对哪些回答满意或不满；字数尽可能在 {SUMMARY_TARGET_CHARS} 字左右，不要超出太多。
-
-已有摘要：
-{prev_summary.strip()}
-
-新增对话：
-{hist}
-
-新摘要："""
-    else:
-        prompt = f"""请将以下对话整理成简短摘要。
-要求：保留用户关注点、已讨论模块、关键结论、未解决问题；每条助手回复带有 [用户反馈：无反馈/点赞/点踩]，请在摘要中简要提及用户对哪些回答满意或不满；字数尽可能在 {SUMMARY_TARGET_CHARS} 字左右，不要超出太多。
-
-对话记录：
-{hist}
-
-摘要："""
+    # 摘要提示词统一从 assistant/knowledge/system 读取
+    prompt = get_summary_prompt(prev_summary, hist, SUMMARY_TARGET_CHARS)
 
     try:
         llm = _get_summary_llm()
