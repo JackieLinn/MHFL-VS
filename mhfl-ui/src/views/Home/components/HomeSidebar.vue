@@ -84,7 +84,7 @@ const handleMenuClick = (path: string) => {
     <!-- 收缩/展开按钮 -->
     <div class="collapse-btn p-3 cursor-pointer flex items-center justify-center transition-all border-t"
          @click="toggleCollapse">
-      <span :class="isCollapsed ? 'i-mdi-menu-open' : 'i-mdi-menu-close'"
+      <span :class="isCollapsed ? 'i-mdi-menu-close' : 'i-mdi-menu-open'"
             class="text-xl transition-transform"></span>
     </div>
   </aside>
