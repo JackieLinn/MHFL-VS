@@ -5,6 +5,7 @@ import {useI18n} from 'vue-i18n'
 import {ElMessage, ElMessageBox} from 'element-plus'
 import {Search, Plus} from '@element-plus/icons-vue'
 import PageHeader from '@/components/PageHeader.vue'
+import BackToTop from '@/components/BackToTop.vue'
 import CreateTaskDialog from './components/CreateTaskDialog.vue'
 import TaskCard from './components/TaskCard.vue'
 import {getUserInfo} from '@/api/user'
@@ -116,62 +117,64 @@ const handleDelete = (task: TaskVO) => {
 
 <template>
   <div class="task-manage">
-    <PageHeader
-        class="mb-5"
-        :title="$t('pages.task.title')"
-        :desc="$t('pages.task.desc')"
-    />
+    <div id="task-scroll" class="task-scroll">
+      <PageHeader
+          class="mb-5"
+          :title="$t('pages.task.title')"
+          :desc="$t('pages.task.desc')"
+      />
 
-    <!-- 搜索栏 -->
-    <div class="task-manage-header flex flex-wrap items-end gap-4">
-      <el-input
-          v-model="keyword"
-          :placeholder="$t('pages.task.searchKeyword')"
-          clearable
-          class="search-keyword w-56"
-          @keyup.enter="onSearch"
-      />
-      <el-date-picker
-          v-model="startTime"
-          type="date"
-          :placeholder="$t('pages.task.searchStartTime')"
-          value-format="YYYY-MM-DD"
-          class="w-40"
-          clearable
-      />
-      <el-date-picker
-          v-model="endTime"
-          type="date"
-          :placeholder="$t('pages.task.searchEndTime')"
-          value-format="YYYY-MM-DD"
-          class="w-40"
-          clearable
-      />
-      <el-button type="primary" :icon="Search" @click="onSearch">{{ $t('pages.task.search') }}</el-button>
-      <el-button type="success" :icon="Plus" @click="handleCreateTask">{{ $t('pages.task.createTask') }}</el-button>
-    </div>
-
-    <!-- 任务列表（卡片式） -->
-    <div v-loading="loading" class="task-list flex flex-col gap-3">
-      <div v-if="isEmpty" class="task-empty">
-        <div class="empty-icon"></div>
-        <p class="empty-title">{{ $t('pages.task.noTasks') }}</p>
-        <p class="empty-hint">{{ $t('pages.task.noTasksHint') }}</p>
+      <!-- 搜索栏：滚动到顶部后 sticky -->
+      <div class="task-manage-header flex flex-wrap items-end gap-4">
+        <el-input
+            v-model="keyword"
+            :placeholder="$t('pages.task.searchKeyword')"
+            clearable
+            class="search-keyword w-56"
+            @keyup.enter="onSearch"
+        />
+        <el-date-picker
+            v-model="startTime"
+            type="date"
+            :placeholder="$t('pages.task.searchStartTime')"
+            value-format="YYYY-MM-DD"
+            class="w-40"
+            clearable
+        />
+        <el-date-picker
+            v-model="endTime"
+            type="date"
+            :placeholder="$t('pages.task.searchEndTime')"
+            value-format="YYYY-MM-DD"
+            class="w-40"
+            clearable
+        />
+        <el-button type="primary" :icon="Search" @click="onSearch">{{ $t('pages.task.search') }}</el-button>
+        <el-button type="success" :icon="Plus" @click="handleCreateTask">{{ $t('pages.task.createTask') }}</el-button>
       </div>
 
-      <TaskCard
-          v-for="task in list"
-          :key="task.id"
-          :task="task"
-          :is-admin="isAdmin"
-          @view-detail="handleViewDetail"
-          @delete="handleDelete"
-          @recommend-success="onRecommendSuccess"
-          @start-success="onTaskCreated"
-      />
+      <!-- 任务列表（卡片式） -->
+      <div v-loading="loading" class="task-list flex flex-col gap-3">
+        <div v-if="isEmpty" class="task-empty">
+          <div class="empty-icon"></div>
+          <p class="empty-title">{{ $t('pages.task.noTasks') }}</p>
+          <p class="empty-hint">{{ $t('pages.task.noTasksHint') }}</p>
+        </div>
+
+        <TaskCard
+            v-for="task in list"
+            :key="task.id"
+            :task="task"
+            :is-admin="isAdmin"
+            @view-detail="handleViewDetail"
+            @delete="handleDelete"
+            @recommend-success="onRecommendSuccess"
+            @start-success="onTaskCreated"
+        />
+      </div>
     </div>
 
-    <!-- 分页 -->
+    <!-- 分页（固定在底部） -->
     <div v-if="!isEmpty" class="task-manage-footer flex items-center justify-between gap-4 flex-nowrap">
       <div class="footer-left flex items-center gap-3 flex-shrink-0">
         <span class="text-sm text-[var(--home-text-muted)] whitespace-nowrap">{{ $t('pages.task.pageSize') }}</span>
@@ -193,11 +196,12 @@ const handleDelete = (task: TaskVO) => {
     </div>
 
     <CreateTaskDialog v-model="createDialogVisible" @created="onTaskCreated"/>
+    <BackToTop scroll-target="#task-scroll"/>
   </div>
 </template>
 
 <style scoped>
-/* 整体：顶部/底部固定，中间滚动（与 AccountManage 一致） */
+/* PageHeader 滚走，搜索栏 sticky，列表滚动，分页固定底部 */
 .task-manage {
   height: 100%;
   display: flex;
@@ -207,9 +211,20 @@ const handleDelete = (task: TaskVO) => {
   padding-bottom: 3px;
 }
 
+.task-scroll {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding-right: 4px;
+}
+
 .task-manage-header {
-  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
   margin-bottom: 16px;
+  padding-bottom: 4px;
+  background: var(--home-bg);
 }
 
 .task-manage-header :deep(.el-input__wrapper),
@@ -219,9 +234,6 @@ const handleDelete = (task: TaskVO) => {
 }
 
 .task-list {
-  flex: 1;
-  overflow-y: auto;
-  min-height: 0;
   padding-right: 4px;
 }
 
