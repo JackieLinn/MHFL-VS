@@ -96,4 +96,9 @@ class JwtAuthorizeFilterTest {
         verify(request).setAttribute("id", 100L);
         verify(filterChain).doFilter(request, response);
     }
+
+    @Test
+    void shouldFilterAsyncDispatch() {
+        assertFalse(filter.shouldNotFilterAsyncDispatch());
+    }
 }

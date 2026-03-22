@@ -145,6 +145,19 @@ class FlowLimitingFilterTest {
     }
 
     @Test
+    void shouldNormalizeNullAddressTo127_0_0_1() throws Exception {
+        when(request.getRemoteAddr()).thenReturn(null);
+        when(template.hasKey(Const.FLOW_LIMIT_BLOCK + "127.0.0.1")).thenReturn(false);
+        when(template.execute(any(RedisScript.class), eq(Collections.singletonList(Const.FLOW_LIMIT_COUNTER + "127.0.0.1"))))
+                .thenReturn(1L);
+
+        filter.doFilter(request, response, chain);
+
+        verify(template).execute(any(RedisScript.class), eq(Collections.singletonList(Const.FLOW_LIMIT_COUNTER + "127.0.0.1")));
+        verify(chain).doFilter(request, response);
+    }
+
+    @Test
     void shouldPassWhenLuaReturnsNull() throws Exception {
         when(request.getRemoteAddr()).thenReturn(IP);
         when(template.hasKey(Const.FLOW_LIMIT_BLOCK + IP)).thenReturn(false);

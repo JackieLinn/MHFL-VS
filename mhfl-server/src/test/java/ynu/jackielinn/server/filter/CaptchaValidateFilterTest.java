@@ -90,6 +90,23 @@ class CaptchaValidateFilterTest {
     }
 
     @Test
+    void shouldWriteErrorWhenCaptchaCodeEmpty() throws Exception {
+        when(request.getRequestURI()).thenReturn("/auth/login");
+        when(request.getMethod()).thenReturn("POST");
+        when(request.getParameter("captchaId")).thenReturn("id1");
+        when(request.getParameter("captchaCode")).thenReturn(" ");
+
+        StringWriter sw = new StringWriter();
+        when(response.getWriter()).thenReturn(new PrintWriter(sw));
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        verify(response).setStatus(HttpServletResponse.SC_BAD_REQUEST);
+        assertFalse(sw.toString().isBlank());
+        verify(filterChain, never()).doFilter(request, response);
+    }
+
+    @Test
     void shouldWriteErrorWhenSavedCodeNull() throws Exception {
         when(request.getRequestURI()).thenReturn("/auth/login");
         when(request.getMethod()).thenReturn("POST");

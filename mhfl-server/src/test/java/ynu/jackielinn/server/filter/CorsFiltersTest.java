@@ -62,4 +62,30 @@ class CorsFiltersTest {
 
         verify(chain, times(1)).doFilter(request, response);
     }
+
+    @Test
+    void shouldSetSseHeadersWhenStreamEndpoint() throws Exception {
+        when(request.getHeader("Origin")).thenReturn("http://localhost");
+        when(request.getRequestURI()).thenReturn("/api/assistant/chat/stream");
+
+        filter.doFilter(request, response, chain);
+
+        verify(response).setHeader("Cache-Control", "no-cache");
+        verify(response).setHeader("Connection", "keep-alive");
+        verify(response).setHeader("X-Accel-Buffering", "no");
+        verify(chain).doFilter(request, response);
+    }
+
+    @Test
+    void shouldNotSetSseHeadersWhenUriIsNull() throws Exception {
+        when(request.getHeader("Origin")).thenReturn("http://localhost");
+        when(request.getRequestURI()).thenReturn(null);
+
+        filter.doFilter(request, response, chain);
+
+        verify(response, never()).setHeader(eq("Cache-Control"), anyString());
+        verify(response, never()).setHeader(eq("Connection"), anyString());
+        verify(response, never()).setHeader(eq("X-Accel-Buffering"), anyString());
+        verify(chain).doFilter(request, response);
+    }
 }
