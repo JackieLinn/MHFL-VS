@@ -4,13 +4,14 @@ import jakarta.validation.ValidationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import ynu.jackielinn.server.common.RestResponse;
+import ynu.jackielinn.server.controller.ControllerTestSupport;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * ValidationController 单元测试：ValidationException 处理返回 400 及固定文案。
  */
-class ValidationControllerTest {
+class ValidationControllerTest extends ControllerTestSupport {
 
     private ValidationController controller;
 
