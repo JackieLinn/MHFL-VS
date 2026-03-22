@@ -271,6 +271,11 @@
         "startSuccess": "训练已启动",
         "stopSuccess": "训练已停止"
       },
+      "createTimeSort": "创建时间排序",
+      "updateTimeSort": "更新时间排序",
+      "sortDefault": "默认",
+      "sortAsc": "升序",
+      "sortDesc": "降序",
       "errors": {
         "gpuUnavailable": "GPU 不可用或未检测到 GPU",
         "gpuMemoryInsufficient": "GPU 显存不足",

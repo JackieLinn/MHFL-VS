@@ -11,6 +11,7 @@ import TaskCard from './components/TaskCard.vue'
 import {getUserInfo} from '@/api/user'
 import {listTasks, deleteTask, type TaskVO} from '@/api/task'
 import {usePageSize} from '@/composables/usePageSize'
+import {useTaskSortPreference, type TimeSortOrder} from '@/composables/useTaskSortPreference'
 
 const router = useRouter()
 const {t} = useI18n()
@@ -21,6 +22,7 @@ const isAdmin = computed(() => getUserInfo()?.role === 'admin')
 const keyword = ref('')
 const startTime = ref('')
 const endTime = ref('')
+const {createTimeSort, updateTimeSort} = useTaskSortPreference('task')
 
 // 分页
 const currentPage = ref(1)
@@ -28,6 +30,55 @@ const {pageSize, pageSizeOptions} = usePageSize('task')
 const total = ref(0)
 const list = ref<TaskVO[]>([])
 const loading = ref(false)
+
+const baseSortOptions = computed(() => [
+  {label: t('pages.task.sortDefault'), value: 'DEFAULT' as TimeSortOrder},
+  {label: t('pages.task.sortAsc'), value: 'ASC' as TimeSortOrder},
+  {label: t('pages.task.sortDesc'), value: 'DESC' as TimeSortOrder}
+])
+
+const createSortOptions = computed(() =>
+    baseSortOptions.value.map((option) => ({
+      value: option.value,
+      label: `${t('pages.task.createTimeSort')} - ${option.label}`
+    }))
+)
+
+const updateSortOptions = computed(() =>
+    baseSortOptions.value.map((option) => ({
+      value: option.value,
+      label: `${t('pages.task.updateTimeSort')} - ${option.label}`
+    }))
+)
+
+const parseTimeToStamp = (value?: string | null) => {
+  if (!value) return 0
+  const normalized = value.includes('T') ? value : value.replace(' ', 'T')
+  const stamp = new Date(normalized).getTime()
+  return Number.isNaN(stamp) ? 0 : stamp
+}
+
+const sortByTimeField = (
+    field: 'createTime' | 'updateTime',
+    order: Exclude<TimeSortOrder, 'DEFAULT'>
+) => {
+  const direction = order === 'ASC' ? 1 : -1
+  return [...list.value].sort((a, b) => {
+    const diff = parseTimeToStamp(a[field]) - parseTimeToStamp(b[field])
+    if (diff !== 0) return diff * direction
+    return a.id - b.id
+  })
+}
+
+const sortedList = computed(() => {
+  if (createTimeSort.value !== 'DEFAULT') {
+    return sortByTimeField('createTime', createTimeSort.value)
+  }
+  if (updateTimeSort.value !== 'DEFAULT') {
+    return sortByTimeField('updateTime', updateTimeSort.value)
+  }
+  return list.value
+})
 
 const fetchList = () => {
   loading.value = true
@@ -125,32 +176,64 @@ const handleDelete = (task: TaskVO) => {
       />
 
       <!-- 搜索栏：滚动到顶部后 sticky -->
-      <div class="task-manage-header flex flex-wrap items-end gap-4">
-        <el-input
-            v-model="keyword"
-            :placeholder="$t('pages.task.searchKeyword')"
-            clearable
-            class="search-keyword w-56"
-            @keyup.enter="onSearch"
-        />
-        <el-date-picker
-            v-model="startTime"
-            type="date"
-            :placeholder="$t('pages.task.searchStartTime')"
-            value-format="YYYY-MM-DD"
-            class="w-40"
-            clearable
-        />
-        <el-date-picker
-            v-model="endTime"
-            type="date"
-            :placeholder="$t('pages.task.searchEndTime')"
-            value-format="YYYY-MM-DD"
-            class="w-40"
-            clearable
-        />
-        <el-button type="primary" :icon="Search" @click="onSearch">{{ $t('pages.task.search') }}</el-button>
-        <el-button type="success" :icon="Plus" @click="handleCreateTask">{{ $t('pages.task.createTask') }}</el-button>
+      <div class="task-manage-header">
+        <div class="task-header-row task-header-row-keyword">
+          <el-input
+              v-model="keyword"
+              :placeholder="$t('pages.task.searchKeyword')"
+              clearable
+              class="search-keyword w-56"
+              @keyup.enter="onSearch"
+          />
+        </div>
+        <div class="task-header-row task-header-row-actions">
+          <el-date-picker
+              v-model="startTime"
+              type="date"
+              :placeholder="$t('pages.task.searchStartTime')"
+              value-format="YYYY-MM-DD"
+              class="task-filter-control"
+              clearable
+          />
+          <el-date-picker
+              v-model="endTime"
+              type="date"
+              :placeholder="$t('pages.task.searchEndTime')"
+              value-format="YYYY-MM-DD"
+              class="task-filter-control"
+              clearable
+          />
+          <el-select
+              v-model="createTimeSort"
+              class="task-filter-control"
+              :placeholder="$t('pages.task.createTimeSort')"
+          >
+            <el-option
+                v-for="option in createSortOptions"
+                :key="`create-${option.value}`"
+                :label="option.label"
+                :value="option.value"
+            />
+          </el-select>
+          <el-select
+              v-model="updateTimeSort"
+              class="task-filter-control"
+              :placeholder="$t('pages.task.updateTimeSort')"
+          >
+            <el-option
+                v-for="option in updateSortOptions"
+                :key="`update-${option.value}`"
+                :label="option.label"
+                :value="option.value"
+            />
+          </el-select>
+          <el-button class="task-action-btn" type="primary" :icon="Search" @click="onSearch">
+            {{ $t('pages.task.search') }}
+          </el-button>
+          <el-button class="task-action-btn" type="success" :icon="Plus" @click="handleCreateTask">
+            {{ $t('pages.task.createTask') }}
+          </el-button>
+        </div>
       </div>
 
       <!-- 任务列表（卡片式） -->
@@ -162,7 +245,7 @@ const handleDelete = (task: TaskVO) => {
         </div>
 
         <TaskCard
-            v-for="task in list"
+            v-for="task in sortedList"
             :key="task.id"
             :task="task"
             :is-admin="isAdmin"
@@ -225,10 +308,42 @@ const handleDelete = (task: TaskVO) => {
   margin-bottom: 16px;
   padding-bottom: 4px;
   background: var(--home-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.task-header-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+}
+
+.task-header-row-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) auto auto;
+  align-items: end;
+  width: 100%;
+}
+
+.task-filter-control {
+  min-width: 0;
+  width: 100%;
+}
+
+.task-header-row-actions :deep(.el-date-editor),
+.task-header-row-actions :deep(.el-select) {
+  width: 100%;
+  min-width: 0;
+}
+
+.task-action-btn {
+  width: 120px;
 }
 
 .task-manage-header :deep(.el-input__wrapper),
-.task-manage-header :deep(.el-date-editor) {
+.task-manage-header :deep(.el-date-editor),
+.task-manage-header :deep(.el-select__wrapper) {
   background: var(--home-card-bg);
   border-color: var(--home-border);
 }

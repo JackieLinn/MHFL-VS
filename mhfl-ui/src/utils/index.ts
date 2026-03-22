@@ -1,6 +1,7 @@
 import axios, {type AxiosInstance, type AxiosError, type AxiosResponse} from "axios";
 import {ElMessage} from "element-plus";
 import {clearAllPageSizePreferences} from "@/composables/usePageSize";
+import {clearAllTaskSortPreferences} from "@/composables/useTaskSortPreference";
 import {resolveTrainError} from "@/utils/trainError";
 
 // =========================================================================
@@ -56,6 +57,7 @@ const deleteAccessToken = (): void => {
     localStorage.removeItem(authItemName);
     sessionStorage.removeItem(authItemName);
     clearAllPageSizePreferences();
+    clearAllTaskSortPreferences();
 };
 
 // 获取 Token
