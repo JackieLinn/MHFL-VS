@@ -63,10 +63,36 @@ class WebSocketSessionManagerTest {
     }
 
     @Test
+    void removeSessionShouldKeepTaskWhenOtherSessionsStillExist() {
+        Long taskId = 1L;
+        WebSocketSession s1 = mock(WebSocketSession.class);
+        WebSocketSession s2 = mock(WebSocketSession.class);
+        manager.addSession(taskId, s1);
+        manager.addSession(taskId, s2);
+
+        manager.removeSession(taskId, s1);
+
+        Set<WebSocketSession> sessions = manager.getSessions(taskId);
+        assertEquals(1, sessions.size());
+        assertTrue(sessions.contains(s2));
+    }
+
+    @Test
     void getSessionsWhenNoTaskShouldReturnEmptySet() {
         Set<WebSocketSession> sessions = manager.getSessions(999L);
         assertNotNull(sessions);
         assertTrue(sessions.isEmpty());
+    }
+
+    @Test
+    void getSessionsShouldReturnUnmodifiableSet() {
+        Long taskId = 1L;
+        WebSocketSession session = mock(WebSocketSession.class);
+        manager.addSession(taskId, session);
+
+        Set<WebSocketSession> sessions = manager.getSessions(taskId);
+
+        assertThrows(UnsupportedOperationException.class, () -> sessions.add(mock(WebSocketSession.class)));
     }
 
     @Test
@@ -126,6 +152,19 @@ class WebSocketSessionManagerTest {
         manager.closeAllSessionsForTask(taskId);
 
         verify(session).close(any());
+        assertTrue(manager.getSessions(taskId).isEmpty());
+    }
+
+    @Test
+    void closeAllSessionsForTaskShouldRemoveClosedSessionsWithoutClosingAgain() throws Exception {
+        Long taskId = 1L;
+        WebSocketSession session = mock(WebSocketSession.class);
+        when(session.isOpen()).thenReturn(false);
+        manager.addSession(taskId, session);
+
+        manager.closeAllSessionsForTask(taskId);
+
+        verify(session, never()).close(any());
         assertTrue(manager.getSessions(taskId).isEmpty());
     }
 

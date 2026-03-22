@@ -183,6 +183,70 @@ class TaskWebSocketHandlerTest {
     }
 
     @Test
+    void afterConnectionClosedShouldNotRemoveOrUnsubscribeWhenNotAuthenticated() throws Exception {
+        sessionAttrs.put("taskId", 1L);
+        sessionAttrs.put("authenticated", false);
+
+        handler.afterConnectionClosed(session, CloseStatus.NORMAL);
+
+        verify(sessionManager, never()).removeSession(anyLong(), any());
+        verify(subscriptionService, never()).unsubscribeTask(anyLong());
+    }
+
+    @Test
+    void afterConnectionClosedShouldResolveTaskIdFromUriWhenAttributeMissing() throws Exception {
+        sessionAttrs.put("authenticated", false);
+        when(session.getUri()).thenReturn(URI.create("http://localhost/ws/task/2"));
+
+        handler.afterConnectionClosed(session, CloseStatus.NORMAL);
+
+        verify(sessionManager, never()).removeSession(anyLong(), any());
+        verify(subscriptionService, never()).unsubscribeTask(anyLong());
+    }
+
+    @Test
+    void afterConnectionClosedWhenTaskRecommendedShouldUnsubscribe() throws Exception {
+        sessionAttrs.put("taskId", 1L);
+        sessionAttrs.put("authenticated", true);
+        when(sessionManager.getSessions(1L)).thenReturn(Set.of());
+        Task task = new Task();
+        task.setStatus(Status.RECOMMENDED);
+        when(taskService.getById(1L)).thenReturn(task);
+
+        handler.afterConnectionClosed(session, CloseStatus.NORMAL);
+
+        verify(subscriptionService).unsubscribeTask(1L);
+    }
+
+    @Test
+    void afterConnectionClosedWhenTaskFailedShouldUnsubscribe() throws Exception {
+        sessionAttrs.put("taskId", 1L);
+        sessionAttrs.put("authenticated", true);
+        when(sessionManager.getSessions(1L)).thenReturn(Set.of());
+        Task task = new Task();
+        task.setStatus(Status.FAILED);
+        when(taskService.getById(1L)).thenReturn(task);
+
+        handler.afterConnectionClosed(session, CloseStatus.NORMAL);
+
+        verify(subscriptionService).unsubscribeTask(1L);
+    }
+
+    @Test
+    void afterConnectionClosedWhenTaskCancelledShouldUnsubscribe() throws Exception {
+        sessionAttrs.put("taskId", 1L);
+        sessionAttrs.put("authenticated", true);
+        when(sessionManager.getSessions(1L)).thenReturn(Set.of());
+        Task task = new Task();
+        task.setStatus(Status.CANCELLED);
+        when(taskService.getById(1L)).thenReturn(task);
+
+        handler.afterConnectionClosed(session, CloseStatus.NORMAL);
+
+        verify(subscriptionService).unsubscribeTask(1L);
+    }
+
+    @Test
     void handleTextMessageShouldReturnWhenAlreadyAuthenticated() throws Exception {
         sessionAttrs.put("taskId", 1L);
         sessionAttrs.put("authenticated", true);
@@ -199,6 +263,17 @@ class TaskWebSocketHandlerTest {
         sessionAttrs.put("authenticated", false);
 
         handler.handleTextMessage(session, new TextMessage("{}"));
+
+        verify(session).close(argThat(s -> s.getCode() == CloseStatus.POLICY_VIOLATION.getCode()));
+        verify(sessionManager, never()).addSession(anyLong(), any());
+    }
+
+    @Test
+    void handleTextMessageShouldCloseWhenPayloadBlank() throws Exception {
+        sessionAttrs.put("taskId", 1L);
+        sessionAttrs.put("authenticated", false);
+
+        handler.handleTextMessage(session, new TextMessage("   "));
 
         verify(session).close(argThat(s -> s.getCode() == CloseStatus.POLICY_VIOLATION.getCode()));
         verify(sessionManager, never()).addSession(anyLong(), any());
@@ -338,5 +413,24 @@ class TaskWebSocketHandlerTest {
         verify(session, never()).close(any());
         verify(sessionManager).addSession(1L, session);
         verify(subscriptionService).subscribeTask(1L);
+        assertEquals(true, sessionAttrs.get("authenticated"));
+    }
+
+    @Test
+    void afterConnectionEstablishedShouldCloseWhenUriPathNull() throws Exception {
+        when(session.getUri()).thenReturn(new URI("http", "localhost", null, null));
+
+        handler.afterConnectionEstablished(session);
+
+        verify(session).close(argThat(s -> s.getCode() == CloseStatus.BAD_DATA.getCode()));
+    }
+
+    @Test
+    void afterConnectionEstablishedShouldCloseWhenPathDoesNotContainTaskSegment() throws Exception {
+        when(session.getUri()).thenReturn(URI.create("http://localhost/ws/not-task/1"));
+
+        handler.afterConnectionEstablished(session);
+
+        verify(session).close(argThat(s -> s.getCode() == CloseStatus.BAD_DATA.getCode()));
     }
 }
