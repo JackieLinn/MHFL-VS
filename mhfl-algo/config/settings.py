@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     # 智能助手配置（.env 中配置，OPENAI_API_KEY 必填）
     OPENAI_API_KEY: str = ""
     OPENAI_API_BASE: str | None = None
-    ASSISTANT_MODEL: str = "gpt-4o-mini"
+    ASSISTANT_MODEL: str = "gpt-5-mini-2025-08-07"
     ASSISTANT_EMBEDDING_MODEL: str = "text-embedding-3-small"
     ASSISTANT_KB_DIR: str = "assistant/knowledge/raw"
     ASSISTANT_CHROMA_DIR: str = "assistant/knowledge/chroma_db"

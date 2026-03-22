@@ -85,20 +85,32 @@ def build_rag_prompt(
         context_data: dict | None = None,
         memory_context: str | None = None,
 ) -> tuple[str, str]:
-    """拼装 RAG 的 system 与 user，返回 (system, user)。memory_context 为历史摘要+最近对话（步骤 15）。"""
+    """拼装 RAG 的 system 与 user，返回 (system, user)。"""
     parts: list[str] = []
+
     if memory_context and memory_context.strip():
-        parts.append(f"[历史记忆]\n{memory_context.strip()}\n")
+        parts.append("## 历史记忆\n" + memory_context.strip())
+
     if docs:
-        context = "\n\n".join([
-            f"[文档{i + 1}]\n来源: {d.metadata.get('source', '')}\n内容:\n{d.page_content}"
-            for i, d in enumerate(docs)
-        ])
-        parts.append(context)
+        doc_blocks = []
+        for i, d in enumerate(docs, start=1):
+            source = d.metadata.get("source", "")
+            doc_blocks.append(
+                f"### 文档片段 {i}\n"
+                f"- 来源文件：`{source}`\n\n"
+                f"{d.page_content.strip()}"
+            )
+        parts.append("## 知识库检索结果\n\n" + "\n\n".join(doc_blocks))
+
     if context_data:
-        parts.append(get_business_data_desc_prompt())
-        parts.append("[业务数据]\n" + json.dumps(context_data, ensure_ascii=False, indent=2))
-    full_ctx = "\n\n".join(parts) if parts else "（无历史记忆、检索文档与业务数据）"
+        parts.append("## 业务数据说明\n" + get_business_data_desc_prompt().strip())
+        parts.append(
+            "## 业务数据内容\n```json\n"
+            + json.dumps(context_data, ensure_ascii=False, indent=2)
+            + "\n```"
+        )
+
+    full_ctx = "\n\n".join(parts) if parts else "## 上下文\n（无可用上下文）"
     system = get_rag_system_prompt()
     user = get_rag_user_prompt(full_ctx, query)
     return system, user
