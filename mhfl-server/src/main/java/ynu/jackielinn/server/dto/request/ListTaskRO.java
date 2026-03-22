@@ -43,4 +43,12 @@ public class ListTaskRO {
     @Schema(description = "终止创建时间（可选，格式：yyyy-MM-dd）")
     @JsonFormat(pattern = "yyyy-MM-dd", timezone = "GMT+8")
     private LocalDate endTime;
+
+    @Schema(description = "创建时间排序（DEFAULT/ASC/DESC，默认 DEFAULT）")
+    @Builder.Default
+    private String createTimeSort = "DEFAULT";
+
+    @Schema(description = "更新时间排序（DEFAULT/ASC/DESC，默认 DEFAULT）")
+    @Builder.Default
+    private String updateTimeSort = "DEFAULT";
 }

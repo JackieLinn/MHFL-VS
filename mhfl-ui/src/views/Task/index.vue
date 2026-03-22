@@ -51,35 +51,6 @@ const updateSortOptions = computed(() =>
     }))
 )
 
-const parseTimeToStamp = (value?: string | null) => {
-  if (!value) return 0
-  const normalized = value.includes('T') ? value : value.replace(' ', 'T')
-  const stamp = new Date(normalized).getTime()
-  return Number.isNaN(stamp) ? 0 : stamp
-}
-
-const sortByTimeField = (
-    field: 'createTime' | 'updateTime',
-    order: Exclude<TimeSortOrder, 'DEFAULT'>
-) => {
-  const direction = order === 'ASC' ? 1 : -1
-  return [...list.value].sort((a, b) => {
-    const diff = parseTimeToStamp(a[field]) - parseTimeToStamp(b[field])
-    if (diff !== 0) return diff * direction
-    return a.id - b.id
-  })
-}
-
-const sortedList = computed(() => {
-  if (createTimeSort.value !== 'DEFAULT') {
-    return sortByTimeField('createTime', createTimeSort.value)
-  }
-  if (updateTimeSort.value !== 'DEFAULT') {
-    return sortByTimeField('updateTime', updateTimeSort.value)
-  }
-  return list.value
-})
-
 const fetchList = () => {
   loading.value = true
   listTasks(
@@ -87,6 +58,8 @@ const fetchList = () => {
         keyword: keyword.value.trim() || undefined,
         startTime: startTime.value || undefined,
         endTime: endTime.value || undefined,
+        createTimeSort: createTimeSort.value,
+        updateTimeSort: updateTimeSort.value,
         current: currentPage.value,
         size: pageSize.value
       },
@@ -111,6 +84,14 @@ watch(keyword, (newVal) => {
     currentPage.value = 1
     fetchList()
   }
+})
+
+watch([createTimeSort, updateTimeSort], ([newCreate, newUpdate], [oldCreate, oldUpdate]) => {
+  if (newCreate === oldCreate && newUpdate === oldUpdate) {
+    return
+  }
+  currentPage.value = 1
+  fetchList()
 })
 
 onMounted(() => {
@@ -205,7 +186,7 @@ const handleDelete = (task: TaskVO) => {
           />
           <el-select
               v-model="createTimeSort"
-              class="task-filter-control"
+              class="task-filter-control task-sort-select"
               :placeholder="$t('pages.task.createTimeSort')"
           >
             <el-option
@@ -217,7 +198,7 @@ const handleDelete = (task: TaskVO) => {
           </el-select>
           <el-select
               v-model="updateTimeSort"
-              class="task-filter-control"
+              class="task-filter-control task-sort-select"
               :placeholder="$t('pages.task.updateTimeSort')"
           >
             <el-option
@@ -245,7 +226,7 @@ const handleDelete = (task: TaskVO) => {
         </div>
 
         <TaskCard
-            v-for="task in sortedList"
+            v-for="task in list"
             :key="task.id"
             :task="task"
             :is-admin="isAdmin"
@@ -335,6 +316,11 @@ const handleDelete = (task: TaskVO) => {
 .task-header-row-actions :deep(.el-select) {
   width: 100%;
   min-width: 0;
+}
+
+.task-header-row-actions :deep(.task-sort-select .el-select__selected-item),
+.task-header-row-actions :deep(.task-sort-select .el-select__placeholder) {
+  color: var(--home-text-muted);
 }
 
 .task-action-btn {

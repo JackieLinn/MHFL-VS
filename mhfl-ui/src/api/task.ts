@@ -6,6 +6,7 @@ import {get, post, put, del} from '@/utils'
 
 /** 任务状态：后端 @JsonValue 序列化为 code 0-5 */
 export type TaskStatusCode = 0 | 1 | 2 | 3 | 4 | 5
+export type TaskTimeSortOrder = 'DEFAULT' | 'ASC' | 'DESC'
 
 export interface TaskVO {
     id: number
@@ -35,6 +36,8 @@ export interface ListTaskRO {
     size?: number
     startTime?: string // yyyy-MM-dd
     endTime?: string // yyyy-MM-dd
+    createTimeSort?: TaskTimeSortOrder
+    updateTimeSort?: TaskTimeSortOrder
 }
 
 /** 分页结果（与后端 IPage 一致） */
@@ -61,6 +64,8 @@ export const listTasks = (
     if (params.size != null) q.set('size', String(params.size))
     if (params.startTime != null) q.set('startTime', params.startTime)
     if (params.endTime != null) q.set('endTime', params.endTime)
+    if (params.createTimeSort != null) q.set('createTimeSort', params.createTimeSort)
+    if (params.updateTimeSort != null) q.set('updateTimeSort', params.updateTimeSort)
     const query = q.toString()
     get(`/api/task/list${query ? `?${query}` : ''}`, success, failure)
 }

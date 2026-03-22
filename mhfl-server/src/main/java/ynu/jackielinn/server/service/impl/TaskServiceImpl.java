@@ -53,6 +53,10 @@ import java.util.stream.Collectors;
 @Service
 public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements TaskService {
 
+    private static final String SORT_ASC = "ASC";
+
+    private static final String SORT_DESC = "DESC";
+
     @Resource
     private DatasetService datasetService;
 
@@ -334,7 +338,8 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
             wrapper.le(Task::getCreateTime, endDate.atTime(23, 59, 59));
         }
 
-        wrapper.orderByAsc(Task::getId);
+        // 排序：支持 createTimeSort/updateTimeSort；未选时保持 id 升序（旧逻辑）
+        applyTaskListOrder(wrapper, ro);
 
         IPage<Task> taskPage = page(page, wrapper);
         List<TaskVO> voList = toTaskVOList(taskPage.getRecords());
@@ -404,6 +409,57 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
                     vo.setUsername(usernameMap.get(task.getUid()));
                 }))
                 .toList();
+    }
+
+    /**
+     * 任务列表排序规则：
+     * 1) createTimeSort 优先（ASC/DESC）
+     * 2) createTimeSort 为 DEFAULT 时，再看 updateTimeSort（ASC/DESC）
+     * 3) 两者都为 DEFAULT 时，回落到 id 升序（与原逻辑一致）
+     * 4) 按时间排序时，均以 id 升序作为二级排序，保证分页稳定
+     *
+     * @param wrapper MyBatis-Plus 查询条件
+     * @param ro      任务列表查询参数
+     */
+    private void applyTaskListOrder(LambdaQueryWrapper<Task> wrapper, ListTaskRO ro) {
+        String createSort = normalizeSortOrder(ro.getCreateTimeSort());
+        String updateSort = normalizeSortOrder(ro.getUpdateTimeSort());
+
+        if (SORT_ASC.equals(createSort)) {
+            wrapper.orderByAsc(Task::getCreateTime).orderByAsc(Task::getId);
+            return;
+        }
+        if (SORT_DESC.equals(createSort)) {
+            wrapper.orderByDesc(Task::getCreateTime).orderByAsc(Task::getId);
+            return;
+        }
+        if (SORT_ASC.equals(updateSort)) {
+            wrapper.orderByAsc(Task::getUpdateTime).orderByAsc(Task::getId);
+            return;
+        }
+        if (SORT_DESC.equals(updateSort)) {
+            wrapper.orderByDesc(Task::getUpdateTime).orderByAsc(Task::getId);
+            return;
+        }
+
+        wrapper.orderByAsc(Task::getId);
+    }
+
+    /**
+     * 标准化排序参数：仅接受 ASC/DESC，其余均视为 DEFAULT。
+     *
+     * @param sortOrder 前端传入的排序参数
+     * @return 标准化后的排序值（ASC/DESC/DEFAULT）
+     */
+    private String normalizeSortOrder(String sortOrder) {
+        if (sortOrder == null) {
+            return "DEFAULT";
+        }
+        String normalized = sortOrder.trim().toUpperCase();
+        if (SORT_ASC.equals(normalized) || SORT_DESC.equals(normalized)) {
+            return normalized;
+        }
+        return "DEFAULT";
     }
 
     /**
