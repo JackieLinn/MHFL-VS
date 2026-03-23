@@ -16,7 +16,7 @@ from fl_core.models.cnn_fedssa import (
 class FedSSATrainer(BaseTrainer):
     """FedSSA 训练器：Federated Learning with Semantic-aware Aggregation"""
 
-    def __init__(self, *args, total_classes: int = 100, inner_lr: float = 5e-3,
+    def __init__(self, *args, total_classes: Optional[int] = None, inner_lr: float = 5e-3,
                  inner_wd: float = 5e-5, decay_rounds: int = 2, miu_0: float = 0.5, **kwargs):
         """
         初始化 FedSSA 训练器
@@ -30,12 +30,12 @@ class FedSSATrainer(BaseTrainer):
             miu_0: 初始混合系数
             **kwargs: 传递给基类的其他参数
         """
-        self.total_classes = total_classes
         self.inner_lr = inner_lr
         self.inner_wd = inner_wd
         self.decay_rounds = decay_rounds
         self.miu_0 = miu_0
         super().__init__(*args, **kwargs)
+        self.total_classes = total_classes if total_classes is not None else self.out_dim
 
     def _init_models(self) -> List[nn.Module]:
         """初始化 FedSSA 模型集合"""
