@@ -10,6 +10,8 @@
     <logger name="ynu.jackielinn.server.websocket.TaskWebSocketHandler" level="OFF"/>
     <logger name="ynu.jackielinn.server.monitor.FastApiHealthMonitor" level="OFF"/>
     <logger name="ynu.jackielinn.server.service.impl.AssistantServiceImpl" level="OFF"/>
+    <logger name="ynu.jackielinn.server.service.impl.ResourceServiceImpl" level="OFF"/>
+    <logger name="ynu.jackielinn.server.service.impl.TrainingMessageHandlerImpl" level="OFF"/>
     <logger name="org.springframework.web.client.RestTemplate" level="WARN"/>
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
