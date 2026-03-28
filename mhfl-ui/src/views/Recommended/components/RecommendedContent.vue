@@ -6,7 +6,12 @@ import TestCurvesCard from './TestCurvesCard.vue'
 import ClientMetricsCard from './ClientMetricsCard.vue'
 import {chartMetricKeys} from './recommendedConstants'
 import {listDatasetsForSelect, type DatasetVO} from '@/api/dataset'
-import {getRecommendExperimentSettings, type RecommendExperimentSettingsVO} from '@/api/recommend'
+import {
+  getRecommendExperimentSettings,
+  getRecommendMetricsCompare,
+  type RecommendExperimentSettingsVO,
+  type RecommendMetricsCompareItemVO
+} from '@/api/recommend'
 
 const props = defineProps<{
   dataset: 'cifar100' | 'tiny-imagenet'
@@ -35,6 +40,7 @@ const defaultSettingsByDataset = computed(() => {
 
 const experimentSettings = ref<RecommendExperimentSettingsVO | null>(null)
 const algorithmNames = ref<string[]>([])
+const remoteAlgorithmMetrics = ref<Record<string, number>[]>([])
 const datasetIdByType = ref<Record<'cifar100' | 'tiny-imagenet', number | null>>({
   cifar100: null,
   'tiny-imagenet': null
@@ -58,7 +64,7 @@ const fetchDatasetIds = () => {
       }
     })
     datasetIdByType.value = map
-    fetchExperimentSettings()
+    fetchRecommendData()
   })
 }
 
@@ -80,6 +86,36 @@ const fetchExperimentSettings = () => {
         algorithmNames.value = []
       }
   )
+}
+
+const mapMetricsItem = (item: RecommendMetricsCompareItemVO) => ({
+  loss: item.loss ?? 0,
+  accuracy: item.accuracy ?? 0,
+  precision: item.precision ?? 0,
+  recall: item.recall ?? 0,
+  f1: item.f1Score ?? 0
+})
+
+const fetchMetricsCompare = () => {
+  const datasetId = datasetIdByType.value[props.dataset]
+  if (!datasetId) {
+    remoteAlgorithmMetrics.value = []
+    return
+  }
+  getRecommendMetricsCompare(
+      datasetId,
+      (data) => {
+        remoteAlgorithmMetrics.value = (data?.items ?? []).map(mapMetricsItem)
+      },
+      () => {
+        remoteAlgorithmMetrics.value = []
+      }
+  )
+}
+
+const fetchRecommendData = () => {
+  fetchExperimentSettings()
+  fetchMetricsCompare()
 }
 
 const generateConvergenceCurve = (
@@ -104,6 +140,9 @@ const generateConvergenceCurve = (
 }
 
 const algorithmMetrics = computed(() => {
+  if (remoteAlgorithmMetrics.value.length > 0) {
+    return remoteAlgorithmMetrics.value
+  }
   if (props.dataset === 'cifar100') {
     return [
       {loss: 0.952, accuracy: 0.5812, precision: 0.572, recall: 0.568, f1: 0.570},
@@ -176,7 +215,7 @@ const clientMetrics = computed(() => {
 watch(
     () => props.dataset,
     () => {
-      fetchExperimentSettings()
+      fetchRecommendData()
     },
     {immediate: true}
 )
@@ -188,6 +227,7 @@ fetchDatasetIds()
   <div class="recommended-content flex flex-col gap-6 min-w-0">
     <ExpSettingsCard :settings="settings" :algorithm-names="algorithmNames"/>
     <MetricsCompareCard
+        :algorithm-names="algorithmNames"
         :algorithm-metrics="algorithmMetrics"
         :get-best-index-for-metric="getBestIndexForMetric"
     />

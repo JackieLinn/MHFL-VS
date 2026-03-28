@@ -1,10 +1,19 @@
 <script setup lang="ts">
+import {computed} from 'vue'
 import {algorithmKeys, metricKeys} from './recommendedConstants'
 
-defineProps<{
+const props = defineProps<{
   algorithmMetrics: Record<string, number>[]
+  algorithmNames?: string[]
   getBestIndexForMetric: (val: string) => number
 }>()
+
+const displayAlgorithms = computed(() =>
+    algorithmKeys.map((algo, idx) => ({
+      ...algo,
+      name: props.algorithmNames?.[idx] || ''
+    }))
+)
 </script>
 
 <template>
@@ -23,12 +32,12 @@ defineProps<{
             {{ $t('pages.recommended.expMetrics') }}
           </th>
           <th
-              v-for="algo in algorithmKeys"
+              v-for="algo in displayAlgorithms"
               :key="algo.key"
               class="recommended-th-algo py-3 px-4 text-center text-base font-semibold"
               :class="`recommended-th-${algo.color}`"
           >
-            {{ $t(`pages.recommended.${algo.key}`) }}
+            {{ algo.name || $t(`pages.recommended.${algo.key}`) }}
           </th>
         </tr>
         </thead>
@@ -45,7 +54,7 @@ defineProps<{
               }}</span>
           </td>
           <td
-              v-for="(algo, idx) in algorithmKeys"
+              v-for="(algo, idx) in displayAlgorithms"
               :key="algo.key"
               class="recommended-td-value py-3 px-4 text-center text-lg font-bold tabular-nums"
               :class="idx === getBestIndexForMetric(m.val) ? 'recommended-td-best' : 'text-[var(--home-text-primary)]'"

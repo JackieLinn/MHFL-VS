@@ -5,6 +5,8 @@ import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 import ynu.jackielinn.server.common.Status;
 import ynu.jackielinn.server.dto.response.RecommendExperimentSettingsVO;
+import ynu.jackielinn.server.dto.response.RecommendMetricsCompareItemVO;
+import ynu.jackielinn.server.dto.response.RecommendMetricsCompareVO;
 import ynu.jackielinn.server.entity.Algorithm;
 import ynu.jackielinn.server.entity.Task;
 import ynu.jackielinn.server.service.AlgorithmService;
@@ -82,5 +84,71 @@ public class RecommendServiceImpl implements RecommendService {
         }
 
         return builder.build();
+    }
+
+    /**
+     * 查询推荐展示页算法效果对比数据。
+     * 按候选任务ID顺序返回六列数据：命中“存在 + RECOMMENDED + did匹配”的任务则填入指标，未命中返回空占位。
+     *
+     * @param datasetId        数据集ID
+     * @param candidateTaskIds 候选任务ID列表（由控制器维护）
+     * @return 算法效果对比响应对象
+     */
+    @Override
+    public RecommendMetricsCompareVO getMetricsCompare(Long datasetId, List<Long> candidateTaskIds) {
+        List<Long> validTaskIds = candidateTaskIds == null
+                ? Collections.emptyList()
+                : candidateTaskIds.stream().filter(Objects::nonNull).distinct().toList();
+
+        List<Task> taskList = validTaskIds.isEmpty()
+                ? List.of()
+                : taskService.list(new LambdaQueryWrapper<Task>()
+                .in(Task::getId, validTaskIds)
+                .eq(Task::getDid, datasetId)
+                .eq(Task::getStatus, Status.RECOMMENDED));
+
+        Map<Long, Task> taskById = taskList.stream()
+                .collect(Collectors.toMap(Task::getId, t -> t, (a, b) -> a, LinkedHashMap::new));
+
+        List<Long> aidList = taskList.stream()
+                .map(Task::getAid)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        Map<Long, String> algorithmNameByAid = aidList.isEmpty()
+                ? Collections.emptyMap()
+                : algorithmService.listByIds(aidList).stream()
+                .collect(Collectors.toMap(Algorithm::getId, Algorithm::getAlgorithmName));
+
+        List<RecommendMetricsCompareItemVO> items = validTaskIds.stream()
+                .map(taskId -> {
+                    Task task = taskById.get(taskId);
+                    if (task == null) {
+                        return RecommendMetricsCompareItemVO.builder()
+                                .taskId(null)
+                                .algorithmName(null)
+                                .loss(null)
+                                .accuracy(null)
+                                .precision(null)
+                                .recall(null)
+                                .f1Score(null)
+                                .build();
+                    }
+                    return RecommendMetricsCompareItemVO.builder()
+                            .taskId(task.getId())
+                            .algorithmName(algorithmNameByAid.get(task.getAid()))
+                            .loss(task.getLoss())
+                            .accuracy(task.getAccuracy())
+                            .precision(task.getPrecision())
+                            .recall(task.getRecall())
+                            .f1Score(task.getF1Score())
+                            .build();
+                })
+                .toList();
+
+        return RecommendMetricsCompareVO.builder()
+                .datasetId(datasetId)
+                .items(items)
+                .build();
     }
 }

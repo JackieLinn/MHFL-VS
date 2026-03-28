@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ynu.jackielinn.server.common.RestResponse;
 import ynu.jackielinn.server.dto.response.RecommendExperimentSettingsVO;
+import ynu.jackielinn.server.dto.response.RecommendMetricsCompareVO;
 import ynu.jackielinn.server.entity.Dataset;
 import ynu.jackielinn.server.service.DatasetService;
 import ynu.jackielinn.server.service.RecommendService;
@@ -65,6 +66,32 @@ public class RecommendController {
 
         List<Long> candidateTaskIds = resolveTaskIdsByDataset(dataset);
         RecommendExperimentSettingsVO vo = recommendService.getExperimentSettings(datasetId, candidateTaskIds);
+        return RestResponse.success(vo);
+    }
+
+    /**
+     * 推荐页算法效果对比接口。
+     * 通过 datasetId 选择预置任务ID列表，仅使用“存在且状态为 RECOMMENDED 且 did 匹配”的任务；
+     * 未命中的任务位置返回空占位，前端可继续保持六列渲染。
+     *
+     * @param datasetId 数据集ID（query 参数）
+     * @return 算法效果对比数据
+     */
+    @Operation(summary = "推荐页算法效果对比接口", description = "根据 datasetId 返回推荐页算法效果对比数据")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "datasetId 无效或数据集不存在")
+    })
+    @GetMapping("/metrics-compare")
+    public RestResponse<RecommendMetricsCompareVO> getMetricsCompare(
+            @Parameter(description = "数据集ID", required = true) @RequestParam Long datasetId) {
+        Dataset dataset = datasetService.getById(datasetId);
+        if (dataset == null) {
+            return RestResponse.failure(400, "数据集不存在");
+        }
+
+        List<Long> candidateTaskIds = resolveTaskIdsByDataset(dataset);
+        RecommendMetricsCompareVO vo = recommendService.getMetricsCompare(datasetId, candidateTaskIds);
         return RestResponse.success(vo);
     }
 
