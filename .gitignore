@@ -17,6 +17,9 @@ mhfl-algo/assistant/knowledge/raw/*.md
 mhfl-algo/assistant/knowledge/chroma_db
 !mhfl-algo/assistant/knowledge/chroma_db/.gitkeep
 mhfl-algo/cache
+mhfl-algo/tests/htmlcov
+mhfl-algo/tests/.coverage
+mhfl-algo/tests/coverage.xml
 
 ### mhfl-server ###
 mhfl-server/target
