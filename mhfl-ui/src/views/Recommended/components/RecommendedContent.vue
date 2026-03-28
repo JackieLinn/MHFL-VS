@@ -1,14 +1,86 @@
 <script setup lang="ts">
-import {computed} from 'vue'
+import {computed, ref, watch} from 'vue'
 import ExpSettingsCard from './ExpSettingsCard.vue'
 import MetricsCompareCard from './MetricsCompareCard.vue'
 import TestCurvesCard from './TestCurvesCard.vue'
 import ClientMetricsCard from './ClientMetricsCard.vue'
 import {chartMetricKeys} from './recommendedConstants'
+import {listDatasetsForSelect, type DatasetVO} from '@/api/dataset'
+import {getRecommendExperimentSettings, type RecommendExperimentSettingsVO} from '@/api/recommend'
 
 const props = defineProps<{
   dataset: 'cifar100' | 'tiny-imagenet'
 }>()
+
+const defaultSettingsByDataset = computed(() => {
+  if (props.dataset === 'cifar100') {
+    return {
+      numNodes: 100,
+      fraction: 0.1,
+      classesPerNode: 5,
+      lowProb: 0.5,
+      numSteps: 500,
+      epochs: 10
+    }
+  }
+  return {
+    numNodes: 100,
+    fraction: 0.15,
+    classesPerNode: 10,
+    lowProb: 0.4,
+    numSteps: 300,
+    epochs: 8
+  }
+})
+
+const experimentSettings = ref<RecommendExperimentSettingsVO | null>(null)
+const algorithmNames = ref<string[]>([])
+const datasetIdByType = ref<Record<'cifar100' | 'tiny-imagenet', number | null>>({
+  cifar100: null,
+  'tiny-imagenet': null
+})
+
+const resolveDatasetType = (dataName: string) => {
+  const name = dataName.toLowerCase()
+  return name.includes('tiny') ? 'tiny-imagenet' : 'cifar100'
+}
+
+const fetchDatasetIds = () => {
+  listDatasetsForSelect((page) => {
+    const map: Record<'cifar100' | 'tiny-imagenet', number | null> = {
+      cifar100: null,
+      'tiny-imagenet': null
+    }
+    ;(page?.records ?? []).forEach((ds: DatasetVO) => {
+      const type = resolveDatasetType(ds.dataName || '')
+      if (map[type] == null) {
+        map[type] = ds.id
+      }
+    })
+    datasetIdByType.value = map
+    fetchExperimentSettings()
+  })
+}
+
+const fetchExperimentSettings = () => {
+  const datasetId = datasetIdByType.value[props.dataset]
+  if (!datasetId) {
+    experimentSettings.value = null
+    algorithmNames.value = []
+    return
+  }
+  getRecommendExperimentSettings(
+      datasetId,
+      (data) => {
+        experimentSettings.value = data ?? null
+        algorithmNames.value = data?.algorithmNames ?? []
+      },
+      () => {
+        experimentSettings.value = null
+        algorithmNames.value = []
+      }
+  )
+}
 
 const generateConvergenceCurve = (
     finalValue: number,
@@ -53,23 +125,15 @@ const algorithmMetrics = computed(() => {
 })
 
 const settings = computed(() => {
-  if (props.dataset === 'cifar100') {
-    return {
-      numNodes: 100,
-      fraction: 0.1,
-      classesPerNode: 5,
-      lowProb: 0.5,
-      numSteps: 500,
-      epochs: 10
-    }
-  }
+  const remote = experimentSettings.value
+  if (!remote) return defaultSettingsByDataset.value
   return {
-    numNodes: 100,
-    fraction: 0.15,
-    classesPerNode: 10,
-    lowProb: 0.4,
-    numSteps: 300,
-    epochs: 8
+    numNodes: remote.numNodes ?? defaultSettingsByDataset.value.numNodes,
+    fraction: remote.fraction ?? defaultSettingsByDataset.value.fraction,
+    classesPerNode: remote.classesPerNode ?? defaultSettingsByDataset.value.classesPerNode,
+    lowProb: remote.lowProb ?? defaultSettingsByDataset.value.lowProb,
+    numSteps: remote.numSteps ?? defaultSettingsByDataset.value.numSteps,
+    epochs: remote.epochs ?? defaultSettingsByDataset.value.epochs
   }
 })
 
@@ -108,11 +172,21 @@ const clientMetrics = computed(() => {
     }
   })
 })
+
+watch(
+    () => props.dataset,
+    () => {
+      fetchExperimentSettings()
+    },
+    {immediate: true}
+)
+
+fetchDatasetIds()
 </script>
 
 <template>
   <div class="recommended-content flex flex-col gap-6 min-w-0">
-    <ExpSettingsCard :settings="settings"/>
+    <ExpSettingsCard :settings="settings" :algorithm-names="algorithmNames"/>
     <MetricsCompareCard
         :algorithm-metrics="algorithmMetrics"
         :get-best-index-for-metric="getBestIndexForMetric"

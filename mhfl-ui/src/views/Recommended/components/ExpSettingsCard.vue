@@ -1,9 +1,27 @@
 <script setup lang="ts">
+import {computed} from 'vue'
 import {algorithmKeys, settingKeys} from './recommendedConstants'
 
-defineProps<{
+const props = defineProps<{
   settings: Record<string, string | number>
+  algorithmNames?: string[]
 }>()
+
+const badgeColors = ['blue', 'green', 'teal', 'fuchsia', 'amber', 'rose'] as const
+
+const displayAlgorithms = computed(() => {
+  if (props.algorithmNames && props.algorithmNames.length > 0) {
+    return props.algorithmNames.map((name, idx) => ({
+      name,
+      color: badgeColors[idx % badgeColors.length]
+    }))
+  }
+  return algorithmKeys.map((algo, idx) => ({
+    name: '',
+    key: algo.key,
+    color: badgeColors[idx % badgeColors.length]
+  }))
+})
 </script>
 
 <template>
@@ -31,12 +49,12 @@ defineProps<{
       <span class="recommended-setting-label text-xs block mb-2">{{ $t('pages.recommended.settingAlgorithm') }}</span>
       <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
         <span
-            v-for="algo in algorithmKeys"
-            :key="algo.key"
+            v-for="algo in displayAlgorithms"
+            :key="algo.name || algo.key"
             class="recommended-algo-badge recommended-algo-badge-grid"
             :class="`recommended-algo-badge-${algo.color}`"
         >
-          {{ $t(`pages.recommended.${algo.key}`) }}
+          {{ algo.name || $t(`pages.recommended.${algo.key}`) }}
         </span>
       </div>
     </div>
