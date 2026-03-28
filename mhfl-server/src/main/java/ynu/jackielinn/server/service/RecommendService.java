@@ -1,6 +1,7 @@
 package ynu.jackielinn.server.service;
 
 import ynu.jackielinn.server.dto.response.RecommendClientMetricsVO;
+import ynu.jackielinn.server.dto.response.RecommendClientDetailVO;
 import ynu.jackielinn.server.dto.response.RecommendExperimentSettingsVO;
 import ynu.jackielinn.server.dto.response.RecommendMetricsCompareVO;
 import ynu.jackielinn.server.dto.response.RecommendTestCurvesVO;
@@ -46,5 +47,15 @@ public interface RecommendService {
      * @return 客户端指标响应对象
      */
     RecommendClientMetricsVO getClientMetrics(Long datasetId, List<Long> candidateTaskIds, String metric);
-}
 
+    /**
+     * 查询推荐展示页客户端详情指标曲线（原始值，不做平滑）。
+     *
+     * @param datasetId 数据集ID
+     * @param candidateTaskIds 控制器中配置的候选任务ID列表
+     * @param clientIndex 客户端索引
+     * @param metric 指标名称，仅支持 accuracy/precision/recall/f1
+     * @return 客户端详情响应对象
+     */
+    RecommendClientDetailVO getClientDetail(Long datasetId, List<Long> candidateTaskIds, Integer clientIndex, String metric);
+}

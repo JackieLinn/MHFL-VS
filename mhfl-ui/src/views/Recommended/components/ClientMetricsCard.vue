@@ -11,10 +11,13 @@ import {
   getClientModel
 } from './recommendedConstants'
 import type {RecommendClientMetricType} from '@/api/recommend'
+import {getRecommendClientDetail, type RecommendClientDetailVO} from '@/api/recommend'
 
 const {t} = useI18n()
 const props = defineProps<{
   dataset: 'cifar100' | 'tiny-imagenet'
+  datasetId?: number | null
+  algorithmNames?: string[]
   selectedClientMetric?: RecommendClientMetricType
   clientMetrics: { accuracy: number[]; precision: number[]; recall: number[]; f1: number[] }[]
 }>()
@@ -26,6 +29,13 @@ const selectedClientMetric = ref<RecommendClientMetricType>(props.selectedClient
 const clientDetailVisible = ref(false)
 const selectedClientId = ref(0)
 const selectedClientDetailMetric = ref<RecommendClientMetricType>('accuracy')
+const detailRounds = ref<number[]>([])
+const detailSeries = ref<Record<RecommendClientMetricType, Array<Array<number | null>>>>({
+  accuracy: [],
+  precision: [],
+  recall: [],
+  f1: []
+})
 
 const onMetricClick = (metric: RecommendClientMetricType) => {
   selectedClientMetric.value = metric
@@ -34,10 +44,15 @@ const onMetricClick = (metric: RecommendClientMetricType) => {
 
 const numRounds = computed(() => (props.dataset === 'cifar100' ? 500 : 300))
 
+const displayAlgoName = (idx: number) => {
+  return props.algorithmNames?.[idx] || (algorithmKeys[idx] ? t(`pages.recommended.${algorithmKeys[idx].key}`) : '')
+}
+
 const openClientDetail = (clientIndex: number) => {
   selectedClientId.value = clientIndex
   selectedClientDetailMetric.value = selectedClientMetric.value
   clientDetailVisible.value = true
+  fetchClientDetail()
 }
 
 const clientDetailChartRef = ref<HTMLElement | null>(null)
@@ -46,6 +61,24 @@ let clientDetailChartInst: echarts.ECharts | null = null
 const onClientDetailClosed = () => {
   clientDetailChartInst?.dispose()
   clientDetailChartInst = null
+}
+
+const fetchClientDetail = () => {
+  const did = props.datasetId
+  if (!did || selectedClientId.value <= 0) {
+    return
+  }
+  getRecommendClientDetail(
+      did,
+      selectedClientId.value - 1,
+      selectedClientDetailMetric.value,
+      (data: RecommendClientDetailVO) => {
+        detailRounds.value = data?.rounds ?? []
+        const series = (data?.algorithms ?? []).map((x) => x.values ?? [])
+        detailSeries.value[selectedClientDetailMetric.value] = series
+        updateClientDetailChart()
+      }
+  )
 }
 
 const getChartColorVar = (name: string): string => {
@@ -109,7 +142,10 @@ const updateClientDetailChart = () => {
   const textColor = chartTextColor()
   const mutedColor = chartMutedColor()
   const isDark = document.documentElement.classList.contains('dark')
-  const rounds = Array.from({length: numRounds.value}, (_, i) => i + 1)
+  const rounds = detailRounds.value.length > 0
+      ? detailRounds.value
+      : Array.from({length: numRounds.value}, (_, i) => i + 1)
+  const remoteMetricSeries = detailSeries.value[metric]
   const option = {
     backgroundColor: 'transparent',
     tooltip: {
@@ -126,7 +162,7 @@ const updateClientDetailChart = () => {
       formatter: (params: { axisValue?: number; data?: number }[]) => {
         const round = params[0]?.axisValue ?? 0
         const lines = (params ?? []).map((p, i) => {
-          const name = algorithmKeys[i] ? t(`pages.recommended.${algorithmKeys[i].key}`) : ''
+          const name = displayAlgoName(i)
           const val = typeof p?.data === 'number' ? (p.data * 100).toFixed(2) + '%' : '-'
           return `${name}: ${val}`
         })
@@ -142,7 +178,7 @@ const updateClientDetailChart = () => {
       itemHeight: 10,
       itemGap: 14,
       padding: [2, 0, 0, 0],
-      data: algorithmKeys.map((a) => t(`pages.recommended.${a.key}`))
+      data: algorithmKeys.map((_, idx) => displayAlgoName(idx))
     },
     grid: {left: 52, right: 20, top: 24, bottom: 72},
     xAxis: {
@@ -173,10 +209,10 @@ const updateClientDetailChart = () => {
       axisTick: {show: false}
     },
     series: algorithmKeys.map((algo, idx) => ({
-      name: t(`pages.recommended.${algo.key}`),
+      name: displayAlgoName(idx),
       type: 'line',
-      data: data[metric]?.[idx] ?? [],
-      smooth: 0.25,
+      data: (remoteMetricSeries?.[idx]?.length ? remoteMetricSeries[idx] : data[metric]?.[idx]) ?? [],
+      smooth: false,
       symbol: 'none',
       lineStyle: {width: 2.5, color: chartColors[idx]},
       itemStyle: {color: chartColors[idx]},
@@ -188,12 +224,19 @@ const updateClientDetailChart = () => {
 
 watch(clientDetailVisible, (visible) => {
   if (visible) {
+    fetchClientDetail()
     nextTick(() => setTimeout(initClientDetailChart, 50))
+  } else {
+    detailRounds.value = []
+    detailSeries.value = {accuracy: [], precision: [], recall: [], f1: []}
   }
 })
-watch([selectedClientId, selectedClientDetailMetric, clientDetailChartData], () => {
-  if (clientDetailVisible.value) updateClientDetailChart()
-}, {deep: true})
+watch([selectedClientId, selectedClientDetailMetric], () => {
+  if (clientDetailVisible.value) {
+    fetchClientDetail()
+    updateClientDetailChart()
+  }
+})
 watch(
     () => props.selectedClientMetric,
     (value) => {
@@ -248,7 +291,7 @@ watch(
               v-for="(algo, ai) in algorithmKeys"
               :key="algo.key"
               class="recommended-client-mini-ring"
-              :title="`${$t('pages.recommended.' + algo.key)}: ${((clientMetrics[i - 1]?.[selectedClientMetric]?.[ai] ?? 0) * 100).toFixed(2)}%`"
+              :title="`${displayAlgoName(ai)}: ${((clientMetrics[i - 1]?.[selectedClientMetric]?.[ai] ?? 0) * 100).toFixed(2)}%`"
           >
             <div class="recommended-client-mini-ring-wrap">
               <svg viewBox="0 0 36 36" class="recommended-client-mini-svg">

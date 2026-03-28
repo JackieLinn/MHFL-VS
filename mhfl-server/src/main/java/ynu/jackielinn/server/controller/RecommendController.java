@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ynu.jackielinn.server.common.RestResponse;
 import ynu.jackielinn.server.dto.response.RecommendClientMetricsVO;
+import ynu.jackielinn.server.dto.response.RecommendClientDetailVO;
 import ynu.jackielinn.server.dto.response.RecommendExperimentSettingsVO;
 import ynu.jackielinn.server.dto.response.RecommendMetricsCompareVO;
 import ynu.jackielinn.server.dto.response.RecommendTestCurvesVO;
@@ -144,6 +145,40 @@ public class RecommendController {
     }
 
     /**
+     * 推荐页客户端详情接口（原始曲线，不做平滑）。
+     *
+     * @param datasetId 数据集ID
+     * @param clientIndex 客户端索引
+     * @param metric 指标名称，仅支持 accuracy/precision/recall/f1
+     * @return 客户端详情曲线数据
+     */
+    @Operation(summary = "推荐页客户端详情接口", description = "根据 datasetId、clientIndex、metric 返回客户端详情原始指标曲线")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "参数非法或数据集不存在")
+    })
+    @GetMapping("/client-detail")
+    public RestResponse<RecommendClientDetailVO> getClientDetail(
+            @Parameter(description = "数据集ID", required = true) @RequestParam Long datasetId,
+            @Parameter(description = "客户端索引，范围 0~numNodes-1", required = true) @RequestParam Integer clientIndex,
+            @Parameter(description = "指标名称：accuracy/precision/recall/f1", required = true) @RequestParam String metric) {
+        Dataset dataset = datasetService.getById(datasetId);
+        if (dataset == null) {
+            return RestResponse.failure(400, "数据集不存在");
+        }
+        if (clientIndex == null || clientIndex < 0) {
+            return RestResponse.failure(400, "clientIndex 非法");
+        }
+        List<Long> candidateTaskIds = resolveTaskIdsByDataset(dataset);
+        try {
+            RecommendClientDetailVO vo = recommendService.getClientDetail(datasetId, candidateTaskIds, clientIndex, metric);
+            return RestResponse.success(vo);
+        } catch (IllegalArgumentException ex) {
+            return RestResponse.failure(400, ex.getMessage());
+        }
+    }
+
+    /**
      * 按数据集名称选择控制器中的预置任务ID列表。
      *
      * @param dataset 数据集实体
@@ -157,4 +192,3 @@ public class RecommendController {
         return CIFAR100_TASK_IDS;
     }
 }
-

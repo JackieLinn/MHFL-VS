@@ -36,15 +36,15 @@ public class RecommendCurveAlgorithmVO {
     @Schema(description = "f1 原始曲线")
     private List<Double> f1Raw;
 
-    @Schema(description = "accuracy 高斯平滑曲线（sigma=5）")
+    @Schema(description = "accuracy 高斯平滑曲线")
     private List<Double> accuracySmooth;
 
-    @Schema(description = "precision 高斯平滑曲线（sigma=5）")
+    @Schema(description = "precision 高斯平滑曲线")
     private List<Double> precisionSmooth;
 
-    @Schema(description = "recall 高斯平滑曲线（sigma=5）")
+    @Schema(description = "recall 高斯平滑曲线")
     private List<Double> recallSmooth;
 
-    @Schema(description = "f1 高斯平滑曲线（sigma=5）")
+    @Schema(description = "f1 高斯平滑曲线")
     private List<Double> f1Smooth;
 }

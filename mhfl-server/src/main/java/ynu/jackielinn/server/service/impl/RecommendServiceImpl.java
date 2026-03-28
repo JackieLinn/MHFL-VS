@@ -6,6 +6,8 @@ import org.springframework.stereotype.Service;
 import ynu.jackielinn.server.common.Status;
 import ynu.jackielinn.server.dto.response.RecommendClientMetricItemVO;
 import ynu.jackielinn.server.dto.response.RecommendClientMetricsVO;
+import ynu.jackielinn.server.dto.response.RecommendClientDetailAlgorithmVO;
+import ynu.jackielinn.server.dto.response.RecommendClientDetailVO;
 import ynu.jackielinn.server.dto.response.RecommendCurveAlgorithmVO;
 import ynu.jackielinn.server.dto.response.RecommendExperimentSettingsVO;
 import ynu.jackielinn.server.dto.response.RecommendMetricsCompareItemVO;
@@ -334,12 +336,118 @@ public class RecommendServiceImpl implements RecommendService {
                     .build());
         }
 
-        return RecommendClientMetricsVO.builder()
-                .datasetId(datasetId)
-                .metric(normalizedMetric)
-                .algorithmNames(algorithmNames)
-                .clients(clients)
-                .build();
+        RecommendClientMetricsVO vo = new RecommendClientMetricsVO();
+        vo.setDatasetId(datasetId);
+        vo.setMetric(normalizedMetric);
+        vo.setAlgorithmNames(algorithmNames);
+        vo.setClients(clients);
+        return vo;
+    }
+
+    /**
+     * 查询推荐页客户端详情指标曲线（原始值，不做平滑）。
+     *
+     * @param datasetId 数据集ID
+     * @param candidateTaskIds 候选任务ID列表
+     * @param clientIndex 客户端索引
+     * @param metric 指标名称，仅支持 accuracy/precision/recall/f1
+     * @return 客户端详情响应对象
+     */
+    @Override
+    public RecommendClientDetailVO getClientDetail(Long datasetId, List<Long> candidateTaskIds, Integer clientIndex, String metric) {
+        String normalizedMetric = normalizeClientMetric(metric);
+        List<Long> validTaskIds = candidateTaskIds == null
+                ? Collections.emptyList()
+                : candidateTaskIds.stream().filter(Objects::nonNull).distinct().toList();
+
+        List<Task> taskList = validTaskIds.isEmpty()
+                ? List.of()
+                : taskService.list(new LambdaQueryWrapper<Task>()
+                .in(Task::getId, validTaskIds)
+                .eq(Task::getDid, datasetId)
+                .eq(Task::getStatus, Status.RECOMMENDED));
+        Map<Long, Task> taskById = taskList.stream()
+                .collect(Collectors.toMap(Task::getId, t -> t, (a, b) -> a, LinkedHashMap::new));
+
+        int roundsCount = taskList.stream()
+                .map(Task::getNumSteps)
+                .filter(Objects::nonNull)
+                .max(Integer::compareTo)
+                .orElse(0);
+        if (roundsCount <= 0) {
+            roundsCount = taskList.stream()
+                    .map(Task::getId)
+                    .map(roundService::listByTidOrderByRoundNum)
+                    .filter(list -> list != null && !list.isEmpty())
+                    .map(list -> list.stream()
+                            .map(Round::getRoundNum)
+                            .filter(Objects::nonNull)
+                            .max(Integer::compareTo)
+                            .orElse(-1) + 1)
+                    .max(Integer::compareTo)
+                    .orElse(0);
+        }
+        List<Integer> rounds = new ArrayList<>(Math.max(roundsCount, 0));
+        for (int i = 0; i < roundsCount; i++) {
+            rounds.add(i + 1);
+        }
+
+        int finalRoundsCount = roundsCount;
+        List<RecommendClientDetailAlgorithmVO> algorithms = validTaskIds.stream()
+                .map(taskId -> {
+                    Task task = taskById.get(taskId);
+                    if (task == null) {
+                        return RecommendClientDetailAlgorithmVO.builder()
+                                .taskId(null)
+                                .algorithmName(null)
+                                .values(createZeroSeries(finalRoundsCount))
+                                .build();
+                    }
+
+                    String algorithmName = null;
+                    if (task.getAid() != null) {
+                        Algorithm algorithm = algorithmService.getById(task.getAid());
+                        algorithmName = algorithm != null ? algorithm.getAlgorithmName() : null;
+                    }
+
+                    List<Round> roundsOfTask = roundService.listByTidOrderByRoundNum(task.getId());
+                    Map<Long, Integer> ridToRoundNum = roundsOfTask.stream()
+                            .filter(r -> r.getId() != null && r.getRoundNum() != null)
+                            .collect(Collectors.toMap(Round::getId, Round::getRoundNum, (a, b) -> a, LinkedHashMap::new));
+                    List<Long> rids = new ArrayList<>(ridToRoundNum.keySet());
+                    List<Client> clients = clientService.listByRidsAndClientIndex(rids, clientIndex);
+
+                    Map<Integer, Double> roundMetricMap = new LinkedHashMap<>();
+                    for (Client client : clients) {
+                        if (client.getRid() == null) {
+                            continue;
+                        }
+                        Integer roundNum = ridToRoundNum.get(client.getRid());
+                        if (roundNum == null || roundNum < 0 || roundNum >= finalRoundsCount) {
+                            continue;
+                        }
+                        Double value = extractClientMetric(client, normalizedMetric);
+                        if (value != null) {
+                            roundMetricMap.put(roundNum, value);
+                        }
+                    }
+                    List<Double> series = buildLatestCarrySeries(finalRoundsCount, roundMetricMap);
+
+                    return RecommendClientDetailAlgorithmVO.builder()
+                            .taskId(task.getId())
+                            .algorithmName(algorithmName)
+                            .values(series)
+                            .build();
+                })
+                .toList();
+
+        RecommendClientDetailVO vo = new RecommendClientDetailVO();
+        vo.setDatasetId(datasetId);
+        vo.setClientIndex(clientIndex);
+        vo.setMetric(normalizedMetric);
+        vo.setRounds(rounds);
+        vo.setAlgorithms(algorithms);
+        return vo;
     }
 
     /**
@@ -504,6 +612,41 @@ public class RecommendServiceImpl implements RecommendService {
         List<Double> series = new ArrayList<>(Math.max(size, 0));
         for (int i = 0; i < size; i++) {
             series.add(null);
+        }
+        return series;
+    }
+
+    /**
+     * 创建固定长度的 0 序列。
+     *
+     * @param size 序列长度
+     * @return 全部为 0 的序列
+     */
+    private List<Double> createZeroSeries(int size) {
+        List<Double> series = new ArrayList<>(Math.max(size, 0));
+        for (int i = 0; i < size; i++) {
+            series.add(0.0);
+        }
+        return series;
+    }
+
+    /**
+     * 根据“某些轮次的真实值”构建“每轮都有值”的连续序列。
+     * 未训练到的轮次为 0；训练后采用最新指标前向保持。
+     *
+     * @param roundsCount 总轮次
+     * @param roundMetricMap roundNum -> metricValue
+     * @return 连续序列
+     */
+    private List<Double> buildLatestCarrySeries(int roundsCount, Map<Integer, Double> roundMetricMap) {
+        List<Double> series = new ArrayList<>(Math.max(roundsCount, 0));
+        double latest = 0.0;
+        for (int round = 0; round < roundsCount; round++) {
+            Double current = roundMetricMap.get(round);
+            if (current != null) {
+                latest = current;
+            }
+            series.add(latest);
         }
         return series;
     }

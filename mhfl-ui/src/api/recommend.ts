@@ -64,6 +64,20 @@ export interface RecommendClientMetricsVO {
     clients: RecommendClientMetricItemVO[]
 }
 
+export interface RecommendClientDetailAlgorithmVO {
+    taskId: number | null
+    algorithmName: string | null
+    values: Array<number | null>
+}
+
+export interface RecommendClientDetailVO {
+    datasetId: number
+    clientIndex: number
+    metric: RecommendClientMetricType
+    rounds: number[]
+    algorithms: RecommendClientDetailAlgorithmVO[]
+}
+
 /**
  * 获取推荐页实验设置
  */
@@ -108,4 +122,17 @@ export const getRecommendClientMetrics = (
     failure?: (message: string, code: number, url: string) => void
 ) => {
     get(`/api/recommended/clients-metrics?datasetId=${datasetId}&metric=${metric}`, success, failure)
+}
+
+/**
+ * 获取推荐页客户端详情（原始曲线）
+ */
+export const getRecommendClientDetail = (
+    datasetId: number,
+    clientIndex: number,
+    metric: RecommendClientMetricType,
+    success: (data: RecommendClientDetailVO) => void,
+    failure?: (message: string, code: number, url: string) => void
+) => {
+    get(`/api/recommended/client-detail?datasetId=${datasetId}&clientIndex=${clientIndex}&metric=${metric}`, success, failure)
 }

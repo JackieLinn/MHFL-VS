@@ -394,6 +394,8 @@ fetchDatasetIds()
     />
     <ClientMetricsCard
         :dataset="dataset"
+        :dataset-id="datasetIdByType[dataset]"
+        :algorithm-names="displayCurveAlgorithmNames"
         :selected-client-metric="selectedClientMetric"
         :client-metrics="clientMetrics"
         @metric-change="onClientMetricChange"
