@@ -9,8 +9,11 @@ import {listDatasetsForSelect, type DatasetVO} from '@/api/dataset'
 import {
   getRecommendExperimentSettings,
   getRecommendMetricsCompare,
+  getRecommendTestCurves,
+  type RecommendCurveAlgorithmVO,
   type RecommendExperimentSettingsVO,
-  type RecommendMetricsCompareItemVO
+  type RecommendMetricsCompareItemVO,
+  type RecommendTestCurvesVO
 } from '@/api/recommend'
 
 const props = defineProps<{
@@ -40,7 +43,12 @@ const defaultSettingsByDataset = computed(() => {
 
 const experimentSettings = ref<RecommendExperimentSettingsVO | null>(null)
 const algorithmNames = ref<string[]>([])
+const compareAlgorithmNames = ref<string[]>([])
+const curveAlgorithmNames = ref<string[]>([])
 const remoteAlgorithmMetrics = ref<Record<string, number>[]>([])
+const remoteRounds = ref<number[]>([])
+const remoteChartSmoothSeries = ref<Record<string, Array<Array<number | null>>>>({})
+const remoteChartRawSeries = ref<Record<string, Array<Array<number | null>>>>({})
 const datasetIdByType = ref<Record<'cifar100' | 'tiny-imagenet', number | null>>({
   cifar100: null,
   'tiny-imagenet': null
@@ -100,15 +108,18 @@ const fetchMetricsCompare = () => {
   const datasetId = datasetIdByType.value[props.dataset]
   if (!datasetId) {
     remoteAlgorithmMetrics.value = []
+    compareAlgorithmNames.value = []
     return
   }
   getRecommendMetricsCompare(
       datasetId,
       (data) => {
         remoteAlgorithmMetrics.value = (data?.items ?? []).map(mapMetricsItem)
+        compareAlgorithmNames.value = (data?.items ?? []).map((x) => x.algorithmName ?? '')
       },
       () => {
         remoteAlgorithmMetrics.value = []
+        compareAlgorithmNames.value = []
       }
   )
 }
@@ -116,7 +127,71 @@ const fetchMetricsCompare = () => {
 const fetchRecommendData = () => {
   fetchExperimentSettings()
   fetchMetricsCompare()
+  fetchTestCurves()
 }
+
+const mapCurveSeries = (
+    algorithms: RecommendCurveAlgorithmVO[],
+    metric: 'accuracy' | 'precision' | 'recall' | 'f1'
+) => {
+  const smoothKey = `${metric}Smooth` as const
+  const rawKey = `${metric}Raw` as const
+  return {
+    smooth: algorithms.map((a) => (a[smoothKey] ?? []) as Array<number | null>),
+    raw: algorithms.map((a) => (a[rawKey] ?? []) as Array<number | null>)
+  }
+}
+
+const fetchTestCurves = () => {
+  const datasetId = datasetIdByType.value[props.dataset]
+  if (!datasetId) {
+    remoteRounds.value = []
+    curveAlgorithmNames.value = []
+    remoteChartSmoothSeries.value = {}
+    remoteChartRawSeries.value = {}
+    return
+  }
+  getRecommendTestCurves(
+      datasetId,
+      (data: RecommendTestCurvesVO) => {
+        const algorithms = data?.algorithms ?? []
+        curveAlgorithmNames.value = algorithms.map((x) => x.algorithmName ?? '')
+        const accuracy = mapCurveSeries(algorithms, 'accuracy')
+        const precision = mapCurveSeries(algorithms, 'precision')
+        const recall = mapCurveSeries(algorithms, 'recall')
+        const f1 = mapCurveSeries(algorithms, 'f1')
+        remoteRounds.value = data?.rounds ?? []
+        remoteChartSmoothSeries.value = {
+          accuracy: accuracy.smooth,
+          precision: precision.smooth,
+          recall: recall.smooth,
+          f1: f1.smooth
+        }
+        remoteChartRawSeries.value = {
+          accuracy: accuracy.raw,
+          precision: precision.raw,
+          recall: recall.raw,
+          f1: f1.raw
+        }
+      },
+      () => {
+        remoteRounds.value = []
+        curveAlgorithmNames.value = []
+        remoteChartSmoothSeries.value = {}
+        remoteChartRawSeries.value = {}
+      }
+  )
+}
+
+const displayCompareAlgorithmNames = computed(() =>
+    compareAlgorithmNames.value.length > 0 ? compareAlgorithmNames.value : algorithmNames.value
+)
+
+const displayCurveAlgorithmNames = computed(() => {
+  if (curveAlgorithmNames.value.length > 0) return curveAlgorithmNames.value
+  if (compareAlgorithmNames.value.length > 0) return compareAlgorithmNames.value
+  return algorithmNames.value
+})
 
 const generateConvergenceCurve = (
     finalValue: number,
@@ -185,17 +260,33 @@ const getBestIndexForMetric = (val: string) => {
 }
 
 const numRounds = computed(() => (props.dataset === 'cifar100' ? 500 : 300))
+const displayRounds = computed(() => {
+  if (remoteRounds.value.length > 0) {
+    return remoteRounds.value
+  }
+  return Array.from({length: numRounds.value}, (_, i) => i + 1)
+})
 
 const chartSeriesData = computed(() => {
+  if (Object.keys(remoteChartSmoothSeries.value).length > 0) {
+    return remoteChartSmoothSeries.value
+  }
   const metrics = algorithmMetrics.value
   const rounds = numRounds.value
-  const result: Record<string, number[][]> = {}
+  const result: Record<string, Array<Array<number | null>>> = {}
   for (const m of chartMetricKeys) {
     result[m.val] = metrics.map((row) =>
         generateConvergenceCurve((row as Record<string, number>)[m.val] ?? 0, rounds)
     )
   }
   return result
+})
+
+const chartSeriesRawData = computed(() => {
+  if (Object.keys(remoteChartRawSeries.value).length > 0) {
+    return remoteChartRawSeries.value
+  }
+  return chartSeriesData.value
 })
 
 const clientMetrics = computed(() => {
@@ -227,11 +318,17 @@ fetchDatasetIds()
   <div class="recommended-content flex flex-col gap-6 min-w-0">
     <ExpSettingsCard :settings="settings" :algorithm-names="algorithmNames"/>
     <MetricsCompareCard
-        :algorithm-names="algorithmNames"
+        :algorithm-names="displayCompareAlgorithmNames"
         :algorithm-metrics="algorithmMetrics"
         :get-best-index-for-metric="getBestIndexForMetric"
     />
-    <TestCurvesCard :dataset="dataset" :chart-series-data="chartSeriesData"/>
+    <TestCurvesCard
+        :dataset="dataset"
+        :rounds="displayRounds"
+        :algorithm-names="displayCurveAlgorithmNames"
+        :chart-series-data="chartSeriesData"
+        :chart-series-raw-data="chartSeriesRawData"
+    />
     <ClientMetricsCard :dataset="dataset" :client-metrics="clientMetrics"/>
   </div>
 </template>

@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import ynu.jackielinn.server.common.RestResponse;
 import ynu.jackielinn.server.dto.response.RecommendExperimentSettingsVO;
 import ynu.jackielinn.server.dto.response.RecommendMetricsCompareVO;
+import ynu.jackielinn.server.dto.response.RecommendTestCurvesVO;
 import ynu.jackielinn.server.entity.Dataset;
 import ynu.jackielinn.server.service.DatasetService;
 import ynu.jackielinn.server.service.RecommendService;
@@ -92,6 +93,31 @@ public class RecommendController {
 
         List<Long> candidateTaskIds = resolveTaskIdsByDataset(dataset);
         RecommendMetricsCompareVO vo = recommendService.getMetricsCompare(datasetId, candidateTaskIds);
+        return RestResponse.success(vo);
+    }
+
+    /**
+     * 推荐页测试集曲线接口。
+     * 返回每个算法的原始曲线与高斯平滑曲线（sigma=5）；前端展示平滑曲线，tooltip 显示原始值。
+     *
+     * @param datasetId 数据集ID（query 参数）
+     * @return 测试集曲线数据
+     */
+    @Operation(summary = "推荐页测试集曲线接口", description = "根据 datasetId 返回推荐页测试集曲线（含原始值与平滑值）")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "datasetId 无效或数据集不存在")
+    })
+    @GetMapping("/test-curves")
+    public RestResponse<RecommendTestCurvesVO> getTestCurves(
+            @Parameter(description = "数据集ID", required = true) @RequestParam Long datasetId) {
+        Dataset dataset = datasetService.getById(datasetId);
+        if (dataset == null) {
+            return RestResponse.failure(400, "数据集不存在");
+        }
+
+        List<Long> candidateTaskIds = resolveTaskIdsByDataset(dataset);
+        RecommendTestCurvesVO vo = recommendService.getTestCurves(datasetId, candidateTaskIds);
         return RestResponse.success(vo);
     }
 

@@ -9,10 +9,13 @@ const {t, locale} = useI18n()
 const {actualTheme} = useTheme()
 const props = defineProps<{
   dataset: 'cifar100' | 'tiny-imagenet'
-  chartSeriesData: Record<string, number[][]>
+  rounds: number[]
+  algorithmNames?: string[]
+  chartSeriesData: Record<string, Array<Array<number | null>>>
+  chartSeriesRawData: Record<string, Array<Array<number | null>>>
 }>()
 
-const numRounds = computed(() => (props.dataset === 'cifar100' ? 500 : 300))
+const numRounds = computed(() => props.rounds?.length ?? 0)
 
 const getChartColorVar = (name: string): string => {
   const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
@@ -30,12 +33,17 @@ const chartTooltipBorder = () => getChartColorVar('--home-card-border')
 const chartColor = '#6366f1'
 const needDataZoom = computed(() => numRounds.value > 50)
 
+const displayAlgoName = (idx: number) => {
+  return props.algorithmNames?.[idx] || (algorithmKeys[idx] ? t(`pages.recommended.${algorithmKeys[idx].key}`) : '')
+}
+
 const makeChartOption = (metricVal: string, titleKey: string) => {
   const textColor = chartTextColor()
   const mutedColor = chartMutedColor()
   const isDark = document.documentElement.classList.contains('dark')
-  const rounds = Array.from({length: numRounds.value}, (_, i) => i + 1)
+  const rounds = props.rounds ?? []
   const seriesData = props.chartSeriesData[metricVal] ?? []
+  const rawSeriesData = props.chartSeriesRawData[metricVal] ?? []
 
   return {
     backgroundColor: 'transparent',
@@ -56,11 +64,16 @@ const makeChartOption = (metricVal: string, titleKey: string) => {
       borderColor: chartTooltipBorder(),
       borderWidth: 1,
       padding: [8, 12],
-      formatter: (params: { axisValue?: number; data?: number }[]) => {
+      formatter: (params: { axisValue?: number; data?: number | null; seriesIndex?: number; dataIndex?: number }[]) => {
         const round = params[0]?.axisValue ?? 0
         const lines = (params ?? []).map((p, i) => {
-          const name = algorithmKeys[i] ? t(`pages.recommended.${algorithmKeys[i].key}`) : ''
-          const val = typeof p?.data === 'number' ? (p.data * 100).toFixed(2) + '%' : '-'
+          const seriesIndex = p?.seriesIndex ?? i
+          const dataIndex = p?.dataIndex ?? 0
+          const rawVal = rawSeriesData[seriesIndex]?.[dataIndex]
+          const fallbackVal = p?.data
+          const metricVal = typeof rawVal === 'number' ? rawVal : (typeof fallbackVal === 'number' ? fallbackVal : null)
+          const name = displayAlgoName(seriesIndex)
+          const val = metricVal != null ? (metricVal * 100).toFixed(2) + '%' : '-'
           return `${name}: ${val}`
         })
         return `Round ${round}<br/>${lines.join('<br/>')}`
@@ -75,7 +88,7 @@ const makeChartOption = (metricVal: string, titleKey: string) => {
       itemHeight: 10,
       itemGap: 12,
       padding: [2, 0, 0, 0],
-      data: algorithmKeys.map((a) => t(`pages.recommended.${a.key}`))
+      data: algorithmKeys.map((_, idx) => displayAlgoName(idx))
     },
     grid: {left: 52, right: 20, top: 36, bottom: needDataZoom.value ? 110 : 78},
     dataZoom: needDataZoom.value
@@ -114,7 +127,11 @@ const makeChartOption = (metricVal: string, titleKey: string) => {
         color: textColor,
         fontSize: 11,
         margin: 8,
-        interval: (idx: number) => idx === 0 || idx % 50 === 49 || idx === numRounds.value - 1
+        interval: (idx: number) => {
+          if (idx === 0 || idx === numRounds.value - 1) return true
+          const step = Math.max(1, Math.ceil(numRounds.value / 10))
+          return (idx + 1) % step === 0
+        }
       }
     },
     yAxis: {
@@ -130,10 +147,11 @@ const makeChartOption = (metricVal: string, titleKey: string) => {
       axisTick: {show: false}
     },
     series: algorithmKeys.map((algo, idx) => ({
-      name: t(`pages.recommended.${algo.key}`),
+      name: displayAlgoName(idx),
       type: 'line',
       data: seriesData[idx] ?? [],
-      smooth: 0.25,
+      smooth: false,
+      connectNulls: true,
       symbol: 'none',
       lineStyle: {width: 2.5, color: chartColors[idx]},
       itemStyle: {color: chartColors[idx]},
@@ -192,9 +210,9 @@ const resizeCharts = () => {
   chartF1Inst?.resize()
 }
 
-watch([() => props.dataset, needDataZoom, actualTheme, locale], () => {
+watch([() => props.dataset, () => props.rounds, () => props.algorithmNames, () => props.chartSeriesData, () => props.chartSeriesRawData, needDataZoom, actualTheme, locale], () => {
   updateCharts()
-})
+}, {deep: true})
 
 let resizeObserver: ResizeObserver | null = null
 

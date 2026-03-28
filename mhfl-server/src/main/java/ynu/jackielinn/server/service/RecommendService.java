@@ -2,6 +2,7 @@ package ynu.jackielinn.server.service;
 
 import ynu.jackielinn.server.dto.response.RecommendExperimentSettingsVO;
 import ynu.jackielinn.server.dto.response.RecommendMetricsCompareVO;
+import ynu.jackielinn.server.dto.response.RecommendTestCurvesVO;
 
 import java.util.List;
 
@@ -27,4 +28,14 @@ public interface RecommendService {
      * @return 推荐页算法效果对比响应对象
      */
     RecommendMetricsCompareVO getMetricsCompare(Long datasetId, List<Long> candidateTaskIds);
+
+    /**
+     * 查询推荐展示页测试集曲线数据。
+     * 返回每个算法的原始曲线与高斯平滑曲线（sigma=5）；前端展示平滑值，tooltip 可展示原始值。
+     *
+     * @param datasetId        数据集ID（通过 query 参数传入）
+     * @param candidateTaskIds 控制器中配置的候选任务ID列表
+     * @return 推荐页测试集曲线响应对象
+     */
+    RecommendTestCurvesVO getTestCurves(Long datasetId, List<Long> candidateTaskIds);
 }
