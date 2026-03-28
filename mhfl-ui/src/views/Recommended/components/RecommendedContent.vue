@@ -6,6 +6,7 @@ import TestCurvesCard from './TestCurvesCard.vue'
 import ClientMetricsCard from './ClientMetricsCard.vue'
 import {chartMetricKeys} from './recommendedConstants'
 import {listDatasetsForSelect, type DatasetVO} from '@/api/dataset'
+import {useRecommendedCurveSigma} from '@/composables/useRecommendedCurveSigma'
 import {
   getRecommendExperimentSettings,
   getRecommendMetricsCompare,
@@ -45,6 +46,7 @@ const experimentSettings = ref<RecommendExperimentSettingsVO | null>(null)
 const algorithmNames = ref<string[]>([])
 const compareAlgorithmNames = ref<string[]>([])
 const curveAlgorithmNames = ref<string[]>([])
+const curveSigma = ref(2.5)
 const remoteAlgorithmMetrics = ref<Record<string, number>[]>([])
 const remoteRounds = ref<number[]>([])
 const remoteChartSmoothSeries = ref<Record<string, Array<Array<number | null>>>>({})
@@ -53,6 +55,8 @@ const datasetIdByType = ref<Record<'cifar100' | 'tiny-imagenet', number | null>>
   cifar100: null,
   'tiny-imagenet': null
 })
+const cifarSigmaState = useRecommendedCurveSigma('cifar100')
+const tinySigmaState = useRecommendedCurveSigma('tiny-imagenet')
 
 const resolveDatasetType = (dataName: string) => {
   const name = dataName.toLowerCase()
@@ -153,6 +157,7 @@ const fetchTestCurves = () => {
   }
   getRecommendTestCurves(
       datasetId,
+      curveSigma.value,
       (data: RecommendTestCurvesVO) => {
         const algorithms = data?.algorithms ?? []
         curveAlgorithmNames.value = algorithms.map((x) => x.algorithmName ?? '')
@@ -181,6 +186,17 @@ const fetchTestCurves = () => {
         remoteChartRawSeries.value = {}
       }
   )
+}
+
+const onSigmaChange = (value: number) => {
+  if (props.dataset === 'cifar100') {
+    cifarSigmaState.sigma.value = value
+    curveSigma.value = cifarSigmaState.sigma.value
+  } else {
+    tinySigmaState.sigma.value = value
+    curveSigma.value = tinySigmaState.sigma.value
+  }
+  fetchTestCurves()
 }
 
 const displayCompareAlgorithmNames = computed(() =>
@@ -306,6 +322,9 @@ const clientMetrics = computed(() => {
 watch(
     () => props.dataset,
     () => {
+      curveSigma.value = props.dataset === 'cifar100'
+          ? cifarSigmaState.sigma.value
+          : tinySigmaState.sigma.value
       fetchRecommendData()
     },
     {immediate: true}
@@ -324,10 +343,12 @@ fetchDatasetIds()
     />
     <TestCurvesCard
         :dataset="dataset"
+        :sigma="curveSigma"
         :rounds="displayRounds"
         :algorithm-names="displayCurveAlgorithmNames"
         :chart-series-data="chartSeriesData"
         :chart-series-raw-data="chartSeriesRawData"
+        @sigma-change="onSigmaChange"
     />
     <ClientMetricsCard :dataset="dataset" :client-metrics="clientMetrics"/>
   </div>

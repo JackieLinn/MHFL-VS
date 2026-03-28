@@ -35,7 +35,8 @@ public interface RecommendService {
      *
      * @param datasetId        数据集ID（通过 query 参数传入）
      * @param candidateTaskIds 控制器中配置的候选任务ID列表
+     * @param sigma 高斯平滑 sigma（推荐范围 0~5）
      * @return 推荐页测试集曲线响应对象
      */
-    RecommendTestCurvesVO getTestCurves(Long datasetId, List<Long> candidateTaskIds);
+    RecommendTestCurvesVO getTestCurves(Long datasetId, List<Long> candidateTaskIds, Double sigma);
 }

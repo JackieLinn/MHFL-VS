@@ -353,6 +353,7 @@
       "chartRecall": "召回率 (%)",
       "chartF1": "F1分数 (%)",
       "chartXAxis": "通信轮次",
+      "curveSigmaLabel": "高斯平滑",
       "clientAccuracyTitle": "各客户端指标",
       "clientLabel": "客户端",
       "clientMetricAccuracy": "准确率",

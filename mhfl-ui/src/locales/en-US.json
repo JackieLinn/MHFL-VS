@@ -353,6 +353,7 @@
       "chartRecall": "Recall (%)",
       "chartF1": "F1 Score (%)",
       "chartXAxis": "Communication Rounds",
+      "curveSigmaLabel": "Gaussian Smoothing",
       "clientAccuracyTitle": "Client Metrics",
       "clientLabel": "Client",
       "clientMetricAccuracy": "Accuracy",

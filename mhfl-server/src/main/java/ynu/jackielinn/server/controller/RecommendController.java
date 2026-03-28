@@ -110,14 +110,15 @@ public class RecommendController {
     })
     @GetMapping("/test-curves")
     public RestResponse<RecommendTestCurvesVO> getTestCurves(
-            @Parameter(description = "数据集ID", required = true) @RequestParam Long datasetId) {
+            @Parameter(description = "数据集ID", required = true) @RequestParam Long datasetId,
+            @Parameter(description = "高斯平滑 sigma，范围 0~5，默认 2.5") @RequestParam(defaultValue = "2.5") Double sigma) {
         Dataset dataset = datasetService.getById(datasetId);
         if (dataset == null) {
             return RestResponse.failure(400, "数据集不存在");
         }
 
         List<Long> candidateTaskIds = resolveTaskIdsByDataset(dataset);
-        RecommendTestCurvesVO vo = recommendService.getTestCurves(datasetId, candidateTaskIds);
+        RecommendTestCurvesVO vo = recommendService.getTestCurves(datasetId, candidateTaskIds, sigma);
         return RestResponse.success(vo);
     }
 

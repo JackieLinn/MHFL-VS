@@ -32,7 +32,7 @@ public class RecommendServiceImpl implements RecommendService {
     /**
      * 曲线平滑使用的高斯核 sigma。
      */
-    private static final double CURVE_SMOOTH_SIGMA = 5.0;
+    private static final double CURVE_SMOOTH_SIGMA = 2.5;
 
     @Resource
     private TaskService taskService;
@@ -175,10 +175,12 @@ public class RecommendServiceImpl implements RecommendService {
      *
      * @param datasetId 数据集 ID
      * @param candidateTaskIds 候选任务 ID 列表（由控制器维护）
+     * @param sigma 高斯平滑 sigma（推荐范围 0~5）
      * @return 测试集曲线响应对象
      */
     @Override
-    public RecommendTestCurvesVO getTestCurves(Long datasetId, List<Long> candidateTaskIds) {
+    public RecommendTestCurvesVO getTestCurves(Long datasetId, List<Long> candidateTaskIds, Double sigma) {
+        double actualSigma = normalizeSigma(sigma);
         List<Long> validTaskIds = candidateTaskIds == null
                 ? Collections.emptyList()
                 : candidateTaskIds.stream().filter(Objects::nonNull).distinct().toList();
@@ -249,10 +251,10 @@ public class RecommendServiceImpl implements RecommendService {
                             .precisionRaw(precisionRaw)
                             .recallRaw(recallRaw)
                             .f1Raw(f1Raw)
-                            .accuracySmooth(gaussianSmooth(accuracyRaw, CURVE_SMOOTH_SIGMA))
-                            .precisionSmooth(gaussianSmooth(precisionRaw, CURVE_SMOOTH_SIGMA))
-                            .recallSmooth(gaussianSmooth(recallRaw, CURVE_SMOOTH_SIGMA))
-                            .f1Smooth(gaussianSmooth(f1Raw, CURVE_SMOOTH_SIGMA))
+                            .accuracySmooth(gaussianSmooth(accuracyRaw, actualSigma))
+                            .precisionSmooth(gaussianSmooth(precisionRaw, actualSigma))
+                            .recallSmooth(gaussianSmooth(recallRaw, actualSigma))
+                            .f1Smooth(gaussianSmooth(f1Raw, actualSigma))
                             .build();
                 })
                 .toList();
@@ -262,6 +264,20 @@ public class RecommendServiceImpl implements RecommendService {
                 .rounds(rounds)
                 .algorithms(algorithms)
                 .build();
+    }
+
+    /**
+     * 规范化 sigma 值。
+     * 空值使用默认值 2.5；并夹紧到 [0, 5] 区间。
+     *
+     * @param sigma 前端传入的 sigma
+     * @return 可用的 sigma
+     */
+    private double normalizeSigma(Double sigma) {
+        if (sigma == null || !Double.isFinite(sigma)) {
+            return CURVE_SMOOTH_SIGMA;
+        }
+        return Math.max(0.0, Math.min(5.0, sigma));
     }
 
     /**
@@ -341,6 +357,9 @@ public class RecommendServiceImpl implements RecommendService {
     private List<Double> gaussianSmooth(List<Double> input, double sigma) {
         if (input == null || input.isEmpty()) {
             return List.of();
+        }
+        if (sigma <= 0.0) {
+            return new ArrayList<>(input);
         }
         int radius = Math.max(1, (int) Math.ceil(3 * sigma));
         List<Double> output = new ArrayList<>(input.size());

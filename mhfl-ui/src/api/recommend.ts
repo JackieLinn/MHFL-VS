@@ -77,8 +77,9 @@ export const getRecommendMetricsCompare = (
  */
 export const getRecommendTestCurves = (
     datasetId: number,
+    sigma: number,
     success: (data: RecommendTestCurvesVO) => void,
     failure?: (message: string, code: number, url: string) => void
 ) => {
-    get(`/api/recommended/test-curves?datasetId=${datasetId}`, success, failure)
+    get(`/api/recommended/test-curves?datasetId=${datasetId}&sigma=${sigma}`, success, failure)
 }

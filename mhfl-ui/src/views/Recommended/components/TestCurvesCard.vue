@@ -9,11 +9,17 @@ const {t, locale} = useI18n()
 const {actualTheme} = useTheme()
 const props = defineProps<{
   dataset: 'cifar100' | 'tiny-imagenet'
+  sigma: number
   rounds: number[]
   algorithmNames?: string[]
   chartSeriesData: Record<string, Array<Array<number | null>>>
   chartSeriesRawData: Record<string, Array<Array<number | null>>>
 }>()
+const emit = defineEmits<{
+  sigmaChange: [value: number]
+}>()
+
+const sigmaLocal = ref(2.5)
 
 const numRounds = computed(() => props.rounds?.length ?? 0)
 
@@ -35,6 +41,12 @@ const needDataZoom = computed(() => numRounds.value > 50)
 
 const displayAlgoName = (idx: number) => {
   return props.algorithmNames?.[idx] || (algorithmKeys[idx] ? t(`pages.recommended.${algorithmKeys[idx].key}`) : '')
+}
+
+const onSigmaInput = (value: number | null) => {
+  const v = value == null ? 0 : Math.round((value + Number.EPSILON) * 2) / 2
+  sigmaLocal.value = v
+  emit('sigmaChange', v)
 }
 
 const makeChartOption = (metricVal: string, titleKey: string) => {
@@ -214,6 +226,14 @@ watch([() => props.dataset, () => props.rounds, () => props.algorithmNames, () =
   updateCharts()
 }, {deep: true})
 
+watch(
+    () => props.sigma,
+    (value) => {
+      sigmaLocal.value = value
+    },
+    {immediate: true}
+)
+
 let resizeObserver: ResizeObserver | null = null
 
 onMounted(() => {
@@ -238,10 +258,25 @@ onBeforeUnmount(() => {
   <section class="recommended-section recommended-tech-card relative overflow-hidden rounded-xl py-5 px-6 shrink-0">
     <div class="recommended-card-glow"></div>
     <div class="recommended-card-scanline"></div>
-    <h3 class="recommended-section-title m-0 mb-4 text-[15px] font-semibold flex items-center gap-2 relative z-[1]">
-      <span class="i-mdi-chart-timeline-variant recommended-section-icon text-xl"></span>
-      {{ $t('pages.recommended.chartSectionTitle') }}
-    </h3>
+    <div class="recommended-curve-head relative z-[1] mb-4">
+      <h3 class="recommended-section-title m-0 text-[15px] font-semibold flex items-center gap-2">
+        <span class="i-mdi-chart-timeline-variant recommended-section-icon text-xl"></span>
+        {{ $t('pages.recommended.chartSectionTitle') }}
+      </h3>
+      <div class="recommended-sigma-panel">
+        <span class="recommended-sigma-label">{{ $t('pages.recommended.curveSigmaLabel') }}</span>
+        <el-slider
+            :model-value="sigmaLocal"
+            :min="0"
+            :max="5"
+            :step="0.5"
+            size="small"
+            class="recommended-sigma-slider"
+            @input="onSigmaInput"
+        />
+        <span class="recommended-sigma-value">σ = {{ sigmaLocal.toFixed(1) }}</span>
+      </div>
+    </div>
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 relative z-[1]">
       <div class="recommended-chart-card">
         <div ref="chartAccuracyRef" class="recommended-chart-inner w-full h-[360px]"></div>
@@ -260,6 +295,51 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+.recommended-curve-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.recommended-sigma-panel {
+  min-width: 300px;
+  max-width: 420px;
+  width: clamp(300px, 40vw, 420px);
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid var(--home-card-border);
+  background: var(--home-hover-bg);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.recommended-sigma-label {
+  color: var(--home-text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.recommended-sigma-value {
+  color: var(--home-text-primary);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  min-width: 56px;
+  text-align: right;
+}
+
+.recommended-sigma-slider {
+  flex: 1;
+  --el-slider-main-bg-color: #6366f1;
+  --el-slider-runway-bg-color: var(--home-card-border);
+  --el-slider-stop-bg-color: var(--home-card-border);
+}
+
 .recommended-chart-card {
   background: var(--home-hover-bg);
   border: 1px solid var(--home-card-border);
