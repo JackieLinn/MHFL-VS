@@ -33,6 +33,7 @@ mhfl-ui/mhfl-ui.iml
 mhfl-ui/.vscode
 mhfl-ui/node_modules
 mhfl-ui/dist
+mhfl-ui/tests/reports
 
 ### development-documentation ###
 AGENTS.md
