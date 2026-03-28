@@ -10,17 +10,27 @@ import {
   cnnColors,
   getClientModel
 } from './recommendedConstants'
+import type {RecommendClientMetricType} from '@/api/recommend'
 
 const {t} = useI18n()
 const props = defineProps<{
   dataset: 'cifar100' | 'tiny-imagenet'
+  selectedClientMetric?: RecommendClientMetricType
   clientMetrics: { accuracy: number[]; precision: number[]; recall: number[]; f1: number[] }[]
 }>()
+const emit = defineEmits<{
+  metricChange: [metric: RecommendClientMetricType]
+}>()
 
-const selectedClientMetric = ref<'accuracy' | 'precision' | 'recall' | 'f1'>('accuracy')
+const selectedClientMetric = ref<RecommendClientMetricType>(props.selectedClientMetric ?? 'accuracy')
 const clientDetailVisible = ref(false)
 const selectedClientId = ref(0)
-const selectedClientDetailMetric = ref<'accuracy' | 'precision' | 'recall' | 'f1'>('accuracy')
+const selectedClientDetailMetric = ref<RecommendClientMetricType>('accuracy')
+
+const onMetricClick = (metric: RecommendClientMetricType) => {
+  selectedClientMetric.value = metric
+  emit('metricChange', metric)
+}
 
 const numRounds = computed(() => (props.dataset === 'cifar100' ? 500 : 300))
 
@@ -184,6 +194,14 @@ watch(clientDetailVisible, (visible) => {
 watch([selectedClientId, selectedClientDetailMetric, clientDetailChartData], () => {
   if (clientDetailVisible.value) updateClientDetailChart()
 }, {deep: true})
+watch(
+    () => props.selectedClientMetric,
+    (value) => {
+      if (!value) return
+      selectedClientMetric.value = value
+    },
+    {immediate: true}
+)
 </script>
 
 <template>
@@ -202,7 +220,7 @@ watch([selectedClientId, selectedClientDetailMetric, clientDetailChartData], () 
             type="button"
             class="recommended-client-metric-btn px-3 py-1.5 text-xs font-medium transition-colors"
             :class="selectedClientMetric === opt.val ? 'recommended-client-metric-btn-active' : 'recommended-client-metric-btn-inactive'"
-            @click="selectedClientMetric = opt.val"
+            @click="onMetricClick(opt.val)"
         >
           {{ $t(`pages.recommended.${opt.key}`) }}
         </button>

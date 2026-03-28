@@ -13,6 +13,7 @@ const displayAlgorithms = computed(() => {
   if (props.algorithmNames && props.algorithmNames.length > 0) {
     return props.algorithmNames.map((name, idx) => ({
       name,
+      key: '',
       color: badgeColors[idx % badgeColors.length]
     }))
   }

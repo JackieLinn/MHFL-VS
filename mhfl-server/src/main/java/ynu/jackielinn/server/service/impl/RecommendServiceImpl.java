@@ -4,15 +4,19 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 import ynu.jackielinn.server.common.Status;
+import ynu.jackielinn.server.dto.response.RecommendClientMetricItemVO;
+import ynu.jackielinn.server.dto.response.RecommendClientMetricsVO;
 import ynu.jackielinn.server.dto.response.RecommendCurveAlgorithmVO;
 import ynu.jackielinn.server.dto.response.RecommendExperimentSettingsVO;
 import ynu.jackielinn.server.dto.response.RecommendMetricsCompareItemVO;
 import ynu.jackielinn.server.dto.response.RecommendMetricsCompareVO;
 import ynu.jackielinn.server.dto.response.RecommendTestCurvesVO;
 import ynu.jackielinn.server.entity.Algorithm;
+import ynu.jackielinn.server.entity.Client;
 import ynu.jackielinn.server.entity.Round;
 import ynu.jackielinn.server.entity.Task;
 import ynu.jackielinn.server.service.AlgorithmService;
+import ynu.jackielinn.server.service.ClientService;
 import ynu.jackielinn.server.service.RecommendService;
 import ynu.jackielinn.server.service.RoundService;
 import ynu.jackielinn.server.service.TaskService;
@@ -42,6 +46,9 @@ public class RecommendServiceImpl implements RecommendService {
 
     @Resource
     private RoundService roundService;
+
+    @Resource
+    private ClientService clientService;
 
     /**
      * 查询推荐展示页实验设置。
@@ -264,6 +271,188 @@ public class RecommendServiceImpl implements RecommendService {
                 .rounds(rounds)
                 .algorithms(algorithms)
                 .build();
+    }
+
+    /**
+     * 查询推荐页客户端最新指标（按单一指标）。
+     *
+     * @param datasetId 数据集ID
+     * @param candidateTaskIds 候选任务ID列表
+     * @param metric 指标名称，仅支持 accuracy/precision/recall/f1
+     * @return 客户端指标响应对象
+     */
+    @Override
+    public RecommendClientMetricsVO getClientMetrics(Long datasetId, List<Long> candidateTaskIds, String metric) {
+        String normalizedMetric = normalizeClientMetric(metric);
+        List<Long> validTaskIds = candidateTaskIds == null
+                ? Collections.emptyList()
+                : candidateTaskIds.stream().filter(Objects::nonNull).distinct().toList();
+
+        List<Task> taskList = validTaskIds.isEmpty()
+                ? List.of()
+                : taskService.list(new LambdaQueryWrapper<Task>()
+                .in(Task::getId, validTaskIds)
+                .eq(Task::getDid, datasetId)
+                .eq(Task::getStatus, Status.RECOMMENDED));
+        Map<Long, Task> taskById = taskList.stream()
+                .collect(Collectors.toMap(Task::getId, t -> t, (a, b) -> a, LinkedHashMap::new));
+
+        int clientCount = taskList.stream()
+                .map(Task::getNumNodes)
+                .filter(Objects::nonNull)
+                .max(Integer::compareTo)
+                .orElse(100);
+
+        List<String> algorithmNames = new ArrayList<>(validTaskIds.size());
+        List<Map<Integer, Double>> taskMetricMaps = new ArrayList<>(validTaskIds.size());
+        for (Long taskId : validTaskIds) {
+            Task task = taskById.get(taskId);
+            if (task == null) {
+                algorithmNames.add(null);
+                taskMetricMaps.add(Collections.emptyMap());
+                continue;
+            }
+
+            String algorithmName = null;
+            if (task.getAid() != null) {
+                Algorithm algorithm = algorithmService.getById(task.getAid());
+                algorithmName = algorithm != null ? algorithm.getAlgorithmName() : null;
+            }
+            algorithmNames.add(algorithmName);
+            taskMetricMaps.add(buildLatestClientMetricMap(task.getId(), normalizedMetric));
+        }
+
+        List<RecommendClientMetricItemVO> clients = new ArrayList<>(Math.max(clientCount, 0));
+        for (int clientIndex = 0; clientIndex < clientCount; clientIndex++) {
+            List<Double> values = new ArrayList<>(validTaskIds.size());
+            for (Map<Integer, Double> metricMap : taskMetricMaps) {
+                values.add(metricMap.get(clientIndex));
+            }
+            clients.add(RecommendClientMetricItemVO.builder()
+                    .clientIndex(clientIndex)
+                    .values(values)
+                    .build());
+        }
+
+        return RecommendClientMetricsVO.builder()
+                .datasetId(datasetId)
+                .metric(normalizedMetric)
+                .algorithmNames(algorithmNames)
+                .clients(clients)
+                .build();
+    }
+
+    /**
+     * 规范化客户端指标名称，仅支持 accuracy/precision/recall/f1。
+     *
+     * @param metric 指标名称
+     * @return 规范化后的指标名称
+     */
+    private String normalizeClientMetric(String metric) {
+        if (metric == null) {
+            throw new IllegalArgumentException("metric 不能为空");
+        }
+        String normalized = metric.trim().toLowerCase();
+        if (Objects.equals(normalized, "accuracy")
+                || Objects.equals(normalized, "precision")
+                || Objects.equals(normalized, "recall")
+                || Objects.equals(normalized, "f1")) {
+            return normalized;
+        }
+        throw new IllegalArgumentException("metric 仅支持 accuracy/precision/recall/f1");
+    }
+
+    /**
+     * 构建任务下每个客户端的最新指标映射。
+     *
+     * @param taskId 任务ID
+     * @param metric 指标名称
+     * @return clientIndex -> metricValue 映射
+     */
+    private Map<Integer, Double> buildLatestClientMetricMap(Long taskId, String metric) {
+        if (taskId == null) {
+            return Collections.emptyMap();
+        }
+        List<Round> rounds = roundService.listByTidOrderByRoundNum(taskId);
+        if (rounds == null || rounds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        Map<Long, Integer> ridToRoundNum = rounds.stream()
+                .filter(r -> r.getId() != null)
+                .collect(Collectors.toMap(
+                        Round::getId,
+                        r -> r.getRoundNum() != null ? r.getRoundNum() : -1,
+                        (a, b) -> a,
+                        LinkedHashMap::new
+                ));
+        List<Long> rids = new ArrayList<>(ridToRoundNum.keySet());
+        if (rids.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        List<Client> clients = clientService.listByRidIn(rids);
+        if (clients == null || clients.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        Map<Integer, Client> latestByClientIndex = new LinkedHashMap<>();
+        for (Client client : clients) {
+            Integer clientIndex = client.getClientIndex();
+            if (clientIndex == null) {
+                continue;
+            }
+            Client currentLatest = latestByClientIndex.get(clientIndex);
+            if (currentLatest == null || isClientRecordLater(client, currentLatest, ridToRoundNum)) {
+                latestByClientIndex.put(clientIndex, client);
+            }
+        }
+
+        Map<Integer, Double> metricMap = new LinkedHashMap<>();
+        latestByClientIndex.forEach((clientIndex, latestClient) ->
+                metricMap.put(clientIndex, extractClientMetric(latestClient, metric)));
+        return metricMap;
+    }
+
+    /**
+     * 判断候选记录是否比当前记录更新。
+     * 优先比较 roundNum，轮次相同再比较 timestamp。
+     *
+     * @param candidate 候选记录
+     * @param current 当前记录
+     * @param ridToRoundNum rid -> roundNum 映射
+     * @return 候选记录是否更新
+     */
+    private boolean isClientRecordLater(Client candidate, Client current, Map<Long, Integer> ridToRoundNum) {
+        int candidateRound = candidate.getRid() != null ? ridToRoundNum.getOrDefault(candidate.getRid(), -1) : -1;
+        int currentRound = current.getRid() != null ? ridToRoundNum.getOrDefault(current.getRid(), -1) : -1;
+        if (candidateRound != currentRound) {
+            return candidateRound > currentRound;
+        }
+        if (candidate.getTimestamp() == null) {
+            return false;
+        }
+        if (current.getTimestamp() == null) {
+            return true;
+        }
+        return candidate.getTimestamp().isAfter(current.getTimestamp());
+    }
+
+    /**
+     * 从客户端记录提取指定指标值。
+     *
+     * @param client 客户端记录
+     * @param metric 指标名称
+     * @return 指标值
+     */
+    private Double extractClientMetric(Client client, String metric) {
+        return switch (metric) {
+            case "accuracy" -> client.getAccuracy();
+            case "precision" -> client.getPrecision();
+            case "recall" -> client.getRecall();
+            case "f1" -> client.getF1Score();
+            default -> null;
+        };
     }
 
     /**

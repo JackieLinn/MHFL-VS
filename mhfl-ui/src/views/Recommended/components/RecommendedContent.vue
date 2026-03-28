@@ -8,9 +8,12 @@ import {chartMetricKeys} from './recommendedConstants'
 import {listDatasetsForSelect, type DatasetVO} from '@/api/dataset'
 import {useRecommendedCurveSigma} from '@/composables/useRecommendedCurveSigma'
 import {
+  getRecommendClientMetrics,
   getRecommendExperimentSettings,
   getRecommendMetricsCompare,
   getRecommendTestCurves,
+  type RecommendClientMetricType,
+  type RecommendClientMetricsVO,
   type RecommendCurveAlgorithmVO,
   type RecommendExperimentSettingsVO,
   type RecommendMetricsCompareItemVO,
@@ -47,10 +50,12 @@ const algorithmNames = ref<string[]>([])
 const compareAlgorithmNames = ref<string[]>([])
 const curveAlgorithmNames = ref<string[]>([])
 const curveSigma = ref(2.5)
+const selectedClientMetric = ref<RecommendClientMetricType>('accuracy')
 const remoteAlgorithmMetrics = ref<Record<string, number>[]>([])
 const remoteRounds = ref<number[]>([])
 const remoteChartSmoothSeries = ref<Record<string, Array<Array<number | null>>>>({})
 const remoteChartRawSeries = ref<Record<string, Array<Array<number | null>>>>({})
+const remoteClientMetricMatrix = ref<Array<Array<number | null>>>([])
 const datasetIdByType = ref<Record<'cifar100' | 'tiny-imagenet', number | null>>({
   cifar100: null,
   'tiny-imagenet': null
@@ -132,6 +137,7 @@ const fetchRecommendData = () => {
   fetchExperimentSettings()
   fetchMetricsCompare()
   fetchTestCurves()
+  fetchClientMetrics()
 }
 
 const mapCurveSeries = (
@@ -197,6 +203,30 @@ const onSigmaChange = (value: number) => {
     curveSigma.value = tinySigmaState.sigma.value
   }
   fetchTestCurves()
+}
+
+const fetchClientMetrics = () => {
+  const datasetId = datasetIdByType.value[props.dataset]
+  if (!datasetId) {
+    remoteClientMetricMatrix.value = []
+    return
+  }
+  getRecommendClientMetrics(
+      datasetId,
+      selectedClientMetric.value,
+      (data: RecommendClientMetricsVO) => {
+        const clients = data?.clients ?? []
+        remoteClientMetricMatrix.value = clients.map((x) => x.values ?? [])
+      },
+      () => {
+        remoteClientMetricMatrix.value = []
+      }
+  )
+}
+
+const onClientMetricChange = (metric: RecommendClientMetricType) => {
+  selectedClientMetric.value = metric
+  fetchClientMetrics()
 }
 
 const displayCompareAlgorithmNames = computed(() =>
@@ -310,11 +340,23 @@ const clientMetrics = computed(() => {
   const spread = props.dataset === 'cifar100' ? 0.08 : 0.06
   return Array.from({length: 100}, (_, clientIdx) => {
     const noise = (Math.sin(clientIdx * 0.5) * 0.5 + Math.cos(clientIdx * 0.3) * 0.5) * spread
-    return {
+    const fallback = {
       accuracy: bases.map((row) => Math.max(0.2, Math.min(0.85, (row.accuracy ?? 0) + noise))),
       precision: bases.map((row) => Math.max(0.2, Math.min(0.85, (row.precision ?? 0) + noise * 0.98))),
       recall: bases.map((row) => Math.max(0.2, Math.min(0.85, (row.recall ?? 0) + noise * 1.02))),
       f1: bases.map((row) => Math.max(0.2, Math.min(0.85, (row.f1 ?? 0) + noise)))
+    }
+    const remoteSelectedValues = remoteClientMetricMatrix.value[clientIdx] ?? []
+    const mergedSelectedValues = bases.map((_, ai) => {
+      const remoteVal = remoteSelectedValues[ai]
+      if (typeof remoteVal === 'number') return remoteVal
+      return fallback[selectedClientMetric.value][ai] ?? 0
+    })
+    return {
+      accuracy: selectedClientMetric.value === 'accuracy' ? mergedSelectedValues : fallback.accuracy,
+      precision: selectedClientMetric.value === 'precision' ? mergedSelectedValues : fallback.precision,
+      recall: selectedClientMetric.value === 'recall' ? mergedSelectedValues : fallback.recall,
+      f1: selectedClientMetric.value === 'f1' ? mergedSelectedValues : fallback.f1
     }
   })
 })
@@ -350,6 +392,11 @@ fetchDatasetIds()
         :chart-series-raw-data="chartSeriesRawData"
         @sigma-change="onSigmaChange"
     />
-    <ClientMetricsCard :dataset="dataset" :client-metrics="clientMetrics"/>
+    <ClientMetricsCard
+        :dataset="dataset"
+        :selected-client-metric="selectedClientMetric"
+        :client-metrics="clientMetrics"
+        @metric-change="onClientMetricChange"
+    />
   </div>
 </template>

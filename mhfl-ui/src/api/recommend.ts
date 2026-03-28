@@ -50,6 +50,20 @@ export interface RecommendTestCurvesVO {
     algorithms: RecommendCurveAlgorithmVO[]
 }
 
+export type RecommendClientMetricType = 'accuracy' | 'precision' | 'recall' | 'f1'
+
+export interface RecommendClientMetricItemVO {
+    clientIndex: number
+    values: Array<number | null>
+}
+
+export interface RecommendClientMetricsVO {
+    datasetId: number
+    metric: RecommendClientMetricType
+    algorithmNames: Array<string | null>
+    clients: RecommendClientMetricItemVO[]
+}
+
 /**
  * 获取推荐页实验设置
  */
@@ -82,4 +96,16 @@ export const getRecommendTestCurves = (
     failure?: (message: string, code: number, url: string) => void
 ) => {
     get(`/api/recommended/test-curves?datasetId=${datasetId}&sigma=${sigma}`, success, failure)
+}
+
+/**
+ * 获取推荐页客户端最新指标（按单一指标）
+ */
+export const getRecommendClientMetrics = (
+    datasetId: number,
+    metric: RecommendClientMetricType,
+    success: (data: RecommendClientMetricsVO) => void,
+    failure?: (message: string, code: number, url: string) => void
+) => {
+    get(`/api/recommended/clients-metrics?datasetId=${datasetId}&metric=${metric}`, success, failure)
 }
