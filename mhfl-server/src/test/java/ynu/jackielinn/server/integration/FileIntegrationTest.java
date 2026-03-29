@@ -2,36 +2,39 @@ package ynu.jackielinn.server.integration;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.web.servlet.MockMvc;
 import ynu.jackielinn.server.service.AccountService;
-import ynu.jackielinn.server.service.FileService;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
  * 文件模块接口集成测试。
- * 覆盖 FileController，业务依赖全部 mock，不触发真实中间件/文件系统。
+ * 覆盖 Controller -> Service -> Mapper -> H2 链路。
  */
+@Sql(
+        scripts = {
+                "classpath:integration/file/schema.sql",
+                "classpath:integration/file/data.sql"
+        },
+        executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD
+)
+@TestPropertySource(properties = "web.upload.base-dir=target/test-uploads")
 class FileIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
 
-    @MockitoBean
-    private FileService fileService;
-
-    @MockitoBean
+    @Autowired
     private AccountService accountService;
 
     /**
-     * 成功场景：上传头像成功并返回 URL。
+     * 成功场景：上传头像成功并更新账号头像字段。
      */
     @Test
     void uploadAvatarShouldReturnSuccess() throws Exception {
@@ -42,16 +45,16 @@ class FileIntegrationTest extends BaseIntegrationTest {
                 "fake-image-content".getBytes()
         );
 
-        String avatarUrl = "http://localhost:8088/uploads/avatar/2_123456.png";
-        when(fileService.saveAvatar(eq(2L), any())).thenReturn(avatarUrl);
-        when(accountService.updateAvatar(2L, avatarUrl)).thenReturn(null);
-
         mockMvc.perform(multipart("/api/file/avatar/upload")
                         .file(file)
                         .requestAttr("id", 2L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.data").value(avatarUrl));
+                .andExpect(jsonPath("$.data").value(org.hamcrest.Matchers.containsString("/uploads/avatar/")));
+
+        String avatar = accountService.getById(2L).getAvatar();
+        assertThat(avatar).isNotBlank();
+        assertThat(avatar).contains("/uploads/avatar/");
     }
 
     /**
