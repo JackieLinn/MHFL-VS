@@ -90,6 +90,9 @@ const onStartTask = () => {
       task.value.id,
       () => {
         startLoading.value = false
+        if (task.value) {
+          task.value.status = 1
+        }
         ElMessage.success(t('pages.task.create.startSuccess'))
         fetchDetail()
       },
@@ -144,71 +147,71 @@ onMounted(() => {
           <span class="detail-meta-label">{{ $t('pages.task.status') }}</span>
           <span :class="statusBadgeClass(task.status)">{{ statusLabel(task.status) }}</span>
         </span>
-        <span class="detail-meta-item">
+          <span class="detail-meta-item">
           <span class="detail-meta-label">{{ $t('pages.task.algorithmName') }}</span>
           <span class="detail-meta-value">{{ task.algorithmName }}</span>
         </span>
-        <span class="detail-meta-item">
+          <span class="detail-meta-item">
           <span class="detail-meta-label">{{ $t('pages.task.dataName') }}</span>
           <span class="detail-meta-value">{{ task.dataName }}</span>
         </span>
-        <div v-if="progress.total > 0" class="detail-meta-item detail-progress-wrap">
-          <span class="detail-meta-label">{{ $t('pages.taskDetail.progressLabel') }}</span>
-          <div class="detail-progress-inner">
-            <el-progress
-                :percentage="progress.total > 0 ? Math.min(100, Math.round((progress.current / progress.total) * 100)) : 0"
-                :stroke-width="8"
-                :show-text="false"
-                :status="task.status === 1 ? undefined : (task.status === 2 || task.status === 3 ? 'success' : 'exception')"
-            />
-            <span class="detail-progress-text">
+          <div v-if="progress.total > 0" class="detail-meta-item detail-progress-wrap">
+            <span class="detail-meta-label">{{ $t('pages.taskDetail.progressLabel') }}</span>
+            <div class="detail-progress-inner">
+              <el-progress
+                  :percentage="progress.total > 0 ? Math.min(100, Math.round((progress.current / progress.total) * 100)) : 0"
+                  :stroke-width="8"
+                  :show-text="false"
+                  :status="task.status === 1 ? undefined : (task.status === 2 || task.status === 3 ? 'success' : 'exception')"
+              />
+              <span class="detail-progress-text">
               {{
-                task.status === 1
-                    ? $t('pages.taskDetail.progressInProgress', {current: progress.current, total: progress.total})
-                    : $t('pages.taskDetail.progressDone', {current: progress.current, total: progress.total})
-              }}
+                  task.status === 1
+                      ? $t('pages.taskDetail.progressInProgress', {current: progress.current, total: progress.total})
+                      : $t('pages.taskDetail.progressDone', {current: progress.current, total: progress.total})
+                }}
             </span>
+            </div>
           </div>
+          <el-button
+              v-if="task.status === 0"
+              type="success"
+              :icon="VideoPlay"
+              :loading="startLoading"
+              @click="onStartTask"
+          >
+            {{ $t('pages.task.start') }}
+          </el-button>
+          <el-button
+              v-else-if="task.status === 1"
+              class="detail-stop-btn"
+              type="danger"
+              :icon="VideoPause"
+              :loading="stopLoading"
+              @click="onStopTask"
+          >
+            {{ $t('pages.taskDetail.stopTraining') }}
+          </el-button>
+          <el-button
+              v-else-if="task.status === 5"
+              class="detail-stop-btn"
+              disabled
+              :icon="CircleClose"
+          >
+            {{ statusLabel(task.status) }}
+          </el-button>
         </div>
-        <el-button
-            v-if="task.status === 0"
-            type="success"
-            :icon="VideoPlay"
-            :loading="startLoading"
-            @click="onStartTask"
-        >
-          {{ $t('pages.task.start') }}
-        </el-button>
-        <el-button
-            v-else-if="task.status === 1"
-            class="detail-stop-btn"
-            type="danger"
-            :icon="VideoPause"
-            :loading="stopLoading"
-            @click="onStopTask"
-        >
-          {{ $t('pages.taskDetail.stopTraining') }}
-        </el-button>
-        <el-button
-            v-else-if="task.status === 5"
-            class="detail-stop-btn"
-            disabled
-            :icon="CircleClose"
-        >
-          {{ statusLabel(task.status) }}
-        </el-button>
-      </div>
-    </div>
-
-    <div v-loading="loading" class="detail-content flex-1 flex flex-col min-w-0">
-      <div v-if="error" class="detail-error">
-        <p>{{ error }}</p>
       </div>
 
-      <div v-else-if="task" class="flex-1 flex flex-col min-w-0">
-        <TaskDetailContent :task="task" @status-change="onStatusChange" @progress="progress = $event"/>
+      <div v-loading="loading" class="detail-content flex-1 flex flex-col min-w-0">
+        <div v-if="error" class="detail-error">
+          <p>{{ error }}</p>
+        </div>
+
+        <div v-else-if="task" class="flex-1 flex flex-col min-w-0">
+          <TaskDetailContent :task="task" @status-change="onStatusChange" @progress="progress = $event"/>
+        </div>
       </div>
-    </div>
     </div>
 
     <BackToTop scroll-target="#task-detail-scroll"/>

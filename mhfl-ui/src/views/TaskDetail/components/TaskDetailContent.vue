@@ -110,6 +110,8 @@ const {connect, disconnect, connected} = useTaskWebSocket(props.task.id, {
   onStatus: (msg) => {
     emit('statusChange', msg.status)
     if (TERMINAL_STATUSES.includes(msg.status)) {
+      fetchRounds()
+      fetchClients()
       disconnect()
     }
   }
@@ -123,14 +125,13 @@ watch(() => props.task.id, (id) => {
 }, {immediate: true})
 
 watch(
-    () => [props.task.id, props.task.status] as const,
-    ([id, status]) => {
-      if (!Number.isFinite(id) || id < 1) return
-      if (status === 1) {
-        connect()
-      } else {
+    () => props.task.id,
+    (id) => {
+      if (!Number.isFinite(id) || id < 1) {
         disconnect()
+        return
       }
+      connect()
     },
     {immediate: true}
 )
@@ -210,6 +211,15 @@ const metrics = computed(() => {
   const r = rounds.value
   const isInProgress = t.status === 1
   const fallback = (v: number | null | undefined) => (v != null && Number.isFinite(v) ? v : -1)
+  if (isInProgress && r.length === 0) {
+    return {
+      loss: 0,
+      accuracy: 0,
+      precision: 0,
+      recall: 0,
+      f1Score: 0
+    }
+  }
   if (isInProgress && r.length > 0) {
     const best = r.reduce<RoundVO | null>((acc, cur) => {
       const curAcc = cur.accuracy ?? -1
