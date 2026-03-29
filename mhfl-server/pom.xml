@@ -161,6 +161,7 @@
                                 <exclude>org/mockito/**</exclude>
                                 <exclude>javax/sql/**</exclude>
                                 <exclude>sun/**</exclude>
+                                <exclude>net/sf/jsqlparser/**</exclude>
                             </excludes>
                         </configuration>
                     </execution>

@@ -8,7 +8,6 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.client.RestTemplate;
-import ynu.jackielinn.server.service.AccountService;
 
 /**
  * 集成测试基类。
@@ -43,9 +42,4 @@ public abstract class BaseIntegrationTest {
     @MockitoBean
     protected RestTemplate restTemplate;
 
-    /**
-     * Mock AccountService，避免 AccountServiceImpl 初始化时访问 account 表。
-     */
-    @MockitoBean
-    protected AccountService accountService;
 }
