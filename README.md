@@ -19,14 +19,13 @@ It provides unified task orchestration, real-time training monitoring, system re
 
 ## ✨ Core Features
 
-- 🔐 Authentication and authorization: register/login/reset password, JWT, captcha, rate limiting, token blacklist, role-based access.
-- 🧭 Task lifecycle: create/list/detail/start/stop/delete tasks, recommended-task controls, and permission isolation.
-- 🔄 Real-time training pipeline: Python training publishes Round/Client/Status to Redis; Spring Boot persists to MySQL and pushes WebSocket updates.
-- 📈 Training visualization: task metrics cards, round curves, client grid, per-client detail history.
-- 🛠️ Management console: user/dataset/algorithm management with search, pagination, and audit-friendly operations.
-- 🖥️ Dashboard: platform overview, task status/trend, recent tasks, health checks, and real-time CPU/Memory/GPU monitoring.
-- 🎨 UI adaptation: light/dark theme support and bilingual localization (EN/ZH).
-- 🤖 Assistant: a RAG-based workflow agent with conversation/session APIs and streaming chat endpoints.
+- 🔐 Auth & RBAC: register/login/reset, JWT, captcha, rate limit, token blacklist.
+- 🧭 Task lifecycle: create, query, start/stop, delete, recommend, and access control.
+- 🔄 Real-time pipeline: Python → Redis → Spring Boot → MySQL/WebSocket.
+- 📈 Visualization: metrics cards, round curves, client grid, and client history.
+- 🖥️ Dashboard: platform stats, trends, health checks, and live CPU/Memory/GPU.
+- 🎨 UI & localization: light/dark theme and bilingual localization (EN/ZH).
+- 🤖 Assistant: RAG-based workflow agent with session and streaming chat APIs.
 
 ## 🧩 Tech Stack
 
